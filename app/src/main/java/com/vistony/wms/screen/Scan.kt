@@ -138,6 +138,10 @@ fun ScanScreen(navController: NavHostController,whs:String,idInventory:String,st
 
                 body.itemCode=articleValue.value.article.itemCode
                 body.itemName=articleValue.value.article.itemName
+
+                body.location = ""+Calendar.getInstance().time
+
+
                 body.quantity=1
 
                 homeViewModel.insertData(body)

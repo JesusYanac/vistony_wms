@@ -77,7 +77,9 @@ class HomeViewModel(idInventory:String): ViewModel() {
         realm.executeTransactionAsync { r: Realm ->
 
             val count = r.where(Counting::class.java)
+
                 .equalTo("itemCode",body.itemCode)
+                .equalTo("location",body.location)
                 .equalTo("inventoryId",ObjectId(idInventory))
                 .findFirst()
 
@@ -103,6 +105,7 @@ class HomeViewModel(idInventory:String): ViewModel() {
         }
     }
 
+    //se suma en el rack
     fun updateQuantity(lineUpdate: Counting){
 
         _count.value=CountingResponse(emptyList(),"cargando")
@@ -111,6 +114,7 @@ class HomeViewModel(idInventory:String): ViewModel() {
 
             val body: Counting? =r.where(Counting::class.java)
                 .equalTo("_id", lineUpdate._id)
+                //.equalTo("location",lineUpdate.location)
                 .findFirst()
 
             body?.quantity=lineUpdate.quantity
