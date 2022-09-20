@@ -1,6 +1,5 @@
 package com.vistony.wms.component
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -24,7 +23,6 @@ import androidx.compose.ui.window.DialogProperties
 import com.vistony.wms.R
 import com.vistony.wms.model.UpdateLine
 import com.vistony.wms.ui.theme.AzulVistony202
-import java.util.*
 
 @Composable
 fun CustomProgressDialog(text:String){
@@ -89,19 +87,23 @@ fun CustomDialogQuestion(openDialog:(Boolean)->Unit){
     )
 }
 
+open class FlagDialog(
+    var status:Boolean=false,
+    var flag:String=""
+)
 
 @Composable
-fun CustomDialogSendSap(openDialog:(Boolean)->Unit){
+fun CustomDialogResendOrClose(openDialog:(Boolean)->Unit,flag:String){
 
     AlertDialog(
         onDismissRequest = {
             openDialog(false)
         },
         title = {
-            Text(text = "Enviar a SAP")
+            Text(text = if(flag=="Close"){"Cerrar conteo"}else{"Reenviar a Sap"})
         },
         text = {
-            Text(text="¿Está seguro de cerrar la ficha y enviar a SAP?")
+            Text(text=if(flag=="Close"){"¿Está seguro de cerrar la ficha de conteo?"}else{"¿Está seguro de reenviar a Sap?"})
         },
         confirmButton = {
             Button(
@@ -115,7 +117,38 @@ fun CustomDialogSendSap(openDialog:(Boolean)->Unit){
                 onClick = { openDialog(true) },
                 colors= ButtonDefaults.buttonColors(backgroundColor = Color.Gray)
             ) {
-                Text("Enviar",color=Color.White)
+                Text( if(flag=="Close"){"Cerrar Conteo"}else{"Reenviar a Sap"} ,color=Color.White)
+            }
+        }
+    )
+}
+
+@Composable
+fun CustomDialogCreateConteo(openDialog:(Boolean)->Unit){
+
+    AlertDialog(
+        onDismissRequest = {
+            openDialog(false)
+        },
+        title = {
+            Text(text = "Crear conteo")
+        },
+        text = {
+            Text(text="¿Está seguro de crear esta ficha de conteo?")
+        },
+        confirmButton = {
+            Button(
+                onClick = { openDialog(false) }
+            ) {
+                Text("Cancelar")
+            }
+        },
+        dismissButton = {
+            Button(
+                onClick = { openDialog(true) },
+                colors= ButtonDefaults.buttonColors(backgroundColor = Color.Gray)
+            ) {
+                Text("Crear",color=Color.White)
             }
         }
     )
@@ -123,11 +156,9 @@ fun CustomDialogSendSap(openDialog:(Boolean)->Unit){
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun CustomDialogChangeNumber(binLocation:String,itemName:String,location:String="", value:String, newValue:(UpdateLine)->Unit){
+fun CustomDialogChangeNumber(binLocation:String,itemName:String,location:String?, value:String, newValue:(UpdateLine)->Unit){
 
-    Log.e("JEPICAME","REGRESO DE NEUVO location: "+location+" binLocation:"+binLocation  )
-
-    var locationTemp by remember { mutableStateOf( TextFieldValue(location)) }
+    var locationTemp by remember { mutableStateOf( TextFieldValue( if(location.isNullOrEmpty()){""}else{location} )) }
     var textNumber by remember { mutableStateOf(value) }
     val keyboardController = LocalSoftwareKeyboardController.current
 
@@ -135,13 +166,10 @@ fun CustomDialogChangeNumber(binLocation:String,itemName:String,location:String=
         locationTemp=TextFieldValue(binLocation)
     }
 
-    Log.e("JEPICAME","---"+locationTemp.text )
-
-
     AlertDialog(
         onDismissRequest = {
             locationTemp=TextFieldValue("")
-            newValue(UpdateLine(0,""))
+            newValue(UpdateLine(0.0,""))
         },
         title = {
             Column{
@@ -183,7 +211,7 @@ fun CustomDialogChangeNumber(binLocation:String,itemName:String,location:String=
                 onClick = {
                     try{
                         keyboardController?.hide()
-                        val numeric:Long=textNumber.toLong()
+                        val numeric:Double=textNumber.toDouble()
 
                         newValue(UpdateLine(numeric,locationTemp.text))
                     }catch(e:Exception){
@@ -199,7 +227,7 @@ fun CustomDialogChangeNumber(binLocation:String,itemName:String,location:String=
             Button(
                 onClick = {
                     locationTemp=TextFieldValue("")
-                    newValue(UpdateLine(0,""))
+                    newValue(UpdateLine(0.0,""))
                 }
             ) {
                 Text("Cancelar")

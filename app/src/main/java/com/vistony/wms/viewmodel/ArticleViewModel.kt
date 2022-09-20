@@ -45,17 +45,26 @@ class ArticleViewModel(flag:String): ViewModel() {
         _articulo.value=ArticleResponse()
     }
 
-    fun getArticle(itemCode:String){
+    fun getArticle(valueReadZebra:String){
+        val count:Int = valueReadZebra.split("|").size
+        var lote:String = ""
+        var itemCodeNew:String =valueReadZebra
+
+        if(count>=2){
+            itemCodeNew=valueReadZebra.split("|")[0]
+            lote=valueReadZebra.split("|")[1]
+        }
+
         _articulo.value=ArticleResponse(article=Article(),status="cargando")
 
         Realm.getInstanceAsync(configPublic, object : Realm.Callback() {
             override fun onSuccess(r: Realm) {
                 val article = r.where(Article::class.java)
-                    .equalTo("itemCode",itemCode)
+                    .equalTo("itemCode",itemCodeNew)
                     .findFirst()
 
                     if (article != null) {
-                        _articulo.value= ArticleResponse(article=article,status="ok")
+                        _articulo.value= ArticleResponse(article=article,status="ok",lote=lote)
                     }else{
                         _articulo.value=ArticleResponse(article=Article(),status="vacio")
                     }

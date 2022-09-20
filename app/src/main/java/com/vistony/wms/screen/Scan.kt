@@ -108,7 +108,7 @@ fun ScanScreen(navController: NavHostController,whs:String,idInventory:String,st
 
         }else{
             binLocationText=""
-            articleViewModel.getArticle(zebraValue.value.split("|")[0])
+            articleViewModel.getArticle(zebraValue.value)
         }
 
         zebraViewModel.setData("")
@@ -138,11 +138,10 @@ fun ScanScreen(navController: NavHostController,whs:String,idInventory:String,st
 
                 body.itemCode=articleValue.value.article.itemCode
                 body.itemName=articleValue.value.article.itemName
-
+                body.lote=articleValue.value.lote
                 body.location = ""+Calendar.getInstance().time
 
-
-                body.quantity=1
+                body.quantity=1.0
 
                 homeViewModel.insertData(body)
                 articleViewModel.resetArticleStatus()
@@ -238,7 +237,7 @@ private fun divContainer(binLocation:String,status:String,whs:String,context:Con
                             cameraProvider=cameraProvider,
                             context=context,
                             valueText = { textDecode ->
-                                articleViewModel.getArticle(textDecode.split("|")[0])
+                                articleViewModel.getArticle(textDecode)
                             }
                         )
 
@@ -410,21 +409,26 @@ fun dataad(binLocation:String,status:String,listBody:List<Counting> = emptyList(
                             .weight(0.75f)
                             .padding(20.dp)
                     ){
-                        var colorText=if(line.location.isEmpty()){Color.Red}else{Color.Unspecified}
+                        var colorLocation=if(line.location.isNullOrEmpty()){Color.Red}else{Color.Unspecified}
+                        var colorLote=if(line.lote.isNullOrEmpty()){Color.Red}else{Color.Gray}
 
                         Text(
-                            text="${line.itemCode} ",
-                            color=colorText
+                            text="Artículo ${line.itemCode} ",
+                            color=colorLocation
                         )
                         Text(
                             text="${line.itemName} ",
-                            color=if(line.location.isEmpty()){Color.Red}else{Color.Gray},
+                            color=if(line.location.isNullOrEmpty()){Color.Red}else{Color.Gray},
                             fontSize =13.sp
                         )
 
                         Text(
-                            text=if(line.location.isEmpty()){"SIN UBICACIÓN"}else{"${line.location} "},
-                            color=colorText
+                            text=if(line.location.isNullOrEmpty()){"SIN UBICACIÓN"}else{"Ubicación ${line.location} "},
+                            color=colorLocation
+                        )
+                        Text(
+                            text=if(line.lote.isNullOrEmpty()){"SIN LOTE"}else{"Lote ${line.lote} "},
+                            color=colorLote
                         )
                     }
 
@@ -468,7 +472,7 @@ fun dataad(binLocation:String,status:String,listBody:List<Counting> = emptyList(
 }
 
 @Composable
-fun Stepper(binLocation:String,itemName:String,status:Boolean,location:String,count: Long, onCountChanged: (UpdateLine) -> Unit) {
+fun Stepper(binLocation:String,itemName:String,status:Boolean,location:String?,count: Double, onCountChanged: (UpdateLine) -> Unit) {
     var text by remember { mutableStateOf("$count") }
     var visible by remember { mutableStateOf(false) }
 
@@ -481,7 +485,7 @@ fun Stepper(binLocation:String,itemName:String,status:Boolean,location:String,co
             value=text,
             newValue = {
 
-                if(it.count!=0L){
+                if(it.count!=0.0){
                     Log.e("JEPICAME","count "+it.count+" location "+it.location)
                     onCountChanged(it)
                 }
@@ -550,7 +554,7 @@ private fun CameraPreview(
                 val barcodeAnalyser = BarCodeAnalyser { barcodes ->
                     barcodes.forEach { barcode ->
                         barcode.rawValue?.let { barcodeValue ->
-                            //VALUE SCAN
+                            //VALUE SCAN|
                             valueText(barcodeValue)
                         }
                     }

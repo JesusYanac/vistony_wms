@@ -31,10 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.vistony.wms.R
-import com.vistony.wms.component.CustomDialogQuestion
-import com.vistony.wms.component.CustomDialogSendSap
-import com.vistony.wms.component.CustomProgressDialog
-import com.vistony.wms.component.TopBar
+import com.vistony.wms.component.*
 import com.vistony.wms.model.Counting
 import com.vistony.wms.model.Inventory
 import com.vistony.wms.ui.theme.AzulVistony201
@@ -42,6 +39,8 @@ import com.vistony.wms.ui.theme.AzulVistony202
 import com.vistony.wms.ui.theme.RedVistony202
 import com.vistony.wms.viewmodel.InventoryViewModel
 import org.bson.types.ObjectId
+import java.text.SimpleDateFormat
+import java.util.*
 
 @Composable
 fun HistoryInventoryScreen(navController: NavHostController,context: Context){
@@ -54,7 +53,7 @@ fun HistoryInventoryScreen(navController: NavHostController,context: Context){
 
     Scaffold(
         topBar = {
-            TopBar(title="Historial de recuentos")
+            TopBar(title="Historial de conteos")
         }
     ){
 
@@ -62,23 +61,25 @@ fun HistoryInventoryScreen(navController: NavHostController,context: Context){
 
         LazyColumn(modifier = Modifier.fillMaxHeight()) {
             item{
-                Row(
-                    horizontalArrangement= Arrangement.SpaceBetween,
-                    verticalAlignment= Alignment.CenterVertically,
-                    modifier= Modifier
-                        .padding(10.dp)
-                        .fillMaxWidth()
-
-                ){
-                    Text("Número de fichas: ${inventoryValue.value.inventory.size}",color= Color.Gray)
-                    TextButton(
-                        onClick = {
-                            inventoryViewModel.getData()
-                        }
+                Column(modifier= Modifier.padding(10.dp)){
+                    Row(
+                        horizontalArrangement= Arrangement.SpaceBetween,
+                        verticalAlignment= Alignment.CenterVertically,
+                        modifier= Modifier.fillMaxWidth()
                     ){
-                        Text(text="Actualizar",color= RedVistony202)
+                        Text("Número de fichas: ${inventoryValue.value.inventory.size}",color= Color.Gray)
+                        TextButton(
+                            onClick = {
+                                inventoryViewModel.getData()
+                            }
+                        ){
+                            Text(text="Actualizar",color= RedVistony202)
+                        }
                     }
+
+                    Text(text = "${inventoryValue.value.ownerName } ",color=Color.Gray)
                 }
+
             }
             items(inventoryValue.value.inventory){ inventory ->
 
@@ -86,29 +87,37 @@ fun HistoryInventoryScreen(navController: NavHostController,context: Context){
                     ""->{}
                     "cargando"->{
                         CustomProgressDialog("Listando fichas...")
+
                     }
                     "ok"->{
 
-                        val openDialog = remember { mutableStateOf(false) }
+                        val openDialog = remember { mutableStateOf(FlagDialog()) }
 
-                        if(openDialog.value){
-                            CustomDialogSendSap(openDialog={ response ->
-                                if(response){
-                                    inventoryViewModel.updateStatusClose(inventory._id)
-                                }
+                        if(openDialog.value.status){
+                            CustomDialogResendOrClose(
+                                openDialog={ response ->
+                                    if(response){
+                                        if(openDialog.value.flag=="Close"){
+                                            inventoryViewModel.updateStatusClose(inventory._id)
+                                        }else if(openDialog.value.flag=="Resend"){
+                                            inventoryViewModel.resendToSap(inventory._id)
+                                        }
 
-                                openDialog.value=false
-
-                            })
+                                    }
+                                    openDialog.value=FlagDialog(false)
+                                },
+                                flag=openDialog.value.flag
+                            )
                         }
-
 
                         ExpandableListItem(
                             inventory=inventory,
                             navController=navController,
-                            ownerName = inventoryValue.value.ownerName,
                             onPresChangeStatus={
-                                openDialog.value=true
+                                openDialog.value= FlagDialog(
+                                    status = true,
+                                    flag=it
+                                )
                             }
                         )
                     }
@@ -134,7 +143,7 @@ fun HistoryInventoryScreen(navController: NavHostController,context: Context){
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
-fun ExpandableListItem(inventory: Inventory,navController: NavHostController,ownerName:String=" ",onPresChangeStatus:() ->Unit) {
+fun ExpandableListItem(inventory: Inventory,navController: NavHostController,onPresChangeStatus:(String) ->Unit) {
     var expanded by remember { mutableStateOf(false) }
 
     Card(
@@ -174,8 +183,8 @@ fun ExpandableListItem(inventory: Inventory,navController: NavHostController,own
 
                 TitleAndSubtitle(
                     title = inventory.name,
-                    owner = ownerName,
-                    subtitle = inventory.createAt.toString()
+                    type = inventory.type,
+                    status = inventory.status
                 )
 
                 Icon(
@@ -217,9 +226,9 @@ fun ExpandableListItem(inventory: Inventory,navController: NavHostController,own
                     Spacer(modifier = Modifier.height(10.dp))
 
                     ExtraItem(item = Item(
-                        title="Tipo",
-                        date="${inventory.type} "
-                        )
+                        title="Fecha de Inicio",
+                        date="${inventory.createAt.getUIStringTimeStampWithDate()} "
+                    )
                     )
 
                     Spacer(modifier = Modifier.height(10.dp))
@@ -227,8 +236,8 @@ fun ExpandableListItem(inventory: Inventory,navController: NavHostController,own
                     Spacer(modifier = Modifier.height(10.dp))
 
                     ExtraItem(item = Item(
-                        "Estado",
-                        "${inventory.status} "
+                            title="Fecha de Fin",
+                            date=if(inventory.createAt != inventory.closeAt){"${inventory.closeAt.getUIStringTimeStampWithDate()} "}else{" "}
                         )
                     )
 
@@ -236,10 +245,15 @@ fun ExpandableListItem(inventory: Inventory,navController: NavHostController,own
                     Divider(modifier = Modifier.height(1.dp))
                     Spacer(modifier = Modifier.height(10.dp))
 
-                    ExtraItem(item = Item(
-                        "N° SAP",
-                        if(inventory.codeSAP==0){"# "}else{"${inventory.codeSAP} " }
-                    )
+                    ExtraItem(
+                        item = Item(
+                            title="N° SAP",
+                            date=if(inventory.codeSAP==0){"# "}else{"${inventory.codeSAP} " }
+                        ),
+                        onClick={
+                            onPresChangeStatus("Resend")
+                        },
+                        status=inventory.status
                     )
 
                     if(inventory.response.isNotEmpty()){
@@ -254,16 +268,17 @@ fun ExpandableListItem(inventory: Inventory,navController: NavHostController,own
                         ) {
                             Text(text = inventory.response,color=Color.Gray)
                         }
-
                     }
 
                     TextButton(
-                        modifier=Modifier.padding(top=10.dp,bottom=5.dp).fillMaxWidth(),
+                        modifier= Modifier
+                            .padding(top = 10.dp, bottom = 5.dp)
+                            .fillMaxWidth(),
                         enabled = inventory.status=="Abierto",
                         onClick = {
-                            onPresChangeStatus()
+                            onPresChangeStatus("Close")
                         }) {
-                        Text(text="Enviar a SAP",color= if(inventory.status=="Abierto"){AzulVistony202}else{Color.Gray})
+                        Text(text="Cerrar recuento",color= if(inventory.status=="Abierto"){AzulVistony202}else{Color.Gray})
                     }
 
                 }
@@ -272,31 +287,47 @@ fun ExpandableListItem(inventory: Inventory,navController: NavHostController,own
     }
 }
 
+private fun Date.getUIStringTimeStampWithDate(): String {
+    val dateFormat = SimpleDateFormat("dd-MMM-yyyy HH:mm",Locale.getDefault())
+    dateFormat.timeZone = TimeZone.getDefault()
+    return dateFormat.format(this)
+}
+
 @Composable
 fun TitleAndSubtitle(
     title: String,
-    owner: String,
-    subtitle: String
+    type: String,
+    status: String,
 ) {
+
     Column(
         horizontalAlignment=Alignment.Start,
         verticalArrangement = Arrangement.Center,
         modifier=Modifier.padding(10.dp)
     ) {
         Text(text = title, fontWeight = FontWeight.Bold)
-        Text(text = "$owner ",color=Color.Gray)
-        Text(text = subtitle,color=Color.Gray)
+        Text(text = "$type ",color=Color.Gray)
+        Text(text = "$status ",color=Color.Gray)
     }
 }
 
 @Composable
-fun ExtraItem(item: Item) {
+fun ExtraItem(item: Item,onClick:()->Unit={},status:String="") {
     Row(
         horizontalArrangement = Arrangement.SpaceBetween,
         modifier=Modifier.fillMaxWidth()
     ) {
         Text(text = item.title)
-        Text(text = item.date,color=Color.Gray)
+
+        if(item.date=="# " && status=="Cerrado"){
+            TextButton(onClick = {
+                onClick()
+            }){
+                Text(text = "Reenviar",color=Color.Gray)
+            }
+        }else{
+            Text(text = item.date,color=Color.Gray)
+        }
     }
 }
 

@@ -2,6 +2,7 @@ package com.vistony.wms.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import com.vistony.wms.model.Counting
 import com.vistony.wms.model.DocumentInventory
 import com.vistony.wms.model.Inventory
 import com.vistony.wms.model.InventoryResponse
@@ -52,27 +53,8 @@ class InventoryViewModel(): ViewModel() {
 
                 val obj = r.createObject(Inventory::class.java, ObjectId().toHexString())
 
-                val ubicacion= when(inventory.wareHouse){
-                    "AN001"->{
-                        13341
-                    }
-                    "AN002"->{
-                        13342
-                    }
-                    "AN005"->{
-                        13342
-                    }
-                    "AN021"->{
-                        48035
-                    }
-                    else -> {
-                        0
-                    }
-               }
-
                 obj.name=inventory.name
                 obj.wareHouse=inventory.wareHouse
-                obj.location=ubicacion
                 obj.realm_id=realm.syncSession.user.id
                 obj.status=inventory.status
                 obj.type=inventory.type
@@ -107,7 +89,7 @@ class InventoryViewModel(): ViewModel() {
             override fun onSuccess(r: Realm) {
 
                 val inventory = r.where(Inventory::class.java)
-                    .sort("updateAt", Sort.DESCENDING)
+                    .sort("closeAt", Sort.DESCENDING)
                     .findAll()
 
                 inventory?.let { data: RealmResults<Inventory> ->
@@ -142,22 +124,43 @@ class InventoryViewModel(): ViewModel() {
                 .equalTo("_id",idInventory)
                 .findFirst()
 
-            //SI TODO ESTA OK FRENTE A SAP EL TRIGGER DE ATLAS CAMBIA EL ESTADO A CERRADO
-            //body?.status ="Cerrado"
-            body?.response =""
-            body?.updateAt= Date()
+            val count = r.where(Counting::class.java)
+                .equalTo("inventoryId",idInventory)
+                .findFirst()
 
-            r.insertOrUpdate(body)
+            if(count !=null && body!=null){
+                body.status ="Cerrado"
+                body.response =""
+                body.closeAt= Date()
 
-            //INFORMAR EL ESTATUS A LA VISTA
+                r.insertOrUpdate(body)
+            }
+        }
 
-            /*val recovery=r.copyToRealmOrUpdate(body)
+        getData()
+    }
 
-            if(recovery!=null ){
-                _idInventoryHeader.value=recovery._id.toHexString()
-            }else{
-                _idInventoryHeader.value="error"
-            }*/
+    fun resendToSap(idInventory:ObjectId ){
+        realm.executeTransactionAsync { r:Realm->
+            val value:Int=0
+            val body: Inventory? =r.where(Inventory::class.java)
+                .equalTo("_id",idInventory)
+                .equalTo("codeSAP",value)
+                .equalTo("status","Cerrado")
+                .findFirst()
+
+            val count = r.where(Counting::class.java)
+                .equalTo("inventoryId",idInventory)
+                .findFirst()
+
+            if(count != null && body!=null){
+                body.response =""
+                body.arrivalTimeSap= body.createAt
+                body.arrivalTimeAtlas =Date()
+
+                r.insertOrUpdate(body)
+            }
+
         }
 
         getData()

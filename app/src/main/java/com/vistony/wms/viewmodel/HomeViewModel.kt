@@ -89,6 +89,7 @@ class HomeViewModel(idInventory:String): ViewModel() {
                 obj.itemCode=body.itemCode
                 obj.itemName=body.itemName
                 obj.quantity=body.quantity
+                obj.lote=body.lote
                 obj.inventoryId=ObjectId(idInventory)
                 obj.realm_id=realm.syncSession.user.id
 

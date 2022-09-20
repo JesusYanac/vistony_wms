@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
@@ -104,7 +105,7 @@ fun formLogin(loginViewModel: LoginViewModel, context:Context, open: (BottomShee
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 10.dp, bottom = 10.dp),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword,imeAction = ImeAction.Go),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number,imeAction = ImeAction.Go),
             keyboardActions = KeyboardActions(
                 onGo = {keyboardController?.hide()}
             ),
@@ -180,7 +181,7 @@ fun formCreateInventoryHeader(context: Context,onPress: (Inventory) -> Unit, ope
     ){
 
         var nombre by remember { mutableStateOf(TextFieldValue("")) }
-        var tipo by remember { mutableStateOf(TextFieldValue("Simple")) }
+        var type by remember { mutableStateOf(TextFieldValue("")) }
         var messageError by remember { mutableStateOf("") }
         var location by remember { mutableStateOf(TextFieldValue("")) }
 
@@ -198,9 +199,12 @@ fun formCreateInventoryHeader(context: Context,onPress: (Inventory) -> Unit, ope
             trailingIcon = { Icon(imageVector = Icons.Default.Edit, contentDescription = null) },
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 10.dp, bottom = 10.dp),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
-            label = { Text(text = "Nombre del recuento") },
+                .padding(bottom = 10.dp),
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Text,
+                capitalization = KeyboardCapitalization.Characters
+            ),
+            label = { Text(text = "Nombre del conteo") },
             placeholder = { Text(text = "") },
             onValueChange = {
                 nombre=it
@@ -247,28 +251,42 @@ fun formCreateInventoryHeader(context: Context,onPress: (Inventory) -> Unit, ope
         }
 
 
-        OutlinedTextField(
-            enabled=false,
-            singleLine=true,
-            maxLines=1,
-            colors = TextFieldDefaults.outlinedTextFieldColors(
-                focusedBorderColor = Color.DarkGray,
-                unfocusedBorderColor = Color.DarkGray,
-                disabledTextColor = Color.DarkGray,
-                disabledLabelColor = Color.DarkGray
-            ),
-            value = tipo,
-            trailingIcon = { Icon(imageVector = Icons.Default.Edit, contentDescription = null) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 10.dp, bottom = 10.dp),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
-            label = { Text(text = "Tipo de recuento") },
-            placeholder = { Text(text = "") },
-            onValueChange = {
-                tipo=it
-            }
-        )
+        Box{
+            OutlinedTextField(
+                enabled=false,
+                colors = TextFieldDefaults.outlinedTextFieldColors(
+                    focusedBorderColor = Color.DarkGray,
+                    unfocusedBorderColor = Color.DarkGray,
+                    disabledTextColor = Color.DarkGray,
+                    disabledLabelColor = Color.DarkGray
+                ),
+                value = type,
+                trailingIcon = { Icon(imageVector = Icons.Default.Edit, contentDescription = null) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 10.dp, bottom = 10.dp),
+
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+                label = { Text(text = "Tipo de conteo") },
+                placeholder = { Text(text = "") },
+                onValueChange = {}
+            )
+
+            Spacer(
+                modifier = Modifier.matchParentSize().background(Color.Transparent)
+                    .clickable(
+                        onClick = {
+                            open(
+                                BottomSheetScreen.SelectTypeModal(
+                                    selected = {
+                                        type=TextFieldValue(it.text)
+                                        close()
+                                    })
+                            )
+                        }
+                    )
+            )
+        }
 
         Row(
            modifier = Modifier.fillMaxWidth(),// padding(8.dp).clickable(){},
@@ -311,21 +329,25 @@ fun formCreateInventoryHeader(context: Context,onPress: (Inventory) -> Unit, ope
             onClick = {
 
                 if(nombre.text.isEmpty()){
-                    messageError="*Es necesario que se ingrese un nombre al recuento."
+                    messageError="*Es necesario que se ingrese un nombre para el conteo."
                 }else{
                     if(location.text.isEmpty()){
-                        messageError="*Es necesario que su usuario este asignado a un almacen."
+                        messageError="*Es necesario seleccionar un almacen."
                     }else{
-                        messageError=""
+                        if(type.text.isEmpty()){
+                            messageError="*Es necesario seleccionar el tipo de conteo."
+                        }else{
+                            messageError=""
 
-                        onPress(
+                            onPress(
 
-                            Inventory(
-                                type=tipo.text,
-                                name=nombre.text,
-                                wareHouse = location.text,
+                                Inventory(
+                                    type=type.text,
+                                    name=nombre.text,
+                                    wareHouse = location.text,
+                                )
                             )
-                        )
+                        }
                     }
                 }
             },

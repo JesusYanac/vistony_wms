@@ -9,14 +9,15 @@ open class Inventory(
     var coment: String = "",
     var owner: Int = 0,
     var createAt: Date = Date(),
-    var updateAt: Date = Date(),
-    var location: Int = 0,
+    var closeAt: Date = Date(),
+    var arrivalTimeAtlas: Date = Date(),
+    var arrivalTimeSap: Date = Date(),
     var name: String = "",
     var realm_id: String = "",
     var status: String = "Abierto",
     var codeSAP: Int=0,
     var response: String="",
-    var type: String = "Simple",
+    var type: String = "Otros",
     var wareHouse: String = "",
     var country:String=""
 ): RealmObject() {
@@ -35,8 +36,9 @@ open class Counting(
     var inventoryId: ObjectId = ObjectId(),
     var itemCode: String = "",
     var itemName: String = "",
-    var quantity: Long = 1,
+    var quantity: Double  = 1.0,
     var location: String = "",
+    var lote: String = "",
     var realm_id: String = ""
 ): RealmObject() {
     @PrimaryKey var _id: ObjectId = ObjectId()
@@ -49,11 +51,16 @@ open class CountingResponse(
 )
 
 open class UpdateLine(
-    var count: Long =  1,
+    var count: Double  =  1.0,
     var location: String = ""
 )
 
 open class DocumentInventory(
     var idInventoryHeader: String =  "",
     var idWhs: String = ""
+)
+
+open class TypeInventario(
+    var value:String="",
+    var text:String=""
 )

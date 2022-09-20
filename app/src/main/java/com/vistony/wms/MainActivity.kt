@@ -217,7 +217,8 @@ class MainActivity : ComponentActivity(),Observer{
 
                 composable(Routes.MasterArticle.route) {
                     ArticleScreen(
-                        navController = navController
+                        navController = navController,
+                        context = applicationContext
                     )
                 }
 
