@@ -1,5 +1,7 @@
 package com.vistony.wms.component
 
+import android.content.Context
+import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -20,9 +22,14 @@ import androidx.compose.ui.text.style.TextAlign.Companion.Center
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.google.common.util.concurrent.ListenableFuture
 import com.vistony.wms.R
+import com.vistony.wms.enum_.CallFor
+import com.vistony.wms.enum_.TypeReadSKU
 import com.vistony.wms.model.UpdateLine
+import com.vistony.wms.screen.CameraForm
 import com.vistony.wms.ui.theme.AzulVistony202
+import com.vistony.wms.viewmodel.WarehouseViewModel
 
 @Composable
 fun CustomProgressDialog(text:String){
@@ -64,10 +71,10 @@ fun CustomDialogQuestion(openDialog:(Boolean)->Unit){
             openDialog(false)
         },
         title = {
-            Text(text = "Borrar artículo")
+            Text(text = "Eliminar línea")
         },
         text = {
-            Text(text="¿Está seguro de que desea eliminar este artículo de la ficha de recuento?")
+            Text(text="¿Está seguro de que desea eliminar este línea en el documento actual?")
         },
         confirmButton = {
             Button(
@@ -93,17 +100,17 @@ open class FlagDialog(
 )
 
 @Composable
-fun CustomDialogResendOrClose(openDialog:(Boolean)->Unit,flag:String){
+fun CustomDialogResendOrClose(title:String,openDialog:(Boolean)->Unit,flag:String){
 
     AlertDialog(
         onDismissRequest = {
             openDialog(false)
         },
         title = {
-            Text(text = if(flag=="Close"){"Cerrar conteo"}else{"Reenviar a Sap"})
+            Text(text = if(flag=="Close"){title}else{"Reenviar a Sap"})
         },
         text = {
-            Text(text=if(flag=="Close"){"¿Está seguro de cerrar la ficha de conteo?"}else{"¿Está seguro de reenviar a Sap?"})
+            Text(text=if(flag=="Close"){"¿Está seguro de cerrar esta ficha?"}else{"¿Está seguro de reenviar a Sap?"})
         },
         confirmButton = {
             Button(
@@ -117,24 +124,24 @@ fun CustomDialogResendOrClose(openDialog:(Boolean)->Unit,flag:String){
                 onClick = { openDialog(true) },
                 colors= ButtonDefaults.buttonColors(backgroundColor = Color.Gray)
             ) {
-                Text( if(flag=="Close"){"Cerrar Conteo"}else{"Reenviar a Sap"} ,color=Color.White)
+                Text( if(flag=="Close"){title}else{"Reenviar a Sap"} ,color=Color.White)
             }
         }
     )
 }
 
 @Composable
-fun CustomDialogCreateConteo(openDialog:(Boolean)->Unit){
+fun CustomDialogCreateConteo(titulo:String,mensaje:String,openDialog:(Boolean)->Unit){
 
     AlertDialog(
         onDismissRequest = {
             openDialog(false)
         },
         title = {
-            Text(text = "Crear conteo")
+            Text(text = titulo)
         },
         text = {
-            Text(text="¿Está seguro de crear esta ficha de conteo?")
+            Text(text=mensaje)
         },
         confirmButton = {
             Button(
@@ -156,10 +163,11 @@ fun CustomDialogCreateConteo(openDialog:(Boolean)->Unit){
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun CustomDialogChangeNumber(binLocation:String,itemName:String,location:String?, value:String, newValue:(UpdateLine)->Unit){
+fun CustomDialogChangeNumber(whs:String,context: Context, warehouseViewModel: WarehouseViewModel,typeRead: TypeReadSKU, binLocation:String, itemName:String, location:String?, value:String,valueLote:String, newValue:(UpdateLine)->Unit){
 
     var locationTemp by remember { mutableStateOf( TextFieldValue( if(location.isNullOrEmpty()){""}else{location} )) }
     var textNumber by remember { mutableStateOf(value) }
+    var textLote by remember { mutableStateOf(valueLote) }
     val keyboardController = LocalSoftwareKeyboardController.current
 
     if(binLocation.isNotEmpty()){
@@ -180,10 +188,46 @@ fun CustomDialogChangeNumber(binLocation:String,itemName:String,location:String?
         text = {
 
             Column{
+                val cameraProviderFuture: ListenableFuture<ProcessCameraProvider> = ProcessCameraProvider.getInstance(context)
+                val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
+
+                if(typeRead==TypeReadSKU.CAMERA){
+                    CameraForm(
+                        whs=whs,
+                        calledFor=CallFor.Location,
+                        context = context,
+                        warehouseViewModel = warehouseViewModel,
+                        cameraProviderFuture = cameraProviderFuture,
+                        cameraProvider = cameraProvider
+                    )
+                }else{
+                    cameraProvider.unbindAll()
+                }
+
+                OutlinedTextField(
+                    enabled= valueLote.isNullOrEmpty(),
+                    singleLine=true,
+                    value = textLote,
+                    onValueChange = { textLote = it },
+                    placeholder = {
+                        Text("Ingresar Lote")
+                    },
+                    trailingIcon = { Icon(painter = painterResource(id = R.drawable.ic_baseline_box_24), contentDescription = null, tint = AzulVistony202) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number,imeAction = ImeAction.Go ),
+                    keyboardActions = KeyboardActions(
+                        onGo = {keyboardController?.hide()}
+                    )
+                )
+
+                Text(text = " ")
+
                 OutlinedTextField(
                     singleLine=true,
                     value = textNumber,
                     onValueChange = { textNumber = it },
+                    placeholder = {
+                        Text("Ingresar Cantidad")
+                    },
                     trailingIcon = { Icon(painter = painterResource(id = R.drawable.ic_baseline_numbers_24), contentDescription = null, tint = AzulVistony202) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number,imeAction = ImeAction.Go ),
                     keyboardActions = KeyboardActions(
@@ -197,6 +241,9 @@ fun CustomDialogChangeNumber(binLocation:String,itemName:String,location:String?
                     singleLine=true,
                     value = locationTemp,
                     onValueChange = { locationTemp = it },
+                    placeholder = {
+                        Text("Ingresar Ubicación")
+                    },
                     trailingIcon = { Icon(painter = painterResource(id = R.drawable.ic_baseline_rack_24), contentDescription = null, tint = AzulVistony202) },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text,imeAction = ImeAction.Go ),
                     keyboardActions = KeyboardActions(
@@ -213,7 +260,14 @@ fun CustomDialogChangeNumber(binLocation:String,itemName:String,location:String?
                         keyboardController?.hide()
                         val numeric:Double=textNumber.toDouble()
 
-                        newValue(UpdateLine(numeric,locationTemp.text))
+                        newValue(
+                            UpdateLine(
+                                count=numeric,
+                                locationName=locationTemp.text,
+                                locationCode=binLocation,
+                                lote=textLote
+                            )
+                        )
                     }catch(e:Exception){
                         textNumber="1"
                     }
@@ -235,6 +289,106 @@ fun CustomDialogChangeNumber(binLocation:String,itemName:String,location:String?
         }
     )
 }
+
+/*
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+fun CustomDialogChangeOnlyNumber(context: Context, warehouseViewModel: WarehouseViewModel,typeRead: TypeReadSKU, itemName:String,value:String,valueLote:String, newValue:(UpdateLineMerchandise)->Unit){
+
+    var textNumber by remember { mutableStateOf(value) }
+    var textLote by remember { mutableStateOf(valueLote) }
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    AlertDialog(
+        onDismissRequest = {
+            newValue(UpdateLineMerchandise(0.0,""))
+        },
+        title = {
+            Column{
+                Text(text = "$itemName ")
+                Text(text = " ")
+            }
+        },
+        text = {
+
+            Column{
+                val cameraProviderFuture: ListenableFuture<ProcessCameraProvider> = ProcessCameraProvider.getInstance(context)
+                val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
+
+                if(typeRead==TypeReadSKU.CAMERA){
+                    CameraForm(
+                        calledFor=CallFor.Location,
+                        context = context,
+                        warehouseViewModel = warehouseViewModel,
+                        cameraProviderFuture = cameraProviderFuture,
+                        cameraProvider = cameraProvider
+                    )
+                }else{
+                    cameraProvider.unbindAll()
+                }
+
+                OutlinedTextField(
+                    enabled= valueLote.isNullOrEmpty(),
+                    singleLine=true,
+                    value = textLote,
+                    onValueChange = { textLote = it },
+                    placeholder = {
+                        Text("Ingresar Lote")
+                    },
+                    trailingIcon = { Icon(painter = painterResource(id = R.drawable.ic_baseline_box_24), contentDescription = null, tint = AzulVistony202) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number,imeAction = ImeAction.Go ),
+                    keyboardActions = KeyboardActions(
+                        onGo = {keyboardController?.hide()}
+                    )
+                )
+
+                Text(text = " ")
+
+                OutlinedTextField(
+                    singleLine=true,
+                    value = textNumber,
+                    onValueChange = { textNumber = it },
+                    placeholder = {
+                        Text("Ingresar Cantidad")
+                    },
+                    trailingIcon = { Icon(painter = painterResource(id = R.drawable.ic_baseline_numbers_24), contentDescription = null, tint = AzulVistony202) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number,imeAction = ImeAction.Go ),
+                    keyboardActions = KeyboardActions(
+                        onGo = {keyboardController?.hide()}
+                    )
+                )
+
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    try{
+                        keyboardController?.hide()
+                        val numeric:Double=textNumber.toDouble()
+
+                        newValue(UpdateLineMerchandise(numeric,"locationTemp",textLote))
+                    }catch(e:Exception){
+                        textNumber="1"
+                    }
+                },
+                colors= ButtonDefaults.buttonColors(backgroundColor = Color.Gray)
+            ) {
+                Text("Confirmar",color=Color.White)
+            }
+        },
+        dismissButton = {
+            Button(
+                onClick = {
+                    newValue(UpdateLineMerchandise(0.0,""))
+                }
+            ) {
+                Text("Cancelar")
+            }
+        }
+    )
+}
+*/
 
 @Composable
 fun CustomDialogSignOut(onPress:(Boolean)->Unit){

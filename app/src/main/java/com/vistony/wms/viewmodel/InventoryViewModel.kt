@@ -45,8 +45,8 @@ class InventoryViewModel(): ViewModel() {
     fun addInventoryHeader(inventory:Inventory){
 
         val customUserData : Document? = realm.syncSession.user.customData
-        val employeeId=customUserData?.getInteger("employeeId")?:0
-        val country=customUserData?.getString("country")?:""
+        val employeeId=customUserData?.getInteger("EmployeeId")?:0
+        val country=customUserData?.getString("Country")?:""
 
         if(employeeId!=0){
             realm.executeTransactionAsync { r: Realm ->
@@ -55,7 +55,7 @@ class InventoryViewModel(): ViewModel() {
 
                 obj.name=inventory.name
                 obj.wareHouse=inventory.wareHouse
-                obj.realm_id=realm.syncSession.user.id
+                obj.Realm_Id=realm.syncSession.user.id
                 obj.status=inventory.status
                 obj.type=inventory.type
                 obj.owner=employeeId
@@ -74,8 +74,6 @@ class InventoryViewModel(): ViewModel() {
         }else{
             _idInventoryHeader.value=DocumentInventory("error")
         }
-
-
     }
 
     fun resetArticleStatus(){
@@ -97,8 +95,8 @@ class InventoryViewModel(): ViewModel() {
                     val inventoryTemp:List<Inventory> = data.subList(0, data.size)
 
                     val customUserData : Document? = r.syncSession.user.customData
-                    val firstName= customUserData?.getString("firstName")?:""
-                    val lastName = customUserData?.getString("lastName")?:""
+                    val firstName= customUserData?.getString("FirstName")?:""
+                    val lastName = customUserData?.getString("LastName")?:""
 
                     if(inventoryTemp.isNotEmpty()){
                         _inventory.value =  InventoryResponse(inventory=inventoryTemp, ownerName = "$firstName $lastName", status = "ok")
@@ -160,7 +158,6 @@ class InventoryViewModel(): ViewModel() {
 
                 r.insertOrUpdate(body)
             }
-
         }
 
         getData()

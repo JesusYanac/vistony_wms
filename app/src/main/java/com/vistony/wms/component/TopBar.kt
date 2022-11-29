@@ -1,10 +1,14 @@
 package com.vistony.wms.component
 
 import android.annotation.SuppressLint
+import android.util.Log
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -19,22 +23,20 @@ import com.google.accompanist.permissions.PermissionState
 import com.vistony.wms.ui.theme.AzulVistony201
 import com.vistony.wms.ui.theme.AzulVistony202
 import com.vistony.wms.R
-import com.vistony.wms.enum_.OptionsInventory
-import com.vistony.wms.enum_.TypeReadSKU
+import com.vistony.wms.enum_.*
 import com.vistony.wms.util.Routes
 
 @SuppressLint("PermissionLaunchedDuringComposition")
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
-fun TopBarTitle(
+fun TopBarTitleCamera(
     title: String = "",
-    status:Boolean=true,
+    status:String="",
+    objType:Int=0,
     permission:PermissionState,
     onClick:(TypeReadSKU) -> Unit
 ){
     Column{
-
-        val bodyContent = remember { mutableStateOf(TypeReadSKU.HANDHELD) }
 
         TopAppBar(
             modifier= Modifier.background(
@@ -52,55 +54,18 @@ fun TopBarTitle(
             },
             actions = {
 
-                TopAppBarDropdownMenu(bodyContent)
-
-
-                if (bodyContent.value == TypeReadSKU.CAMERA){
-                    if(!permission.hasPermission){
-                        permission.launchPermissionRequest()
-                    }
-                }
-
-                onClick(bodyContent.value)
-
-               /* IconButton(
-                    enabled = status,
-                    onClick = {
-
-                    if (typeRead == TypeReadSKU.KEYBOARD){
-                        if(permission.hasPermission){
-                            typeRead=TypeReadSKU.CAMERA
-                        }else{
+                DropdownMenuCamera(
+                    status=status,
+                    objType=objType,
+                    bodyContent={
+                    if (it == TypeReadSKU.CAMERA){
+                        if(!permission.hasPermission){
                             permission.launchPermissionRequest()
                         }
-
-                    }else{
-                        typeRead=TypeReadSKU.KEYBOARD
                     }
 
-                    onClick(typeRead)
-                }){
-
-                    var iconOption=when(typeRead){
-                        TypeReadSKU.KEYBOARD ->{
-                            R.drawable.ic_baseline_keyboard_24
-                        }
-                        TypeReadSKU.CAMERA->{
-                            R.drawable.ic_baseline_camera_alt_24
-                        }
-                        TypeReadSKU.HANDHELD->{
-
-                        }
-                    }
-
-                    Icon(
-                        painter = painterResource(id = iconOption),
-                        tint= if(status){Color.White}else{Color.Gray},
-                        contentDescription = null
-                    )
-                },
-              */
-
+                    onClick(it)
+                })
             },
             backgroundColor = Color.Transparent,
             elevation = 0.dp
@@ -110,14 +75,21 @@ fun TopBarTitle(
 
 
 @Composable
-fun TopAppBarDropdownMenu(bodyContent: MutableState<TypeReadSKU>) {
+private fun DropdownMenuCamera(objType:Int,status:String,bodyContent: (TypeReadSKU)->Unit) {
     val expanded = remember { mutableStateOf(false) }
 
-    val listOptions = listOf(
-        OptionsInventory(TypeReadSKU.KEYBOARD,"Manual",R.drawable.ic_baseline_keyboard_24),
-        OptionsInventory(TypeReadSKU.CAMERA,"Camara",R.drawable.ic_baseline_camera_alt_24),
-        OptionsInventory(TypeReadSKU.HANDHELD,"Handheld",R.drawable.ic_baseline_qr_code_scanner_24),
-    )
+    val listOptions: MutableList<OptionsInventory> = mutableListOf()
+
+    when(objType){
+        67->{}
+        671->{}
+        22->{ //Orden de Compra
+            if(status!="OrigenCerrado"){
+                listOptions.add(OptionsInventory(TypeReadSKU.KEYBOARD,"Manual",R.drawable.ic_baseline_keyboard_24))
+            }
+        }
+        else->{}
+    }
 
     Box(
         Modifier
@@ -141,9 +113,12 @@ fun TopAppBarDropdownMenu(bodyContent: MutableState<TypeReadSKU>) {
     ) {
 
         listOptions.forEachIndexed { i,it ->
+            if(i==0){
+                Text(" Tipos de entrada", color = Color.LightGray)
+            }
             DropdownMenuItem(onClick = {
                 expanded.value = false
-                bodyContent.value = it.type
+                bodyContent(it.type)
             }) {
                 Row{
                     Icon(
@@ -160,8 +135,112 @@ fun TopAppBarDropdownMenu(bodyContent: MutableState<TypeReadSKU>) {
             }
         }
 
+        //if(objType=="StockTransfer"){
+            Divider()
+            Text(" Cambiar estados", color = Color.LightGray)
+            DropdownMenuItem(onClick={
+                expanded.value = false
+                bodyContent(if(status=="OrigenCerrado"){TypeReadSKU.CERRAR_FICHA}else{TypeReadSKU.CERRAR_ORIGEN})
+            }){
+                Row{
+                    Icon(
+                        imageVector = Icons.Filled.Close,
+                        tint= AzulVistony202,
+                        contentDescription = null
+                    )
+                    Text(if(status=="OrigenCerrado"){"  Cerrar Ficha"}else{"  Cerrar Origen"})
+                }
+            }
+        //}
+
     }
 }
+
+
+@SuppressLint("PermissionLaunchedDuringComposition")
+@Composable
+fun TopBarTitleWithOptions(
+    title: String = "",
+    options:List<OptionsDowns>,
+    onClick:() -> Unit
+){
+    Column{
+
+        TopAppBar(
+            modifier= Modifier.background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        AzulVistony202,
+                        AzulVistony201
+                    )
+                )),
+            title = {
+                Text(
+                    text = title,
+                    color= Color.White
+                )
+            },
+            actions = {
+                DropdownMenuMerchandise(
+                    options=options,
+                    onClick={
+                        onClick()
+                    })
+            },
+            backgroundColor = Color.Transparent,
+            elevation = 0.dp
+        )
+    }
+}
+
+@Composable
+private fun DropdownMenuMerchandise(options:List<OptionsDowns>, onClick: () -> Unit) {
+    val expanded = remember { mutableStateOf(false) }
+
+    Box(
+        Modifier
+            .wrapContentSize(Alignment.TopEnd)
+    ) {
+        IconButton(onClick = {
+            expanded.value = true
+        }) {
+            Icon(
+                Icons.Filled.MoreVert,
+                contentDescription = "More Menu",
+                tint = Color.White
+            )
+        }
+    }
+
+    DropdownMenu(
+        modifier=Modifier.fillMaxWidth(0.5f),
+        expanded = expanded.value,
+        onDismissRequest = { expanded.value = false },
+    ) {
+
+        options.forEachIndexed { i,it ->
+            DropdownMenuItem(onClick = {
+                expanded.value = false
+                onClick()
+            }) {
+                Row{
+                    Icon(
+                        painter = painterResource(id = it.icon),
+                        tint= AzulVistony202,
+                        contentDescription = null
+                    )
+                    Text("  ${it.text}")
+                }
+            }
+
+            if(options.size>2){
+                Divider()
+            }
+        }
+
+    }
+}
+
 
 @Composable
 fun TopBarDashboard(
@@ -218,7 +297,9 @@ fun TopBarDashboard(
 
 @Composable
 fun TopBar(
-    title: String = ""
+    title: String = "",
+    firstColor:Color=AzulVistony202,
+    secondColor:Color=AzulVistony201
 ){
     Column{
 
@@ -226,8 +307,8 @@ fun TopBar(
             modifier= Modifier.background(
                 brush = Brush.verticalGradient(
                     colors = listOf(
-                        AzulVistony202,
-                        AzulVistony201
+                        firstColor,
+                        secondColor
                     )
                 )),
             title = {
@@ -240,4 +321,27 @@ fun TopBar(
             elevation = 0.dp
         )
     }
+}
+
+@Composable
+fun TopBarWithBackPress(title: String,onButtonClicked: () -> Unit) {
+    TopAppBar(
+        elevation = 0.dp,
+        modifier=Modifier.background(
+            brush = Brush.verticalGradient(
+                colors = listOf(
+                    AzulVistony202,
+                    AzulVistony201
+                )
+            )
+        ),
+        title = {
+            Text(
+                text = title,
+                color= Color.White
+            )
+        },
+        navigationIcon = {IconButton(onClick = { onButtonClicked() } ) {Icon(Icons.Filled.ArrowBack, contentDescription = null, tint = Color.White)}},
+        backgroundColor = Color.Transparent
+    )
 }

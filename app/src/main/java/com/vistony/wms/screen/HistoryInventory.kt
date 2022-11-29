@@ -27,7 +27,9 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.vistony.wms.R
@@ -56,9 +58,6 @@ fun HistoryInventoryScreen(navController: NavHostController,context: Context){
             TopBar(title="Historial de conteos")
         }
     ){
-
-
-
         LazyColumn(modifier = Modifier.fillMaxHeight()) {
             item{
                 Column(modifier= Modifier.padding(10.dp)){
@@ -95,6 +94,7 @@ fun HistoryInventoryScreen(navController: NavHostController,context: Context){
 
                         if(openDialog.value.status){
                             CustomDialogResendOrClose(
+                                title="Cerrar Conteo",
                                 openDialog={ response ->
                                     if(response){
                                         if(openDialog.value.flag=="Close"){
@@ -143,7 +143,7 @@ fun HistoryInventoryScreen(navController: NavHostController,context: Context){
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
-fun ExpandableListItem(inventory: Inventory,navController: NavHostController,onPresChangeStatus:(String) ->Unit) {
+private fun ExpandableListItem(inventory: Inventory,navController: NavHostController,onPresChangeStatus:(String) ->Unit) {
     var expanded by remember { mutableStateOf(false) }
 
     Card(
@@ -278,7 +278,7 @@ fun ExpandableListItem(inventory: Inventory,navController: NavHostController,onP
                         onClick = {
                             onPresChangeStatus("Close")
                         }) {
-                        Text(text="Cerrar recuento",color= if(inventory.status=="Abierto"){AzulVistony202}else{Color.Gray})
+                        Text(text="Cerrar ficha",color= if(inventory.status=="Abierto"){AzulVistony202}else{Color.Gray})
                     }
 
                 }
@@ -287,7 +287,7 @@ fun ExpandableListItem(inventory: Inventory,navController: NavHostController,onP
     }
 }
 
-private fun Date.getUIStringTimeStampWithDate(): String {
+fun Date.getUIStringTimeStampWithDate(): String {
     val dateFormat = SimpleDateFormat("dd-MMM-yyyy HH:mm",Locale.getDefault())
     dateFormat.timeZone = TimeZone.getDefault()
     return dateFormat.format(this)

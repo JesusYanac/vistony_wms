@@ -77,8 +77,7 @@ class MainActivity : ComponentActivity(),Observer{
         super.onNewIntent(intent)
 
         if (intent.hasExtra(DWInterface.DATAWEDGE_SCAN_EXTRA_DATA_STRING)) {
-            if(navController.currentDestination?.route =="InventoryCounting/idInventory={idInventory}&whs={whs}&status={status}"){
-
+            if(navController.currentDestination?.route == Routes.InventoryCounting.route || navController.currentDestination?.route ==Routes.MerchandiseMovementDetail.route){
                 val data=intent.getStringExtra(DWInterface.DATAWEDGE_SCAN_EXTRA_DATA_STRING).toString()
                 zebraViewModel.setData(data)
 
@@ -110,8 +109,6 @@ class MainActivity : ComponentActivity(),Observer{
             }
         }
 
-
-
         setContent {
 
             navController= rememberNavController()
@@ -119,6 +116,8 @@ class MainActivity : ComponentActivity(),Observer{
             zebraViewModel = viewModel(
                 factory = ZebraViewModel.ZebraViewModelFactory()
             )
+
+            Log.e("JEPICAME","VIENE DEL ZEBRA set Content")
 
             NavHost(
                 navController = navController,
@@ -145,13 +144,11 @@ class MainActivity : ComponentActivity(),Observer{
                         flagSesion=flag,
                         afterLogin={ userSesion ->
 
-                            Log.e("JEPICAME","LLEGAMOS AL AFTER LOGIN")
-
                             if(thread.isInterrupted){
                                 thread.start()
                             }
 
-                            navController.navigate("Dashboard/userName=${userSesion.firstName}&userWhs=AN001&userId=${userSesion.employeeId}&location=${userSesion.country}")
+                            navController.navigate("Dashboard/userName=${userSesion.FirstName}&userWhs=AN001&userId=${userSesion.EmployeeId}&location=${userSesion.Branch}")
 
                         }
                     )
@@ -199,6 +196,7 @@ class MainActivity : ComponentActivity(),Observer{
                         navArgument("status") { type = NavType.StringType }
                     )
                 ){
+                    Log.e("JEPICAME","VIENE DEL ZEBRA scan")
 
                     ScanScreen(
                         navController = navController,
@@ -208,6 +206,7 @@ class MainActivity : ComponentActivity(),Observer{
                         zebraViewModel=zebraViewModel
                     )
                 }
+
                 composable(Routes.ListInventory.route) {
                     HistoryInventoryScreen(
                         navController = navController,
@@ -222,14 +221,90 @@ class MainActivity : ComponentActivity(),Observer{
                     )
                 }
 
+                composable(
+                    Routes.Merchandise.route,
+                    arguments = listOf(
+                        navArgument("objType") { type = NavType.IntType }
+                    )
+                ) {
+                    MerchandiseScreen(
+                        navController = navController,
+                        context = applicationContext,
+                        objType=TaskManagement(ObjType=it.arguments?.getInt("objType")?:0),
+                    )
+                }
+
+                composable(
+                    Routes.MerchandiseMovementCreate.route,
+                    arguments = listOf(
+                        navArgument("objType") { type = NavType.IntType }
+                    )
+                ) {
+                    MerchandiseCreateScreen(
+                        navController = navController,
+                        context = applicationContext,
+                        objType=TaskManagement(ObjType=it.arguments?.getInt("objType")?:0),
+                    )
+                }
+
+                composable(
+                    Routes.MerchandiseMovementDetail.route,
+                    arguments = listOf(
+                        navArgument("idMerchandise") { type = NavType.StringType },
+                        navArgument("status") { type = NavType.StringType},
+                        navArgument("whs") { type = NavType.StringType },
+                        navArgument("whsDestine") { type = NavType.StringType },
+                        navArgument("objType") { type = NavType.IntType }
+                    )
+                ){
+                    MerchandiseDetailScreen(
+                        navController = navController,
+                        context = applicationContext,
+                        idMerchandise=it.arguments?.getString("idMerchandise")?:"",
+                        status=it.arguments?.getString("status")?:"Cerrado",
+                        whsOrigin=it.arguments?.getString("whs")?:"",
+                        zebraViewModel=zebraViewModel,
+                        whsDestine = it.arguments?.getString("whsDestine")?:"",
+                        objType=it.arguments?.getInt("objType")?:0,
+
+                    )
+                }
+
+                composable(
+                    Routes.StockTransferDestine.route,
+                    arguments = listOf(
+                        navArgument("SubBody") { type = NavType.StringType },
+                        navArgument("Producto") { type = NavType.StringType },
+                        navArgument("objType") { type = NavType.IntType }
+                    )
+                ){
+                    StockTransferDestineScreen(
+                        navController = navController,
+                        context = applicationContext,
+                        subBody=it.arguments?.getString("SubBody")?:"",
+                        producto=it.arguments?.getString("Producto")?:"",
+                        objType=it.arguments?.getInt("objType")?:0
+                    )
+                }
+
                 composable(Routes.MasterWarehouse.route) {
                     WarehouseScreen(
                         navController = navController
                     )
                 }
 
-                composable(Routes.TaskManager.route) {
+                composable(Routes.DataMaster.route) {
+                    DataMasterScreen(
+                        navController= navController,
+                        context= applicationContext
+                    )
+                }
 
+                composable(Routes.TaskManager.route) {
+                    TaskManagerScreen(
+                        navController= navController,
+                        context= applicationContext
+                    )
                 }
 
                 composable(Routes.Recuento.route) {
@@ -238,15 +313,20 @@ class MainActivity : ComponentActivity(),Observer{
                         context = applicationContext
                     )
                 }
+
+                composable(Routes.Slotting.route) {
+                    SlottingScreen(
+                        navController = navController,
+                        context = applicationContext,
+                        objType=TaskManagement(ObjType=671)
+                    )
+                }
             }
 
         }
     }
 
     private fun createDataWedgeProfile() {
-
-        Log.e("JEPICAME","ME EJECUTO")
-
         //  Create and configure the DataWedge profile associated with this application
         //  For readability's sake, I have not defined each of the keys in the DWInterface file
         dwInterface.sendCommandString(this, DWInterface.DATAWEDGE_SEND_CREATE_PROFILE,PROFILE_NAME)

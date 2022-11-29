@@ -27,25 +27,30 @@ data class LoginResponse(
 )
 
 
-open class User(
-    var employeeId: Int = 0,
-    var firstName: String = "",
-    var lastName: String = "",
-    var realm_id: String = "",
-    var country: String = "",
-    var zipCode: String = ""
-): RealmObject() {
-    @PrimaryKey var _id: ObjectId = ObjectId()
-}
+open class Users(
+    @PrimaryKey var _id: ObjectId = ObjectId(),
+    var Branch: String = "",
+    var Department: String = "",
+    var EmployeeId: Int = 0,
+    var FirstName: String = "",
+    var LastName: String = "",
+    var Realm_Id: String = ""
+): RealmObject() {}
 
 open class LoginCustom(
     var app:App,
     var status:Int,
     var message:String,
-    var user:User=User()
+    var user:Users=Users()
 )
 
 open class CountryLocation(
     var value:String="",
     var text:String=""
+)
+
+open class Options(
+    var value:String="",
+    var text:String="",
+    var icono:Int=0
 )

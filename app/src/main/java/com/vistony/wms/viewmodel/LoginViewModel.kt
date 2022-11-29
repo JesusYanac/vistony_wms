@@ -26,7 +26,7 @@ class LoginViewModel(context: Context): ViewModel() {
     private var context:Context = context
 
     private val realmSync by lazy {
-        App(AppConfiguration.Builder("appwms-pvfzv").build())
+        App(AppConfiguration.Builder("vistony_wms-nulgy").build())
     }
 
     private val _login = MutableStateFlow(LoginCustom(realmSync,0, message = ""))
@@ -75,38 +75,29 @@ class LoginViewModel(context: Context): ViewModel() {
 
             val configPrivate= SyncConfiguration
                 .Builder(realmSync.currentUser(), realmSync.currentUser()?.id.toString())
-                .schemaVersion(2)
+                .schemaVersion(3)
                 .build()
 
             Realm.setDefaultConfiguration(configPrivate)
-           /* Realm.removeDefaultConfiguration()
-
-             val configPrivate= SyncConfiguration
-                .Builder(realmSync.currentUser(), realmSync.currentUser()?.id.toString())
-                .build()
-
-            Realm.setDefaultConfiguration(configPrivate)*/
 
             val customUserData : Document? = realmSync.currentUser()?.customData
-            //val customUserData : Document? = privateSync.syncSession.user.customData
 
-  //          Log.e("JEPICAME","USUARIO LOGEADO "+privateSync.syncSession.user.id)
-           // Log.e("JEPICAME","USUARIO LOGEADO "+ realmSync.currentUser()?.id)
+            Log.e("JEPICAME","IS LOGIN DATA USER "+customUserData.toString())
 
-            val userInSession=com.vistony.wms.model.User(
-                employeeId = customUserData?.getInteger("employeeId")?:0,
-                firstName = customUserData?.getString("firstName")?:"",
-                lastName = customUserData?.getString("lastName")?:"",
-                realm_id = customUserData?.getString("realm_id")?:"",
-                country = customUserData?.getString("country")?:""
+            val userInSession=com.vistony.wms.model.Users(
+                EmployeeId = customUserData?.getInteger("EmployeeId")?:0,
+                FirstName = customUserData?.getString("FirstName")?:"",
+                LastName = customUserData?.getString("LastName")?:"",
+                Realm_Id = customUserData?.getString("Realm_Id")?:"",
+                Branch = customUserData?.getString("Branch")?:"",
+                Department = customUserData?.getString("Department")?:""
             )
 
-            if(userInSession.employeeId== 0 || userInSession.realm_id.isNullOrEmpty() || userInSession.firstName .isNullOrEmpty() ){
+            Log.e("JEPICAME","IS LOGIN DATA USER")
+
+            if(userInSession.EmployeeId== 0 || userInSession.Realm_Id.isNullOrEmpty() || userInSession.FirstName.isNullOrEmpty() ){
                 _login.value=LoginCustom(realmSync,0, message = "No se pudo obtener informacion del usuario")
             }else{
-
-                Log.e("JEPCICAME","VALUEE "+userInSession.lastName)
-
                 _login.value=LoginCustom(
                     app=realmSync,
                     status=3,
@@ -120,29 +111,30 @@ class LoginViewModel(context: Context): ViewModel() {
                 if (it.isSuccess) {
 
                     val userSion = it.get()
-                    //realmSync.switchUser(userSion)
-                    //assert(userSion === realmSync.currentUser())
 
                     Realm.removeDefaultConfiguration()
 
                     val configPrivate= SyncConfiguration
                         .Builder(userSion, userSion.id)
-                        .schemaVersion(2)
+                        .schemaVersion(3)
                         .build()
 
                     Realm.setDefaultConfiguration(configPrivate)
 
-                    val customUserData : Document? =  userSion.customData
+                    val customUserData : Document? =  userSion. customData
 
-                    val userInSession=com.vistony.wms.model.User(
-                        employeeId = customUserData?.getInteger("employeeId")?:0,
-                        firstName = customUserData?.getString("firstName")?:"",
-                        lastName = customUserData?.getString("lastName")?:"",
-                        realm_id = customUserData?.getString("realm_id")?:"",
-                        country = customUserData?.getString("country")?:""
+                    val userInSession=com.vistony.wms.model.Users(
+                        EmployeeId = customUserData?.getInteger("EmployeeId")?:0,
+                        FirstName = customUserData?.getString("FirstName")?:"",
+                        LastName = customUserData?.getString("LastName")?:"",
+                        Realm_Id = customUserData?.getString("Realm_Id")?:"",
+                        Branch = customUserData?.getString("Branch")?:"",
+                        Department = customUserData?.getString("Department")?:""
                     )
 
-                    if(userInSession.employeeId== 0 || userInSession.realm_id == "" || userInSession.firstName == ""){
+                    Log.e("JEPICAME","IS NOT LOGIN DATA USER "+customUserData?.getInteger("EmployeeId"))
+
+                    if(userInSession.EmployeeId== 0 || userInSession.Realm_Id == "" || userInSession.FirstName == ""){
                         _login.value=LoginCustom(realmSync,0, message = "No se pudo obtener informacion del usuario")
                     }else{
                         _login.value=LoginCustom(
@@ -154,18 +146,6 @@ class LoginViewModel(context: Context): ViewModel() {
                     }
 
                 }else{
-
-                    //TRIGER GENERATE USER SAP TO ATLAS
-                    //login.location
-
-                    /*val client = HttpClient.newBuilder().build();
-                    val request = HttpRequest.newBuilder()
-                        .uri(URI.create("http://webcode.me"))
-                        .build();
-
-                    val response = client.send(request, HttpResponse.BodyHandlers.ofString());
-                    println(response.body())*/
-
 
                     val xd:App.Result<User> = it
 

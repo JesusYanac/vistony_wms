@@ -11,6 +11,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.GridCells
 import androidx.compose.foundation.lazy.LazyVerticalGrid
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.runtime.*
@@ -33,6 +34,7 @@ import com.vistony.wms.component.*
 import com.vistony.wms.model.LoginResponse
 import com.vistony.wms.ui.theme.AzulVistony200
 import com.vistony.wms.ui.theme.AzulVistony201
+import com.vistony.wms.ui.theme.AzulVistony202
 import com.vistony.wms.util.Routes
 import com.vistony.wms.util.RoutesOptionDashboard
 import io.realm.Realm
@@ -129,27 +131,26 @@ fun DashboardSection(options: List<Routes>, user:LoginResponse, navController: N
                 CourseItem(
                     options=options[i],
                     onPress={ route ->
-                        if(route == Routes.TaskManager.route){
-                            Toast.makeText(context, "Esta opción no esta disponible.", Toast.LENGTH_SHORT).show()
+                        if(
+                            route == Routes.Recepcion.route ||
+                            route == Routes.ImprimirEtiqueta.route ||
+                            route == Routes.Almacenamiento.route
+
+                        ){
+                            Toast.makeText(context, "Es necesario configurar este modulo.", Toast.LENGTH_SHORT).show()
                         }
                         else{
-                            navController.navigate(route)
+                            if(options[i].value!=0){
+                                navController.navigate(route.replace("{objType}",""+options[i].value))
+                            }else{
+                                navController.navigate(route)
+                            }
                         }
                     }
                 )
             }
         }
     }
-}
-
-private fun Path.standardQuadFromTo(from: Offset, to: Offset) {
-
-    quadraticBezierTo(
-        from.x,
-        from.y,
-        Math.abs(from.x + to.x) / 2f,
-        Math.abs(from.y + to.y) / 2f
-    )
 }
 
 @Composable
@@ -167,55 +168,6 @@ fun CourseItem(
             .clip(RoundedCornerShape(10.dp))
             .background(AzulVistony201)
     ) {
-        val width = constraints.maxWidth
-        val height = constraints.maxHeight
-
-        val mediumColoredPoint1 = Offset(0f, height * 0.3f)
-        val mediumColoredPoint2 = Offset(width * 0.1f, height * 0.35f)
-        val mediumColoredPoint3 = Offset(width * 0.4f, height * 0.05f)
-        val mediumColoredPoint4 = Offset(width * 0.75f, height * 0.7f)
-        val mediumColoredPoint5 = Offset(width * 1.4f, -height.toFloat())
-
-        val mediumColoredPath = Path().apply {
-            moveTo(mediumColoredPoint1.x, mediumColoredPoint1.y)
-            standardQuadFromTo(mediumColoredPoint1, mediumColoredPoint2)
-            standardQuadFromTo(mediumColoredPoint2, mediumColoredPoint3)
-            standardQuadFromTo(mediumColoredPoint3, mediumColoredPoint4)
-            standardQuadFromTo(mediumColoredPoint4, mediumColoredPoint5)
-            lineTo(width.toFloat() + 100f, height.toFloat() + 100f)
-            lineTo(-100f, height.toFloat() + 100f)
-            close()
-        }
-
-        val lightPoint1 = Offset(0f, height * 0.35f)
-        val lightPoint2 = Offset(width * 0.1f, height * 0.4f)
-        val lightPoint3 = Offset(width * 0.3f, height * 0.35f)
-        val lightPoint4 = Offset(width * 0.65f, height.toFloat())
-        val lightPoint5 = Offset(width * 1.4f, -height.toFloat() / 3f)
-
-        val lightColoredPath = Path().apply {
-            moveTo(lightPoint1.x, lightPoint1.y)
-            standardQuadFromTo(lightPoint1, lightPoint2)
-            standardQuadFromTo(lightPoint2, lightPoint3)
-            standardQuadFromTo(lightPoint3, lightPoint4)
-            standardQuadFromTo(lightPoint4, lightPoint5)
-            lineTo(width.toFloat() + 100f, height.toFloat() + 100f)
-            lineTo(-100f, height.toFloat() + 100f)
-            close()
-        }
-
-        Canvas(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            drawPath(
-                path = mediumColoredPath,
-                color = Color.DarkGray
-            )
-            drawPath(
-                path = lightColoredPath,
-                color = Color.Gray
-            )
-        }
 
         Box(
             modifier = Modifier
@@ -226,8 +178,15 @@ fun CourseItem(
                 text = options.title,
                 color=Color.White,
                 style = MaterialTheme.typography.h6,
-                lineHeight = 26.sp,
+                lineHeight = 24.sp,
                 modifier = Modifier.align(Alignment.TopStart)
+            )
+
+            Icon(
+                painter = painterResource(id = options.icon),
+                tint= Color.White,
+                contentDescription = null,
+                modifier = Modifier.align(Alignment.BottomStart).size(35.dp).padding(vertical = 6.dp)
             )
 
             Text(

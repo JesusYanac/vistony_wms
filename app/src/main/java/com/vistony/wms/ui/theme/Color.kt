@@ -12,3 +12,11 @@ val RedVistony201 = Color(0xFFFF0000)
 val AzulVistony202 = Color(0xFF003159)
 val AzulVistony201 = Color(0xFF00579C)
 val AzulVistony200 = Color(0xFF3097E9)
+
+
+val AzulVistony1 = Color(0xFFCCCCCC)
+val AzulVistony2 = Color(0xFFDFDFDF)
+
+val ColorOrigin = Color(0xFFF5EDAB)
+val ColorDestine= Color(0xFFA0DAA2)
+

@@ -10,10 +10,13 @@ import io.realm.Sort
 import io.realm.kotlin.syncSession
 import io.realm.mongodb.sync.SyncConfiguration
 import io.sentry.Sentry
+import io.sentry.util.StringUtils
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import org.bson.Document
 import org.bson.types.ObjectId
+import java.nio.charset.Charset
+import java.util.*
 
 class WarehouseViewModel(flag:String): ViewModel() {
 
@@ -21,7 +24,7 @@ class WarehouseViewModel(flag:String): ViewModel() {
     private val customUserData: Document? = realm.syncSession.user.customData
 
     private var configCountry = SyncConfiguration
-        .Builder(realm.syncSession.user, customUserData?.getString("country") ?: "")
+        .Builder(realm.syncSession.user, customUserData?.getString("Branch") ?: "")
         .build()
 
     private val _almacenes = MutableStateFlow(WarehouseResponse())
@@ -49,18 +52,19 @@ class WarehouseViewModel(flag:String): ViewModel() {
     }
 
     fun resetLocationStatus() {
-        _location.value = LocationResponse(location= Location(),status="")
+        _location.value = LocationResponse(location= BinLocations(),status="")
     }
 
     fun getMasterDataWarehouse() {
 
+
+        Log.e("JEPICAME","Cargando")
         _almacenes.value = WarehouseResponse(warehouse = emptyList(), status = "cargando")
 
         Realm.getInstanceAsync(configCountry, object : Realm.Callback() {
             override fun onSuccess(r: Realm) {
                 val almacenes = r.where(Warehouse::class.java)
-                    .equalTo("status", "Y")
-                    .sort("code", Sort.ASCENDING).findAll()
+                    .sort("WarehouseName", Sort.ASCENDING).findAll()
 
                 almacenes?.let { data: RealmResults<Warehouse> ->
 
@@ -71,23 +75,20 @@ class WarehouseViewModel(flag:String): ViewModel() {
                         val numLocation: MutableList<Int> = mutableListOf()
 
                         temp.forEach{ i->
-                            val whsx = r.where(Location::class.java)
-                                .equalTo("wareHouse",i.code)
-                                //.limit(15)
+                            val whsx = r.where(BinLocations::class.java)
+                                .equalTo("Warehouse",i.WarehouseCode)
                                 .findAll()
 
-                            whsx?.let { datax: RealmResults<Location> ->
-                                val temp2: List<Location> = datax.subList(0, datax.size)
-
-                                Log.e("JEPICAME","UBICACIONES ${i.code} -"+temp2.size)
+                            whsx?.let { datax: RealmResults<BinLocations> ->
+                                val temp2: List<BinLocations> = datax.subList(0, datax.size)
                                 numLocation.add(temp2.size)
                             }
 
                         }
-                        _almacenes.value = WarehouseResponse(numLocation=numLocation,warehouse = temp, status = "ok")
+                        _almacenes.value = WarehouseResponse(numLocation=numLocation,warehouse = temp, status = "ok",fechaDescarga = Date())
                     } else {
                         _almacenes.value =
-                            WarehouseResponse(warehouse = emptyList(), status = "vacio")
+                            WarehouseResponse(warehouse = emptyList(), status = "vacio", fechaDescarga = Date())
                     }
                 }
 
@@ -95,42 +96,40 @@ class WarehouseViewModel(flag:String): ViewModel() {
             }
 
             override fun onError(exception: Throwable) {
-                _almacenes.value = WarehouseResponse(warehouse = emptyList(), status = " ${exception.message}")
+                _almacenes.value = WarehouseResponse(warehouse = emptyList(), status = " ${exception.message}",fechaDescarga = Date())
             }
         })
     }
 
-    fun getLocations(AbsEntry:String){
+    fun getLocations(AbsEntry:String,whsOrigin:String){
 
-        _location.value= LocationResponse(location= Location(),status="cargando")
+        _location.value= LocationResponse(location= BinLocations(),status="cargando")
 
-        val convertText=AbsEntry.replace("B", "")
-        var valorAbsEntry: Int=0
-
-        try {
-            valorAbsEntry = convertText.toIntOrNull()!!
-
-        }catch(e:Exception){
-            Sentry.captureMessage(" ${e.message.toString()}")
-        }
-
+        //val convertText=AbsEntry.replace("B", "")
 
         Realm.getInstanceAsync(configCountry, object : Realm.Callback() {
             override fun onSuccess(r: Realm) {
 
-                val location = r.where(Location::class.java)
-                    .equalTo("absEntry",valorAbsEntry)
+                val almacen = r.where(Warehouse::class.java)
+                    .equalTo("WarehouseCode",whsOrigin)
                     .findFirst()
 
-                if (location != null) {
-                    _location.value= LocationResponse(location=location,status="ok")
+                val location = r.where(BinLocations::class.java)
+                    .equalTo("BinCode",AbsEntry)
+                    .equalTo("Warehouse",whsOrigin)
+                    .findFirst()
+
+
+                if (location != null && almacen !=null) {
+
+                    _location.value= LocationResponse(location=location,status="ok", EnableBinLocations = almacen.EnableBinLocations                                                                        )
                 }else{
-                    _location.value=LocationResponse(location=Location(),status="vacio")
+                    _location.value=LocationResponse(location=BinLocations(),status="vacio")
                 }
 
             }
             override fun onError(exception: Throwable) {
-                _location.value= LocationResponse(location=Location(),status=" ${exception.message}")
+                _location.value= LocationResponse(location=BinLocations(),status=" ${exception.message}")
             }
         })
     }

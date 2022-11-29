@@ -13,7 +13,7 @@ open class Inventory(
     var arrivalTimeAtlas: Date = Date(),
     var arrivalTimeSap: Date = Date(),
     var name: String = "",
-    var realm_id: String = "",
+    var Realm_Id: String = "",
     var status: String = "Abierto",
     var codeSAP: Int=0,
     var response: String="",
@@ -39,7 +39,7 @@ open class Counting(
     var quantity: Double  = 1.0,
     var location: String = "",
     var lote: String = "",
-    var realm_id: String = ""
+    var Realm_Id: String = ""
 ): RealmObject() {
     @PrimaryKey var _id: ObjectId = ObjectId()
 }
@@ -52,7 +52,9 @@ open class CountingResponse(
 
 open class UpdateLine(
     var count: Double  =  1.0,
-    var location: String = ""
+    var locationName: String = "",
+    var locationCode: String = "",
+    var lote:String=""
 )
 
 open class DocumentInventory(

@@ -3,7 +3,6 @@ package com.vistony.wms.screen
 import android.Manifest
 import android.R.attr.*
 import android.content.Context
-import android.content.Intent
 import android.util.Log
 import android.util.Size
 import android.view.ViewGroup
@@ -14,7 +13,6 @@ import androidx.camera.view.PreviewView
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -29,15 +27,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.consumeAllChanges
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -48,25 +41,19 @@ import androidx.navigation.NavHostController
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.common.util.concurrent.ListenableFuture
-import com.vistony.wms.R
-import com.vistony.wms.component.CustomDialogChangeNumber
-import com.vistony.wms.component.CustomDialogQuestion
-import com.vistony.wms.component.CustomProgressDialog
-import com.vistony.wms.component.TopBarTitle
+import com.vistony.wms.component.*
+import com.vistony.wms.enum_.CallFor
 import com.vistony.wms.enum_.TypeReadSKU
 import com.vistony.wms.model.Counting
 import com.vistony.wms.model.CountingResponse
 import com.vistony.wms.model.UpdateLine
 import com.vistony.wms.ui.theme.AzulVistony201
-import com.vistony.wms.ui.theme.AzulVistony202
 import com.vistony.wms.ui.theme.RedVistony202
 import com.vistony.wms.util.BarCodeAnalyser
-import com.vistony.wms.util.DWInterface
-import com.vistony.wms.viewmodel.ArticleViewModel
-import com.vistony.wms.viewmodel.HomeViewModel
+import com.vistony.wms.viewmodel.ItemsViewModel
+import com.vistony.wms.viewmodel.CountViewModel
 import com.vistony.wms.viewmodel.WarehouseViewModel
 import com.vistony.wms.viewmodel.ZebraViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
 import org.bson.types.ObjectId
 import java.util.*
 import java.util.concurrent.ExecutorService
@@ -82,12 +69,12 @@ fun ScanScreen(navController: NavHostController,whs:String,idInventory:String,st
 
     var typeRead by remember { mutableStateOf(TypeReadSKU.HANDHELD) }
 
-    val homeViewModel: HomeViewModel = viewModel(
-        factory = HomeViewModel.HomeViewModelFactory(idInventory)
+    val homeViewModel: CountViewModel = viewModel(
+        factory = CountViewModel.HomeViewModelFactory(idInventory)
     )
 
-    val articleViewModel: ArticleViewModel = viewModel(
-        factory = ArticleViewModel.ArticleViewModelFactory("scan")
+    val itemsViewModel: ItemsViewModel = viewModel(
+        factory = ItemsViewModel.ArticleViewModelFactory("scan")
     )
 
     val warehouseViewModel: WarehouseViewModel = viewModel(
@@ -95,7 +82,7 @@ fun ScanScreen(navController: NavHostController,whs:String,idInventory:String,st
     )
 
     val homeValue = homeViewModel.counting.collectAsState()
-    val articleValue = articleViewModel.article.collectAsState()
+    val articleValue = itemsViewModel.article.collectAsState()
     val zebraValue = zebraViewModel.data.collectAsState()
     val warehouseValue = warehouseViewModel.location.collectAsState()
 
@@ -103,12 +90,11 @@ fun ScanScreen(navController: NavHostController,whs:String,idInventory:String,st
 
     if(zebraValue.value.isNotEmpty()){
 
-        if(zebraValue.value.length==6 && zebraValue.value[0]=='B'){
-            warehouseViewModel.getLocations(zebraValue.value)
-
+        if(zebraValue.value.length>=2 && zebraValue.value[0]=='B'){
+            warehouseViewModel.getLocations(zebraValue.value,whs)
         }else{
             binLocationText=""
-            articleViewModel.getArticle(zebraValue.value)
+            itemsViewModel.getArticle(zebraValue.value)
         }
 
         zebraViewModel.setData("")
@@ -118,9 +104,10 @@ fun ScanScreen(navController: NavHostController,whs:String,idInventory:String,st
 
     Scaffold(
         topBar = {
-            TopBarTitle(
-                title="Recuento de inventario",
-                status= (status=="Abierto"),
+            TopBarTitleCamera(
+                title="Conteo de inventario",
+                status= "Abierto"
+                ,
                 permission=cameraPermissionState,
                 onClick={
                     typeRead=it
@@ -136,23 +123,23 @@ fun ScanScreen(navController: NavHostController,whs:String,idInventory:String,st
             "ok"->{
                 val body:Counting= Counting()
 
-                body.itemCode=articleValue.value.article.itemCode
-                body.itemName=articleValue.value.article.itemName
+                body.itemCode=articleValue.value.article.ItemCode
+                body.itemName=articleValue.value.article.ItemName
                 body.lote=articleValue.value.lote
                 body.location = ""+Calendar.getInstance().time
 
                 body.quantity=1.0
 
                 homeViewModel.insertData(body)
-                articleViewModel.resetArticleStatus()
+                itemsViewModel.resetArticleStatus()
             }
             "vacio"->{
                 Toast.makeText(context, "El código escaneado no se encuentra en el maestro de articulos", Toast.LENGTH_SHORT).show()
-                articleViewModel.resetArticleStatus()
+                itemsViewModel.resetArticleStatus()
             }
             else->{
                 Toast.makeText(context, "Ocurrio un error:\n ${articleValue.value.status}", Toast.LENGTH_SHORT).show()
-                articleViewModel.resetArticleStatus()
+                itemsViewModel.resetArticleStatus()
             }
         }
 
@@ -164,7 +151,7 @@ fun ScanScreen(navController: NavHostController,whs:String,idInventory:String,st
                 CustomProgressDialog("Buscando ubicación...")
             }
             "ok"->{
-                binLocationText=warehouseValue.value.location.binCode
+                binLocationText=warehouseValue.value.location.BinCode
                 //binLocationText=" "+Calendar.getInstance().time
                 warehouseViewModel.resetLocationStatus()
             }
@@ -186,16 +173,15 @@ fun ScanScreen(navController: NavHostController,whs:String,idInventory:String,st
             typeRead = typeRead,
             counting = homeValue.value,
             homeViewModel=homeViewModel,
-            articleViewModel=articleViewModel
+            itemsViewModel=itemsViewModel,
+            warehouseViewModel=warehouseViewModel
         )
 
     }
 }
 
 @Composable
-private fun divContainer(binLocation:String,status:String,whs:String,context:Context, typeRead:TypeReadSKU, counting: CountingResponse=CountingResponse(),homeViewModel: HomeViewModel,articleViewModel: ArticleViewModel){
-
-
+private fun divContainer(binLocation:String, status:String, whs:String, context:Context, typeRead:TypeReadSKU, counting: CountingResponse=CountingResponse(), homeViewModel: CountViewModel, itemsViewModel: ItemsViewModel, warehouseViewModel:WarehouseViewModel){
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier=Modifier.fillMaxSize()
@@ -226,38 +212,13 @@ private fun divContainer(binLocation:String,status:String,whs:String,context:Con
 
             when(typeRead){
                 TypeReadSKU.CAMERA->{
-                    var flash by remember { mutableStateOf(false) }
-
-                    Divider()
-
-                    Box{
-                        CameraPreview(
-                            flash=flash,
-                            cameraProviderFuture=cameraProviderFuture,
-                            cameraProvider=cameraProvider,
-                            context=context,
-                            valueText = { textDecode ->
-                                articleViewModel.getArticle(textDecode)
-                            }
-                        )
-
-                        Button(
-                            modifier=Modifier.padding(top=10.dp,start=10.dp),
-                            colors = ButtonDefaults.buttonColors(backgroundColor = AzulVistony201),
-                            onClick = {
-                                flash=!flash
-                            }
-                        ){
-                            Text(text = if(flash){"Apagar"}else{"Prender"},color=Color.White)
-                        }
-                    }
-
-                    Text(
-                        text="Num. Artículos ${counting.counting.size}",
-                        color= RedVistony202,
-                        modifier= Modifier
-                            .padding(bottom = 10.dp, end = 20.dp)
-                            .align(Alignment.End)
+                    CameraForm(
+                        whs=whs,
+                        calledFor=CallFor.Article,
+                        context = context,
+                        itemsViewModel= itemsViewModel,
+                        cameraProviderFuture=cameraProviderFuture,
+                        cameraProvider=cameraProvider
                     )
                 }
                 TypeReadSKU.KEYBOARD-> {
@@ -267,7 +228,7 @@ private fun divContainer(binLocation:String,status:String,whs:String,context:Con
 
                     formHandheld(
                         onPress={
-                            articleViewModel.getArticle(it)
+                            itemsViewModel.getArticle(it)
                         }
                     )
 
@@ -308,6 +269,10 @@ private fun divContainer(binLocation:String,status:String,whs:String,context:Con
             }
             "ok-data"->{
                 dataad(
+                    whs=whs,
+                    warehouseViewModel=warehouseViewModel,
+                    context=context,
+                    typeRead=typeRead,
                     binLocation=binLocation,
                     status=status,
                     listBody=counting.counting,
@@ -376,7 +341,7 @@ private fun formHandheld(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun dataad(binLocation:String,status:String,listBody:List<Counting> = emptyList(),onChangeQuantity:(Counting)->Unit,onDeleteArticle:(ObjectId)->Unit){
+private fun dataad(whs:String,warehouseViewModel:WarehouseViewModel,context:Context,typeRead:TypeReadSKU ,binLocation:String,status:String,listBody:List<Counting> = emptyList(),onChangeQuantity:(Counting)->Unit,onDeleteArticle:(ObjectId)->Unit){
 
     val openDialog = remember { mutableStateOf("") }
 
@@ -436,18 +401,24 @@ fun dataad(binLocation:String,status:String,listBody:List<Counting> = emptyList(
                         Modifier.weight(0.25f)
                     ){
                         Stepper(
+                            whs=whs,
+                            warehouseViewModel=warehouseViewModel,
+                            context=context,
+                            typeRead=typeRead,
                             binLocation=binLocation,
                             itemName=line.itemName,
                             status=(status=="Abierto"),
                             location=line.location,
                             count=line.quantity,
+                            lote=line.lote,
                             onCountChanged={
 
                                 val lineUpdate=Counting()
                                 lineUpdate._id=line._id
                                 lineUpdate.quantity = it.count
-                                lineUpdate.location = it.location
+                                lineUpdate.location = it.locationName
                                 lineUpdate.inventoryId = line.inventoryId
+                                lineUpdate.lote=it.lote
 
                                 onChangeQuantity(lineUpdate)
                             }
@@ -472,21 +443,26 @@ fun dataad(binLocation:String,status:String,listBody:List<Counting> = emptyList(
 }
 
 @Composable
-fun Stepper(binLocation:String,itemName:String,status:Boolean,location:String?,count: Double, onCountChanged: (UpdateLine) -> Unit) {
+private fun Stepper(whs:String,context:Context,warehouseViewModel: WarehouseViewModel,typeRead:TypeReadSKU ,binLocation:String,itemName:String,status:Boolean,location:String?,count: Double,lote:String, onCountChanged: (UpdateLine) -> Unit) {
     var text by remember { mutableStateOf("$count") }
+    var textLote by remember { mutableStateOf(lote) }
     var visible by remember { mutableStateOf(false) }
 
     if(visible){
 
         CustomDialogChangeNumber(
+            whs=whs,
+            context=context,
+            warehouseViewModel=warehouseViewModel,
+            typeRead=typeRead,
             binLocation=binLocation,
             itemName=itemName,
             location=location,
             value=text,
+            valueLote = textLote,
             newValue = {
 
                 if(it.count!=0.0){
-                    Log.e("JEPICAME","count "+it.count+" location "+it.location)
                     onCountChanged(it)
                 }
 
@@ -506,6 +482,44 @@ fun Stepper(binLocation:String,itemName:String,status:Boolean,location:String?,c
         onValueChange = { text = it }
     )
 
+}
+
+@Composable
+fun CameraForm(whs:String,calledFor:CallFor, context:Context, warehouseViewModel: WarehouseViewModel= WarehouseViewModel(""), itemsViewModel:ItemsViewModel=ItemsViewModel(""), cameraProviderFuture: ListenableFuture<ProcessCameraProvider>, cameraProvider: ProcessCameraProvider){
+
+    var flash by remember { mutableStateOf(false) }
+
+    Divider()
+
+    Box{
+        CameraPreview(
+            flash=flash,
+            cameraProviderFuture=cameraProviderFuture,
+            cameraProvider=cameraProvider,
+            context=context,
+            valueText = { textDecode ->
+
+                Log.e("JEPICAME","==>"+textDecode)
+
+                if(calledFor== CallFor.Article){
+                    itemsViewModel.getArticle(textDecode)
+
+                }else if(calledFor== CallFor.Location){
+                    warehouseViewModel.getLocations(textDecode,whs)
+                }
+            }
+        )
+
+        Button(
+            modifier=Modifier.padding(top=10.dp,start=10.dp),
+            colors = ButtonDefaults.buttonColors(backgroundColor = AzulVistony201),
+            onClick = {
+                flash=!flash
+            }
+        ){
+            Text(text = if(flash){"Apagar"}else{"Prender"},color=Color.White)
+        }
+    }
 }
 
 @Composable

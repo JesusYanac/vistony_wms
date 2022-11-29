@@ -17,18 +17,17 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.vistony.wms.component.TopBar
-import com.vistony.wms.model.Article
-import com.vistony.wms.viewmodel.ArticleViewModel
-import io.realm.mongodb.sync.SyncConfiguration
+import com.vistony.wms.model.Items
+import com.vistony.wms.viewmodel.ItemsViewModel
 
 @Composable
 fun ArticleScreen(navController: NavHostController,context: Context){
 
-    val articleViewModel: ArticleViewModel = viewModel(
-        factory = ArticleViewModel.ArticleViewModelFactory("init")
+    val itemsViewModel: ItemsViewModel = viewModel(
+        factory = ItemsViewModel.ArticleViewModelFactory("init")
     )
 
-    val articleValue = articleViewModel.articles.collectAsState()
+    val articleValue = itemsViewModel.articles.collectAsState()
 
     Scaffold(
         topBar = {
@@ -56,16 +55,16 @@ fun ArticleScreen(navController: NavHostController,context: Context){
                         Text("Número de artículos: ${articleValue.value.listArticle.size}",color= Color.Gray)
                         TextButton(
                             onClick = {
-                                articleViewModel.getMasterDataArticle()
+                                itemsViewModel.getMasterDataArticle()
                             }
                         ){
                             Text("Actualizar")
                         }
                     }
                 }
-                items(items=articleValue.value.listArticle.filter {
-                    it.itemCode.contains(searchedText,ignoreCase = true) ||
-                    it.itemName.contains(searchedText,ignoreCase = true)
+                items(items=articleValue.value.listArticle.filter{
+                    it.ItemCode.contains(searchedText,ignoreCase = true) ||
+                    it.ItemName.contains(searchedText,ignoreCase = true)
                 }){ article ->
                         formArticles(article,context)
                     }
@@ -75,12 +74,12 @@ fun ArticleScreen(navController: NavHostController,context: Context){
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-private fun formArticles(article: Article,context: Context){
+private fun formArticles(article: Items,context: Context){
     Card(
         elevation = 4.dp,
         modifier=Modifier.padding(10.dp).fillMaxWidth(),
         onClick = {
-            val urlStr = "https://wms.vistony.pe/vs1.0/Article/Photo?Name="+article.itemCode
+            val urlStr = "https://wms.vistony.pe/vs1.0/Article/Photo?Name="+article.ItemCode
             try{
                 val intent = Intent(Intent.ACTION_VIEW)
                 intent.setDataAndType(Uri.parse(urlStr),"application/pdf")
@@ -96,9 +95,9 @@ private fun formArticles(article: Article,context: Context){
         Column(
             modifier=Modifier.padding(10.dp)
         ){
-            Text("${article.itemName} ")
-            Text("Codigo: ${article.itemCode}",color=Color.Gray)
-            Text("Altura: ${article.height} Ancho: ${article.width} Largo: ${article.length}",color=Color.Gray)
+            Text("${article.ItemName} ")
+            Text("Codigo: ${article.ItemCode}",color=Color.Gray)
+            Text("Altura: ${article.PurchaseUnitHeight} Ancho: ${article.PurchaseUnitWidth} Largo: ${article.PurchaseUnitLength}",color=Color.Gray)
         }
     }
 }

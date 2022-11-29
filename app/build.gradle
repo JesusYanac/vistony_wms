@@ -12,15 +12,15 @@ android {
         applicationId "com.vistony.wms"
         minSdk 26
         targetSdk 31
-        versionCode 6
-        versionName "1.1.6"
+        versionCode 1
+        versionName "1.1.8"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary true
         }
 
-        buildConfigField('String' , 'API_URL', '"https://wms.vistony.pe/vs1.0/"')
+        buildConfigField('String' , 'API_URL', '"https://msw.vistony.pe/vs1.0/"')
     }
 
     buildTypes {
@@ -92,6 +92,9 @@ dependencies {
     implementation "androidx.camera:camera-lifecycle:1.0.2"
     implementation "androidx.camera:camera-view:1.0.0-alpha32"
 
+    //QUE EL TECLADO NO TAPE LA PANTALLA
+    implementation "com.google.accompanist:accompanist-insets:0.24.1-alpha"
+
     //Barcode
     implementation 'com.google.mlkit:barcode-scanning:17.0.2'
     //Camera Permission
@@ -110,7 +113,6 @@ dependencies {
     implementation("androidx.concurrent:concurrent-futures:1.1.0")
     // Kotlin
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-guava:1.6.0")
-
 
     /*Room Sqlite
     implementation("androidx.room:room-runtime:2.4.2")

@@ -3,7 +3,6 @@ package com.vistony.wms.screen
 import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.Card
 import androidx.compose.material.Scaffold
@@ -18,11 +17,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.vistony.wms.component.TopBar
-import com.vistony.wms.model.Article
 import com.vistony.wms.model.Warehouse
-import com.vistony.wms.viewmodel.ArticleViewModel
 import com.vistony.wms.viewmodel.WarehouseViewModel
-import io.realm.mongodb.sync.SyncConfiguration
 
 @Composable
 fun WarehouseScreen(navController: NavHostController){
@@ -32,6 +28,10 @@ fun WarehouseScreen(navController: NavHostController){
     )
 
     val warehouseValue = warehouseViewModel.almacenes.collectAsState()
+
+    Log.e("JEPICAME","Almacen =>"+warehouseValue.value.status)
+
+
 
     Scaffold(
         topBar = {
@@ -72,12 +72,11 @@ private fun formWhs(warehouse: Warehouse,numLocation:Int){
         Column(
             modifier=Modifier.padding(10.dp)
         ){
-            Text("${warehouse.code} ")
-            Text("Codigo: ${warehouse.name}",color=Color.Gray)
-            Text("Cdg Postal: ${warehouse.zipCode}",color=Color.Gray)
+            Text("${warehouse.WarehouseCode} ")
+            Text("Nombre: ${warehouse.WarehouseName}",color=Color.Gray)
+            Text("Sucursal: ${warehouse.Sucursal}",color=Color.Gray)
+            Text("Control ubicaciones: "+if(warehouse.EnableBinLocations=="tNO"){"No"}else{"Si"},color=Color.Gray)
             Text("Ubicaciones: ${numLocation}",color=Color.Gray)
-            var status=if(warehouse.status=="N"){"Inactivo"}else{"Activo"}
-            Text("Estado: $status",color=Color.Gray)
         }
     }
 }

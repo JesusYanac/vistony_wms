@@ -2,6 +2,7 @@ package com.vistony.wms.util
 
 import com.vistony.wms.BuildConfig
 import com.vistony.wms.model.LoginResponse
+import com.vistony.wms.model.Suggestions
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import okhttp3.OkHttpClient
@@ -13,19 +14,16 @@ import java.util.concurrent.TimeUnit
 
 
 interface APIService {
-   @POST("login")
-    fun login(@Body  request: RequestBody): Call<LoginResponse>
-
-    /*@POST("Inventory")
-    fun inventory(@Body  request: RequestBody): Call<InventoryResponse>*/
+    @POST("Warehouse/suggestionPut")
+    fun suggestion(@Query("type")  type: String,@Query("warehouse") warehouse:String): Call<Suggestions>
 
     companion object {
         private var apiService: APIService? = null
 
         private var client: OkHttpClient = OkHttpClient.Builder()
             .connectTimeout(1, TimeUnit.MINUTES)
-            .readTimeout(10, TimeUnit.SECONDS)
-            .writeTimeout(10, TimeUnit.SECONDS)
+            .readTimeout(20, TimeUnit.SECONDS)
+            .writeTimeout(20, TimeUnit.SECONDS)
             .retryOnConnectionFailure(true)
             .proxy(Proxy.NO_PROXY)
             .build()

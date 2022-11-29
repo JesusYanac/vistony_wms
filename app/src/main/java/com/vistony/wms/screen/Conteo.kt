@@ -30,9 +30,6 @@ fun RecuentoScreen(navController: NavHostController,context: Context){
 
     val idInventoryHeader = inventoryViewModel.idInventoryHeader.collectAsState()
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-
     val modal = rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden, confirmStateChange = {false})
     val scope = rememberCoroutineScope()
 
@@ -52,8 +49,6 @@ fun RecuentoScreen(navController: NavHostController,context: Context){
             modal.animateTo(ModalBottomSheetValue.Expanded)
         }
     }
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////////////////////////
 
     ModalBottomSheetLayout(
         sheetState = modal,
@@ -70,21 +65,6 @@ fun RecuentoScreen(navController: NavHostController,context: Context){
                 TopBar(title="Crear conteo")
             }
         ){
-
-            /*when(idInventoryHeader.value){
-                "cargando"->{
-                    CustomProgressDialog("Cargando Maestro...")
-                }
-                ""->{
-                    DivContainerFun(warehouse, onPressed = {
-                        inventoryViewModel.addInventoryHeader(it)
-                    },openSheet,closeSheet)
-                }
-                else->{
-                    navController.navigate("InventoryCounting/idInventory=${idInventoryHeader}&status=Abierto")
-                    inventoryViewModel.resetIdInventoryHeader()
-                }
-            }*/
 
             if(idInventoryHeader.value.idInventoryHeader.isNotEmpty()){
                 if(idInventoryHeader.value.idInventoryHeader == "error"){
@@ -109,7 +89,10 @@ private fun DivContainerFun(context:Context,onPressed: (Inventory) -> Unit,open:
     var invetoryTemp:Inventory by remember { mutableStateOf(Inventory()) }
 
     if(showDialog){
-        CustomDialogCreateConteo(openDialog={ response ->
+        CustomDialogCreateConteo(
+            titulo="Crear conteo",
+            mensaje="¿Está seguro de crear esta ficha de conteo?",
+            openDialog={ response ->
             if(response){
                 onPressed(invetoryTemp)
             }
