@@ -34,11 +34,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.vistony.wms.R
 import com.vistony.wms.component.*
+import com.vistony.wms.enum_.OptionsDowns
 import com.vistony.wms.model.Counting
 import com.vistony.wms.model.Inventory
 import com.vistony.wms.ui.theme.AzulVistony201
 import com.vistony.wms.ui.theme.AzulVistony202
 import com.vistony.wms.ui.theme.RedVistony202
+import com.vistony.wms.util.Routes
 import com.vistony.wms.viewmodel.InventoryViewModel
 import org.bson.types.ObjectId
 import java.text.SimpleDateFormat
@@ -55,7 +57,20 @@ fun HistoryInventoryScreen(navController: NavHostController,context: Context){
 
     Scaffold(
         topBar = {
-            TopBar(title="Historial de conteos")
+
+            val listOptions = listOf(
+                OptionsDowns(" Crear nueva ficha",R.drawable.ic_baseline_insert_drive_file_24),
+            )
+
+            TopBarTitleWithOptions(
+                options=listOptions,
+                title= Routes.ListInventory.title ,
+                onClick={
+                    navController.navigate("Recuento")
+                }
+            )
+
+            //TopBar(title="Historial de conteos")
         }
     ){
         LazyColumn(modifier = Modifier.fillMaxHeight()) {
