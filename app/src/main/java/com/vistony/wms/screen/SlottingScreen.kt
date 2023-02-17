@@ -32,10 +32,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.vistony.wms.R
 import com.vistony.wms.component.*
-import com.vistony.wms.enum_.OptionsDowns
+import com.vistony.wms.num.OptionsDowns
 import com.vistony.wms.model.StockTransferHeader
 import com.vistony.wms.model.TaskManagement
-import com.vistony.wms.model.TransactionDocument
 import com.vistony.wms.ui.theme.AzulVistony201
 import com.vistony.wms.util.Routes
 import com.vistony.wms.viewmodel.StockTransferHeaderViewModel

@@ -1,5 +1,6 @@
 package com.vistony.wms.screen
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
@@ -9,8 +10,8 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.GridCells
-import androidx.compose.foundation.lazy.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
@@ -41,6 +42,7 @@ import io.realm.Realm
 import kotlinx.coroutines.launch
 import java.util.*
 
+@SuppressLint("UnusedMaterialScaffoldPaddingParameter")
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterialApi::class,
     ExperimentalComposeUiApi::class
 )
@@ -87,8 +89,7 @@ fun DashboardScreen(navController: NavHostController,user: LoginResponse,context
                     navController = navController
                 )
             }
-        ) {
-
+        ){
             DashboardSection(
                 options = RoutesOptionDashboard,
                 open= openSheet,
@@ -97,7 +98,6 @@ fun DashboardScreen(navController: NavHostController,user: LoginResponse,context
                 context=context,
                 navController=navController
             )
-
         }
     }
 }
@@ -123,23 +123,21 @@ fun DashboardSection(options: List<Routes>, user:LoginResponse, navController: N
         )
 
         LazyVerticalGrid(
-            cells = GridCells.Fixed(2),
+            columns = GridCells.Fixed(2),
             contentPadding = PaddingValues(start = 7.5.dp, end = 7.5.dp,bottom = 100.dp),
             modifier = Modifier.fillMaxHeight()
-        ) {
+        ){
             items(options.size) { i ->
                 CourseItem(
                     options=options[i],
                     onPress={ route ->
                         if(
-                            route == Routes.Recepcion.route ||
-                            route == Routes.ImprimirEtiqueta.route ||
-                            route == Routes.Almacenamiento.route
-
+                            route == Routes.Recepcion.route || route == Routes.Almacenamiento.route
                         ){
                             Toast.makeText(context, "Es necesario configurar este modulo.", Toast.LENGTH_SHORT).show()
                         }
                         else{
+
                             if(options[i].value!=0){
                                 navController.navigate(route.replace("{objType}",""+options[i].value))
                             }else{
@@ -157,23 +155,31 @@ fun DashboardSection(options: List<Routes>, user:LoginResponse, navController: N
 fun CourseItem(
     options: Routes,
     onPress:(String)->Unit
-) {
+){
     BoxWithConstraints(
 
         modifier = Modifier
             .padding(7.5.dp).clickable {
-                onPress(options.route)
+                if(options.title =="Parametros" || options.title =="Toma de inventario"){
+                    onPress(options.route)
+                }
             }
             .aspectRatio(1f)
             .clip(RoundedCornerShape(10.dp))
-            .background(AzulVistony201)
+            .background(
+                if(options.title =="Parametros" || options.title =="Toma de inventario"){
+                    AzulVistony201
+                }else{
+                    Color.Gray
+                }
+            )
     ) {
 
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(15.dp)
-        ) {
+        ){
             Text(
                 text = options.title,
                 color=Color.White,
@@ -197,7 +203,13 @@ fun CourseItem(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .clip(RoundedCornerShape(10.dp))
-                    .background(AzulVistony200)
+                    .background(
+                        if(options.title =="Parametros" || options.title =="Toma de inventario"){
+                            AzulVistony202
+                        }else{
+                            Color.Gray
+                        }
+                    )
                     .padding(vertical = 6.dp, horizontal = 15.dp)
             )
         }

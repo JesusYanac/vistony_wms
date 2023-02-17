@@ -4,12 +4,10 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.Bundle
 import android.os.Looper
-import android.os.Parcelable
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.viewModels
 import androidx.compose.runtime.*
 import androidx.navigation.*
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -77,7 +75,7 @@ class MainActivity : ComponentActivity(),Observer{
         super.onNewIntent(intent)
 
         if (intent.hasExtra(DWInterface.DATAWEDGE_SCAN_EXTRA_DATA_STRING)) {
-            if(navController.currentDestination?.route == Routes.InventoryCounting.route || navController.currentDestination?.route ==Routes.MerchandiseMovementDetail.route){
+            if(navController.currentDestination?.route == Routes.InventoryDetail.route || navController.currentDestination?.route ==Routes.MerchandiseMovementDetail.route){
                 val data=intent.getStringExtra(DWInterface.DATAWEDGE_SCAN_EXTRA_DATA_STRING).toString()
                 zebraViewModel.setData(data)
 
@@ -189,11 +187,12 @@ class MainActivity : ComponentActivity(),Observer{
                     )
                 }
                 composable(
-                    Routes.InventoryCounting.route,
+                    Routes.InventoryDetail.route,
                     arguments = listOf(
                         navArgument("idInventory") { type = NavType.StringType },
                         navArgument("whs") { type = NavType.StringType },
-                        navArgument("status") { type = NavType.StringType }
+                        navArgument("status") { type = NavType.StringType },
+                        navArgument("typeInventory") { type = NavType.StringType }
                     )
                 ){
                     Log.e("JEPICAME","VIENE DEL ZEBRA scan")
@@ -203,12 +202,14 @@ class MainActivity : ComponentActivity(),Observer{
                         whs=it.arguments?.getString("whs")?:"",
                         idInventory=it.arguments?.getString("idInventory")?:"",
                         status=it.arguments?.getString("status")?:"Cerrado",
-                        zebraViewModel=zebraViewModel
+                        defaultLocation=it.arguments?.getString("defaultLocation")?:"",
+                        zebraViewModel=zebraViewModel,
+                        typeInventory=it.arguments?.getString("typeInventory")?:""
                     )
                 }
 
-                composable(Routes.ListInventory.route) {
-                    HistoryInventoryScreen(
+                composable(Routes.Inventory.route) {
+                    InventoryScreen(
                         navController = navController,
                         context = applicationContext
                     )
@@ -216,6 +217,13 @@ class MainActivity : ComponentActivity(),Observer{
 
                 composable(Routes.MasterArticle.route) {
                     ArticleScreen(
+                        navController = navController,
+                        context = applicationContext
+                    )
+                }
+
+                composable(Routes.ImprimirEtiqueta.route) {
+                    PrintScreen(
                         navController = navController,
                         context = applicationContext
                     )
@@ -257,6 +265,7 @@ class MainActivity : ComponentActivity(),Observer{
                         navArgument("objType") { type = NavType.IntType }
                     )
                 ){
+
                     MerchandiseDetailScreen(
                         navController = navController,
                         context = applicationContext,
@@ -265,8 +274,7 @@ class MainActivity : ComponentActivity(),Observer{
                         whsOrigin=it.arguments?.getString("whs")?:"",
                         zebraViewModel=zebraViewModel,
                         whsDestine = it.arguments?.getString("whsDestine")?:"",
-                        objType=it.arguments?.getInt("objType")?:0,
-
+                        objType=it.arguments?.getInt("objType")?:0
                     )
                 }
 
@@ -307,7 +315,7 @@ class MainActivity : ComponentActivity(),Observer{
                     )
                 }
 
-                composable(Routes.Recuento.route) {
+                composable(Routes.InventoryCreate.route) {
                     RecuentoScreen(
                         navController = navController,
                         context = applicationContext

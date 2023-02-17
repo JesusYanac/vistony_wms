@@ -167,6 +167,8 @@ class StockTransferHeaderViewModel(private val ObjType: TaskManagement,private v
                 obj.WarehouseDestine=stockTransferHeader.WarehouseDestine
                 obj.Status="Abierto"
                 obj.ObjType=stockTransferHeader.ObjType
+                obj.ArrivalTimeSap=date
+                obj.CreateAt=date
                 obj.Realm_Id=realm.syncSession.user.id
                 obj._TaskManagement=recoveryTask._id
 
@@ -208,7 +210,7 @@ class StockTransferHeaderViewModel(private val ObjType: TaskManagement,private v
         getMerchandise(ObjType)
     }
 
-    fun updateHeaderStatus(idInventory:ObjectId,newStatus:String){
+    fun updateHeaderStatus(objType:Int,idInventory:ObjectId,newStatus:String){
 
         _merchandise.value =  StockTransferHeaderResponse(stockTransferHeader =emptyList(), status = "cargando")
 

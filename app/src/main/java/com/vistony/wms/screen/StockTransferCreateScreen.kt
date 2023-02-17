@@ -2,6 +2,7 @@
 
 package com.vistony.wms.screen
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -21,6 +22,7 @@ import com.vistony.wms.model.TransactionDocument
 import com.vistony.wms.viewmodel.StockTransferHeaderViewModel
 import kotlinx.coroutines.launch
 
+@SuppressLint("UnusedMaterialScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterialApi::class, ExperimentalComposeUiApi::class)
 @Composable
 fun MerchandiseCreateScreen(navController: NavHostController, context: Context,objType: TaskManagement){
@@ -76,11 +78,15 @@ fun MerchandiseCreateScreen(navController: NavHostController, context: Context,o
                 })
             }
         ){
-
             if(_merchandiseViewModel.value.id.isNotEmpty()){
                 if(_merchandiseViewModel.value.id == "error"){
                     Toast.makeText(context, "Ocurrio un error al crear la transferencia de stock.", Toast.LENGTH_SHORT).show()
                 }else{
+
+                    /*
+                     *navArgument("locationId") { type = NavType.IntType },navArgument("locationText") { type = NavType.StringType }
+                     */
+
                     navController.navigate("MerchandiseMovementDetail/idMerchandise=${_merchandiseViewModel.value.id}&status=${_merchandiseViewModel.value.status}&whs=${_merchandiseViewModel.value.whs}&whsDestine=${_merchandiseViewModel.value.whsDestine}&objType=${objType.ObjType}")
                     merchandiseViewModel.resetMerchandiseHeader()
                 }

@@ -1,22 +1,20 @@
 package com.vistony.wms.screen
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AddCircle
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -27,27 +25,25 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.vistony.wms.R
 import com.vistony.wms.component.*
-import com.vistony.wms.enum_.OptionsDowns
-import com.vistony.wms.model.Counting
+import com.vistony.wms.num.OptionsDowns
 import com.vistony.wms.model.Inventory
 import com.vistony.wms.ui.theme.AzulVistony201
-import com.vistony.wms.ui.theme.AzulVistony202
 import com.vistony.wms.ui.theme.RedVistony202
 import com.vistony.wms.util.Routes
 import com.vistony.wms.viewmodel.InventoryViewModel
-import org.bson.types.ObjectId
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 import java.text.SimpleDateFormat
 import java.util.*
 
+@SuppressLint("UnusedMaterialScaffoldPaddingParameter")
 @Composable
-fun HistoryInventoryScreen(navController: NavHostController,context: Context){
+fun InventoryScreen(navController: NavHostController, context: Context){
 
     val inventoryViewModel: InventoryViewModel = viewModel(
         factory = InventoryViewModel.InventoryViewModelFactory()
@@ -64,9 +60,13 @@ fun HistoryInventoryScreen(navController: NavHostController,context: Context){
 
             TopBarTitleWithOptions(
                 options=listOptions,
-                title= Routes.ListInventory.title ,
+                title= Routes.Inventory.title ,
                 onClick={
-                    navController.navigate("Recuento")
+
+                    navController.navigate(Routes.InventoryCreate.route) {
+                        launchSingleTop = true
+                    }
+
                 }
             )
 
@@ -101,13 +101,12 @@ fun HistoryInventoryScreen(navController: NavHostController,context: Context){
                     ""->{}
                     "cargando"->{
                         CustomProgressDialog("Listando fichas...")
-
                     }
                     "ok"->{
 
-                        val openDialog = remember { mutableStateOf(FlagDialog()) }
+                       // val openDialog = remember { mutableStateOf(FlagDialog()) }
 
-                        if(openDialog.value.status){
+                        /*if(openDialog.value.status){
                             CustomDialogResendOrClose(
                                 title="Cerrar Conteo",
                                 openDialog={ response ->
@@ -123,17 +122,17 @@ fun HistoryInventoryScreen(navController: NavHostController,context: Context){
                                 },
                                 flag=openDialog.value.flag
                             )
-                        }
+                        }*/
 
                         ExpandableListItem(
                             inventory=inventory,
                             navController=navController,
-                            onPresChangeStatus={
+                            /*onPresChangeStatus={
                                 openDialog.value= FlagDialog(
                                     status = true,
                                     flag=it
                                 )
-                            }
+                            }*/
                         )
                     }
                     "vacio"->{
@@ -156,9 +155,8 @@ fun HistoryInventoryScreen(navController: NavHostController,context: Context){
     }
 }
 
-@OptIn(ExperimentalAnimationApi::class)
 @Composable
-private fun ExpandableListItem(inventory: Inventory,navController: NavHostController,onPresChangeStatus:(String) ->Unit) {
+private fun ExpandableListItem(inventory: Inventory,navController: NavHostController/*,onPresChangeStatus:(String) ->Unit*/) {
     var expanded by remember { mutableStateOf(false) }
 
     Card(
@@ -187,7 +185,7 @@ private fun ExpandableListItem(inventory: Inventory,navController: NavHostContro
                             .padding(10.dp)
                             .size(30.dp)
                             .clickable {
-                                navController.navigate("InventoryCounting/idInventory=${inventory._id}&whs=${inventory.wareHouse}&status=${inventory.status}")
+                                navController.navigate("InventoryCounting/idInventory=${inventory._id}&whs=${inventory.wareHouse}&status=${inventory.status}&defaultLocation=${URLEncoder.encode( if(inventory.defaultLocation==null){"-"}else{inventory.defaultLocation}, StandardCharsets.UTF_8.toString())}&typeInventory=${URLEncoder.encode( inventory.type,StandardCharsets.UTF_8.toString())}")
                             },
                         tint = if(inventory.status=="Cerrado"){Color.Gray}else{AzulVistony201}
                     )
@@ -266,7 +264,7 @@ private fun ExpandableListItem(inventory: Inventory,navController: NavHostContro
                             date=if(inventory.codeSAP==0){"# "}else{"${inventory.codeSAP} " }
                         ),
                         onClick={
-                            onPresChangeStatus("Resend")
+                            //onPresChangeStatus("Resend")
                         },
                         status=inventory.status
                     )
@@ -285,7 +283,7 @@ private fun ExpandableListItem(inventory: Inventory,navController: NavHostContro
                         }
                     }
 
-                    TextButton(
+                    /*TextButton(
                         modifier= Modifier
                             .padding(top = 10.dp, bottom = 5.dp)
                             .fillMaxWidth(),
@@ -294,7 +292,7 @@ private fun ExpandableListItem(inventory: Inventory,navController: NavHostContro
                             onPresChangeStatus("Close")
                         }) {
                         Text(text="Cerrar ficha",color= if(inventory.status=="Abierto"){AzulVistony202}else{Color.Gray})
-                    }
+                    }*/
 
                 }
             }

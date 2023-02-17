@@ -1,5 +1,6 @@
 package com.vistony.wms.screen
 
+import android.annotation.SuppressLint
 import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -30,6 +31,7 @@ import com.vistony.wms.viewmodel.StockTransferHeaderViewModel
 import com.vistony.wms.viewmodel.WarehouseViewModel
 import java.util.*
 
+@SuppressLint("UnusedMaterialScaffoldPaddingParameter")
 @Composable
 fun DataMasterScreen(navController: NavHostController, context: Context) {
 

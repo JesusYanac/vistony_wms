@@ -1,8 +1,7 @@
 package com.vistony.wms.util
 
 import com.vistony.wms.BuildConfig
-import com.vistony.wms.model.LoginResponse
-import com.vistony.wms.model.Suggestions
+import com.vistony.wms.model.*
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import okhttp3.OkHttpClient
@@ -16,6 +15,18 @@ import java.util.concurrent.TimeUnit
 interface APIService {
     @POST("Warehouse/suggestionPut")
     fun suggestion(@Query("type")  type: String,@Query("warehouse") warehouse:String): Call<Suggestions>
+
+    @GET
+    fun listPrint(@Url url:String): Call<ListPrint>
+
+    @POST
+    fun sendPrint(@Url url:String,@Body request:RequestBody): Call<Void>
+
+    @GET
+    fun getSsdd(@Url url:String,@Query("code") codeVal:String,@Header("Authorization") jwt: String): Call<Sscc>
+
+    @GET
+    fun getArticleFromBatch(@Url url:String,@Query("itemCode") itemCode:String): Call<ProductFromBatch>
 
     companion object {
         private var apiService: APIService? = null

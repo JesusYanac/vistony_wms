@@ -1,5 +1,6 @@
 package com.vistony.wms.screen
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -20,6 +21,7 @@ import com.vistony.wms.component.TopBar
 import com.vistony.wms.model.Items
 import com.vistony.wms.viewmodel.ItemsViewModel
 
+@SuppressLint("UnusedMaterialScaffoldPaddingParameter")
 @Composable
 fun ArticleScreen(navController: NavHostController,context: Context){
 

@@ -1,9 +1,12 @@
 package com.vistony.wms.model
 
+import com.vistony.wms.num.TypeCode
 import io.realm.RealmObject
 import io.realm.annotations.PrimaryKey
 import org.bson.types.ObjectId
 import java.util.*
+
+/*Información  del articulo obtenido por lote*/
 
 data class ListItems(
     val listArticle:List<Items> = emptyList(),
@@ -26,11 +29,21 @@ open class Items(
     @PrimaryKey var _id: ObjectId = ObjectId()
 }
 
-open class ItemsResponse(
-    var article: Items = Items(),
+open class ItemResponse(
+    var item: Items = Items(),
     var status: String = "",
     var lote: String ="",
-    var quantity: Double=1.0
+    var quantity: Double=1.0,
+    var expireDate:String="",
+    var defaultBinLocation:String=""
+)
+
+open class ItemsResponse(
+    var items:List<ItemResponse> = emptyList(),
+    var type:TypeCode=TypeCode.QR,
+    var status: String = "",
+    var nameSscc:String="",
+    var defaultLocation:String=""
 )
 
 open class ItemGroup(

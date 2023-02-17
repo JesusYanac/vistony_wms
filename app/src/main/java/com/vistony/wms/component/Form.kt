@@ -207,7 +207,7 @@ fun formLogin(loginViewModel: LoginViewModel, context:Context, open: (BottomShee
 }
 
 @Composable
-fun formCreateInventoryHeader(context: Context,onPress: (Inventory) -> Unit, open: (BottomSheetScreen) -> Unit, close:() ->Unit){
+fun formCreateInventoryHeader(context: Context,onPress: (InventoryPayload) -> Unit, open: (BottomSheetScreen) -> Unit, close:() ->Unit){
     Column(
         modifier= Modifier
             .padding(20.dp)
@@ -218,7 +218,7 @@ fun formCreateInventoryHeader(context: Context,onPress: (Inventory) -> Unit, ope
         var nombre by remember { mutableStateOf(TextFieldValue("")) }
         var type by remember { mutableStateOf(TextFieldValue("")) }
         var messageError by remember { mutableStateOf("") }
-        var location by remember { mutableStateOf(TextFieldValue("")) }
+        var location by remember { mutableStateOf(WarehouseBinLocation()) }
 
         OutlinedTextField(
             enabled=true,
@@ -255,7 +255,7 @@ fun formCreateInventoryHeader(context: Context,onPress: (Inventory) -> Unit, ope
                     disabledTextColor = Color.DarkGray,
                     disabledLabelColor = Color.DarkGray
                 ),
-                value = location,
+                value = TextFieldValue(location.warehouse.WarehouseCode),
                 trailingIcon = { Icon(imageVector = Icons.Default.Edit, contentDescription = null) },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -277,8 +277,7 @@ fun formCreateInventoryHeader(context: Context,onPress: (Inventory) -> Unit, ope
                                 BottomSheetScreen.SelectWarehouseModal(
                                     context = context,
                                     selected = {
-
-                                        location = TextFieldValue(it.WarehouseCode)
+                                        location = it
                                         close()
                                     })
                             )
@@ -370,7 +369,7 @@ fun formCreateInventoryHeader(context: Context,onPress: (Inventory) -> Unit, ope
                 if(nombre.text.isEmpty()){
                     messageError="*Es necesario que se ingrese un nombre para el conteo."
                 }else{
-                    if(location.text.isEmpty()){
+                    if(location.warehouse.WarehouseCode .isEmpty()){
                         messageError="*Es necesario seleccionar un almacen."
                     }else{
                         if(type.text.isEmpty()){
@@ -379,11 +378,13 @@ fun formCreateInventoryHeader(context: Context,onPress: (Inventory) -> Unit, ope
                             messageError=""
 
                             onPress(
-
-                                Inventory(
-                                    type=type.text,
-                                    name=nombre.text,
-                                    wareHouse = location.text,
+                                InventoryPayload(
+                                    inventory=Inventory(
+                                        type=type.text,
+                                        name=nombre.text,
+                                        wareHouse = location.warehouse.WarehouseCode,
+                                    ),
+                                    defaultLocation = location.defaultLocation
                                 )
                             )
                         }
@@ -405,7 +406,7 @@ fun formCreateInventoryEntryOrExit(objType:Int,context: Context, onPress: (Stock
 
     val listWareHouse:MutableList<Options> = mutableListOf()
     val werehouseViewModel: WarehouseViewModel = viewModel(
-        factory = WarehouseViewModel.WarehouseViewModelFactory ("init")
+        factory = WarehouseViewModel.WarehouseViewModelFactory ("init","")
     )
 
     val warehouseValue = werehouseViewModel.almacenes.collectAsState()
@@ -940,7 +941,7 @@ fun formBsHeaderTask(
         label = { Text(text = "Número de serie") },
         placeholder = { Text(text = "Ingresar la serie") },
         trailingIcon = { Icon(imageVector = Icons.Default.Edit, contentDescription = null, tint = AzulVistony202) },
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword,imeAction = ImeAction.Next ),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text,imeAction = ImeAction.Next ),
         keyboardActions = KeyboardActions(
             onNext = {
                 focusManager.clearFocus()
@@ -1024,4 +1025,29 @@ fun formBsHeaderTask(
 
 
 
+}
+
+@Composable
+fun InputBox(
+    enabled:Boolean=true,
+    value:String="",
+    onChange: (String) -> Unit={},
+    label:String="",
+    placeholder:String="",
+    keyboardOptions:KeyboardOptions=KeyboardOptions(),
+    keyboardActions:KeyboardActions=KeyboardActions()
+){
+    OutlinedTextField(
+        enabled= enabled,
+        singleLine=true,
+        value = value,
+        onValueChange = {
+            onChange(it)
+        },
+        label = { Text(text = label) },
+        placeholder = { Text(text = placeholder) },
+        trailingIcon = { Icon(imageVector = Icons.Default.Edit, contentDescription = null, tint = AzulVistony202) },
+        keyboardOptions =keyboardOptions,
+        keyboardActions = keyboardActions
+    )
 }

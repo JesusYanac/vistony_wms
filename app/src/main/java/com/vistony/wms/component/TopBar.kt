@@ -3,13 +3,13 @@ package com.vistony.wms.component
 import android.annotation.SuppressLint
 import android.util.Log
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,7 +23,7 @@ import com.google.accompanist.permissions.PermissionState
 import com.vistony.wms.ui.theme.AzulVistony201
 import com.vistony.wms.ui.theme.AzulVistony202
 import com.vistony.wms.R
-import com.vistony.wms.enum_.*
+import com.vistony.wms.num.*
 import com.vistony.wms.util.Routes
 
 @SuppressLint("PermissionLaunchedDuringComposition")
@@ -76,16 +76,24 @@ fun TopBarTitleCamera(
 
 @Composable
 private fun DropdownMenuCamera(objType:Int,status:String,bodyContent: (TypeReadSKU)->Unit) {
+    Log.e("JEPICAME","=>objtype "+objType)
     val expanded = remember { mutableStateOf(false) }
 
     val listOptions: MutableList<OptionsInventory> = mutableListOf()
 
     when(objType){
-        67->{}
-        671->{}
+
         22->{ //Orden de Compra
             if(status!="OrigenCerrado"){
                 listOptions.add(OptionsInventory(TypeReadSKU.KEYBOARD,"Manual",R.drawable.ic_baseline_keyboard_24))
+            }
+        }
+        67,671->{}
+        100->{
+            if(status=="Abierto"){
+                listOptions.add(OptionsInventory(TypeReadSKU.KEYBOARD,"Manual",R.drawable.ic_baseline_keyboard_24))
+                listOptions.add(OptionsInventory(TypeReadSKU.CAMERA,"Camara",R.drawable.ic_baseline_camera_alt_24))
+                listOptions.add(OptionsInventory(TypeReadSKU.HANDHELD,"Handheld",R.drawable.ic_baseline_qr_code_scanner_24))
             }
         }
         else->{}
@@ -135,24 +143,67 @@ private fun DropdownMenuCamera(objType:Int,status:String,bodyContent: (TypeReadS
             }
         }
 
-        //if(objType=="StockTransfer"){
-            Divider()
-            Text(" Cambiar estados", color = Color.LightGray)
-            DropdownMenuItem(onClick={
-                expanded.value = false
-                bodyContent(if(status=="OrigenCerrado"){TypeReadSKU.CERRAR_FICHA}else{TypeReadSKU.CERRAR_ORIGEN})
-            }){
-                Row{
-                    Icon(
-                        imageVector = Icons.Filled.Close,
-                        tint= AzulVistony202,
-                        contentDescription = null
+        Divider()
+        Text(" Cambiar estados", color = Color.LightGray)
+
+        DropdownMenuItem(onClick={
+            expanded.value = false
+
+            when(objType){
+                Routes.Inventory.value->{
+                    bodyContent(
+                        when(status){
+                            "Abierto"->{
+                                TypeReadSKU.CERRAR_FICHA
+                            }
+                            "FichaCerrada"->{
+                                TypeReadSKU.REENVIAR_FICHA
+                            }
+                            else->{
+                                TypeReadSKU.CERRAR_ORIGEN
+                            }
+                        }
                     )
-                    Text(if(status=="OrigenCerrado"){"  Cerrar Ficha"}else{"  Cerrar Origen"})
+                }
+                else->{
+                    bodyContent(if(status=="OrigenCerrado"){TypeReadSKU.CERRAR_FICHA}else{TypeReadSKU.CERRAR_ORIGEN})
                 }
             }
-        //}
 
+
+        }){
+            Row{
+
+                when(objType){
+                    Routes.Inventory.value->{
+
+                        if(status=="Abierto"){
+                            Icon(
+                                imageVector = Icons.Filled.Close ,
+                                tint= AzulVistony202,
+                                contentDescription = null
+                            )
+                            Text("  Cerrar Ficha")
+                        }else{
+                            Icon(
+                                imageVector = Icons.Filled.Refresh ,
+                                tint= AzulVistony202,
+                                contentDescription = null
+                            )
+                            Text("  Reenviar Ficha")
+                        }
+                    }
+                    else->{
+                        Icon(
+                            imageVector = Icons.Filled.Close,
+                            tint= AzulVistony202,
+                            contentDescription = null
+                        )
+                        Text(if(status=="OrigenCerrado"){"  Cerrar Ficha"}else{"  Cerrar Origen"})
+                    }
+                }
+            }
+        }
     }
 }
 

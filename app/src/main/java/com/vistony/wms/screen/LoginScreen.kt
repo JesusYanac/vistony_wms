@@ -1,5 +1,6 @@
 package com.vistony.wms.screen
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
@@ -35,6 +36,7 @@ import com.vistony.wms.viewmodel.LoginViewModel
 import io.sentry.Sentry
 import kotlinx.coroutines.launch
 
+@SuppressLint("UnusedMaterialScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterialApi::class, ExperimentalComposeUiApi::class,
     ExperimentalFoundationApi::class
 )

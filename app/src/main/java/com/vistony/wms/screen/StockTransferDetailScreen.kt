@@ -5,7 +5,6 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
@@ -38,7 +37,7 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberPermissionState
 import com.vistony.wms.R
 import com.vistony.wms.component.*
-import com.vistony.wms.enum_.TypeReadSKU
+import com.vistony.wms.num.TypeReadSKU
 import com.vistony.wms.model.*
 import com.vistony.wms.ui.theme.*
 import com.vistony.wms.viewmodel.*
@@ -49,11 +48,13 @@ import java.math.RoundingMode
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
+@SuppressLint("UnusedMaterialScaffoldPaddingParameter")
 @OptIn(ExperimentalPermissionsApi::class, ExperimentalMaterialApi::class,
     ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class
 )
 @Composable
-fun MerchandiseDetailScreen(navController: NavHostController, context: Context,idMerchandise:String,status:String,zebraViewModel: ZebraViewModel,whsOrigin:String,whsDestine:String,objType:Int) {
+fun MerchandiseDetailScreen(navController: NavHostController, context: Context,idMerchandise:String,status:String,zebraViewModel: ZebraViewModel,
+                            whsOrigin:String,whsDestine:String,objType:Int) {
 
     val context = LocalContext.current
     val cameraPermissionState = rememberPermissionState(permission = Manifest.permission.CAMERA)
@@ -120,7 +121,7 @@ fun MerchandiseDetailScreen(navController: NavHostController, context: Context,i
                         type= TypeReadSKU.HANDHELD,
                         objType=objType,
                         selected = {
-                            stockTransferBodyViewModel.insertData(it)
+                            stockTransferBodyViewModel.insertData(it,objType)
                             closeSheet()
                         }
                     )
@@ -128,11 +129,9 @@ fun MerchandiseDetailScreen(navController: NavHostController, context: Context,i
 
             }
             "OrigenCerrado"->{
-
-
                 openSheet(
-
                     BottomSheetScreen.SelectDestineModal(
+                        objType=objType,
                         value=zebraValue.value,
                         context=context,
                         stockTransferBodyViewModel=stockTransferBodyViewModel,
@@ -144,8 +143,6 @@ fun MerchandiseDetailScreen(navController: NavHostController, context: Context,i
                         wareHouseDestine = whsDestine
                     )
                 )
-
-
             }
         }
 
@@ -167,14 +164,16 @@ fun MerchandiseDetailScreen(navController: NavHostController, context: Context,i
 
                 if(status!="FichaCerrada"){
                     TopBarTitleCamera(
-                        title=if(objType==67){"Transferencia de stock"}else if(objType==22){"Pedido de compra"}else{"Slotting"},
+                        title=when(objType){ 67->{"Transferencia de stock"}671->{"Slotting"}22->{"Pedido de compra"}1701->{"Hoja de Alistado"}else->{"N/A"}},
                         status= status,
                         objType=objType,
                         permission=cameraPermissionState,
                         onClick={
 
                             if(it==TypeReadSKU.CERRAR_ORIGEN||it==TypeReadSKU.CERRAR_FICHA){
+
                                 stockTransferHeaderViewModel.updateHeaderStatus(
+                                    objType=objType,
                                     idInventory = ObjectId(idMerchandise),
                                     newStatus = if(it==TypeReadSKU.CERRAR_ORIGEN){"OrigenCerrado"}else{"FichaCerrada"}
                                 )
@@ -186,15 +185,21 @@ fun MerchandiseDetailScreen(navController: NavHostController, context: Context,i
                                     671->{
                                         navController.navigate("Slotting")
                                     }
+                                    1701,/*->{
+                                        var status=merchandiseBodyValue.value.stockTransferBody.forEach {
+                                            it.subBody.filter { subBody ->
+                                                subBody.Status!="Completo"
+                                            }.single()
+                                        }
+
+                                        Log.e("JEPICAME","===>> ESTADO"+status)
+                                    }*/
                                     22->{
                                         navController.navigate("TaskManager")
                                     }
                                     else->{
 
                                     }
-                                }
-                                if(objType==67){
-
                                 }
 
                                 /*{
@@ -213,7 +218,7 @@ fun MerchandiseDetailScreen(navController: NavHostController, context: Context,i
                                         type=it,
                                         objType=objType,
                                         selected = {
-                                            stockTransferBodyViewModel.insertData(it)
+                                            stockTransferBodyViewModel.insertData(it,objType)
                                             closeSheet()
                                         }
                                     )
@@ -226,7 +231,7 @@ fun MerchandiseDetailScreen(navController: NavHostController, context: Context,i
                     )
                 }else{
                     TopBar(
-                        title=when(objType){ 67->{"Transferencia de stock"}671->{"Slotting"}22->{"Pedido de compra"}else->{"N/A"}},
+                        title=when(objType){ 67->{"Transferencia de stock"}671->{"Slotting"}22->{"Pedido de compra"}1701->{"Hoja de Alistado"}else->{"N/A"}},
                         firstColor = Color.DarkGray,
                         secondColor = Color.Gray
                     )
@@ -311,6 +316,10 @@ private fun divContainer(navController: NavController,
                 when(objType){
                     22->{
                         Text(text ="$whsOrigin - ${whsDestine.replace("+"," ")}",color= Color.Gray, textAlign = TextAlign.Center)
+                    }
+                    1701->{
+                        Text(text ="Almacén Origen")
+                        Text(text = " ${merchandiseBody.wareHouseOrigin}",color= Color.Gray)
                     }
                     else->{
                         Text(text ="Almacén Orig > Dst")
@@ -682,9 +691,7 @@ fun HeaderBody(
                 modifier = Modifier
                     .padding(vertical = 5.dp)
                     .size(20.dp),
-                tint = if(status=="Cerrado"){Color.Gray}else{
-                    AzulVistony201
-                }
+                tint = if(numOf==num){AzulVistony201}else{RedVistony201}
             )
             Text(text = " $itemName", fontWeight = FontWeight.Bold,fontSize = TextUnit.Unspecified ,modifier= Modifier
                 .fillMaxHeight()
@@ -710,6 +717,20 @@ fun HeaderBody(
                                 Text(text = "$numOf/$num Avance",color=Color.Blue)
                             }"OrigenCerrado"-> {
                                 Text(text = "$count Cantidad")
+                                Text(text = "$numOf/$num Avance",color=Color.Blue)
+                            }
+                        }
+                    }
+                    1701->{
+                        when(status){
+                            "Abierto"->{
+                                Text(text = "El estado ´Abierto´ no es valido",color=Color.Red)
+                            }
+                            "FichaCerrada"-> {
+                                Text(text = "")
+                                Text(text = "$numOf/$num Avance",color=Color.Blue)
+                            }"OrigenCerrado"-> {
+                                Text(text = "")
                                 Text(text = "$numOf/$num Avance",color=Color.Blue)
                             }
                         }

@@ -1,5 +1,6 @@
 package com.vistony.wms.screen
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
@@ -15,9 +16,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.vistony.wms.component.*
 import com.vistony.wms.model.Inventory
+import com.vistony.wms.model.InventoryPayload
 import com.vistony.wms.viewmodel.InventoryViewModel
 import kotlinx.coroutines.launch
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
+@SuppressLint("UnusedMaterialScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterialApi::class, ExperimentalComposeUiApi::class,
     ExperimentalFoundationApi::class
 )
@@ -62,15 +67,17 @@ fun RecuentoScreen(navController: NavHostController,context: Context){
     ){
         Scaffold(
             topBar = {
-                TopBar(title="Crear conteo")
+                TopBar(title="Crear ficha de inventario")
             }
         ){
 
             if(idInventoryHeader.value.idInventoryHeader.isNotEmpty()){
                 if(idInventoryHeader.value.idInventoryHeader == "error"){
-                    Toast.makeText(context, "Ocurrio un error al crear la ficha de recuento.", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Ocurrio un error al crear la ficha.", Toast.LENGTH_SHORT).show()
                 }else{
-                    navController.navigate("InventoryCounting/idInventory=${idInventoryHeader.value.idInventoryHeader}&whs=${idInventoryHeader.value.idWhs}&status=Abierto")
+                    navController.navigate("InventoryCounting/idInventory=${idInventoryHeader.value.idInventoryHeader}&whs=${idInventoryHeader.value.idWhs}&status=Abierto&defaultLocation=${URLEncoder.encode(idInventoryHeader.value.defaultLocation, StandardCharsets.UTF_8.toString())}&typeInventory=${URLEncoder.encode(idInventoryHeader.value.type, StandardCharsets.UTF_8.toString())}"){
+                        popUpTo("Recuento") { inclusive = true }
+                    }
                     inventoryViewModel.resetIdInventoryHeader()
                 }
 
@@ -84,14 +91,14 @@ fun RecuentoScreen(navController: NavHostController,context: Context){
 }
 
 @Composable
-private fun DivContainerFun(context:Context,onPressed: (Inventory) -> Unit,open: (BottomSheetScreen) -> Unit,close:() ->Unit){
+private fun DivContainerFun(context:Context, onPressed: (InventoryPayload) -> Unit, open: (BottomSheetScreen) -> Unit, close:() ->Unit){
     var showDialog by remember { mutableStateOf(false) }
-    var invetoryTemp:Inventory by remember { mutableStateOf(Inventory()) }
+    var invetoryTemp:InventoryPayload by remember { mutableStateOf(InventoryPayload()) }
 
     if(showDialog){
         CustomDialogCreateConteo(
-            titulo="Crear conteo",
-            mensaje="¿Está seguro de crear esta ficha de conteo?",
+            titulo="Crear ficha de inventario",
+            mensaje="¿Está seguro de crear esta ficha de inventario?",
             openDialog={ response ->
             if(response){
                 onPressed(invetoryTemp)

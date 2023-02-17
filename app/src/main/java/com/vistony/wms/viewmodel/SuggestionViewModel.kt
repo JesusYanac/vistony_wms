@@ -43,7 +43,7 @@ class SuggestionViewModel(/* type:String,warehouse:String*/): ViewModel() {
     }
 
     fun resetSuggestionState(){
-        _suggtn.value= Suggestions(Data= emptyList(), status = "" )
+        _suggtn.value= Suggestions(Data= emptyList(), status = "")
     }
 
     fun getSuggestionList(type:String,warehouse:String) {

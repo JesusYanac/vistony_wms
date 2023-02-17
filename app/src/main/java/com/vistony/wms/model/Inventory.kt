@@ -1,9 +1,15 @@
 package com.vistony.wms.model
 
+import com.vistony.wms.num.TypeCode
 import io.realm.RealmObject
 import io.realm.annotations.PrimaryKey
 import org.bson.types.ObjectId
 import java.util.*
+
+open class InventoryPayload(
+    var inventory:Inventory=Inventory(),
+    var defaultLocation:String=""
+)
 
 open class Inventory(
     var coment: String = "",
@@ -12,6 +18,7 @@ open class Inventory(
     var closeAt: Date = Date(),
     var arrivalTimeAtlas: Date = Date(),
     var arrivalTimeSap: Date = Date(),
+    var defaultLocation: String = "",
     var name: String = "",
     var Realm_Id: String = "",
     var status: String = "Abierto",
@@ -36,7 +43,9 @@ open class Counting(
     var inventoryId: ObjectId = ObjectId(),
     var itemCode: String = "",
     var itemName: String = "",
-    var quantity: Double  = 1.0,
+    var interfaz: String = "",
+    var sscc: String = "",
+    var quantity: Double  = 0.0,
     var location: String = "",
     var lote: String = "",
     var Realm_Id: String = ""
@@ -44,22 +53,30 @@ open class Counting(
     @PrimaryKey var _id: ObjectId = ObjectId()
 }
 
+open class CustomCounting(
+    var counting: List<Counting> =  emptyList(),
+    var defaultLocationSSCC:String="",
+    var typeCode: TypeCode = TypeCode.QR
+)
+
 open class CountingResponse(
     var counting: List<Counting> =  emptyList(),
     var status: String = "",
-    var nameInventory: String = ""
+    var nameInventory: String = "",
+    var statusEvent:String=""
 )
 
 open class UpdateLine(
     var count: Double  =  1.0,
     var locationName: String = "",
-    var locationCode: String = "",
-    var lote:String=""
+    var cancelar:String="N"
 )
 
 open class DocumentInventory(
     var idInventoryHeader: String =  "",
-    var idWhs: String = ""
+    var type: String =  "",
+    var idWhs: String = "",
+    var defaultLocation: String=""
 )
 
 open class TypeInventario(

@@ -1,6 +1,6 @@
 package com.vistony.wms.model
 
-import com.vistony.wms.enum_.StatusResponse
+import com.vistony.wms.num.StatusResponse
 import io.realm.RealmObject
 import io.realm.annotations.PrimaryKey
 import io.realm.mongodb.App

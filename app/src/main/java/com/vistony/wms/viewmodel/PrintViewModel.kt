@@ -3,18 +3,31 @@ package com.vistony.wms.viewmodel
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
+import com.google.gson.Gson
+import com.google.gson.JsonSyntaxException
 import com.vistony.wms.model.*
+import com.vistony.wms.util.APIService
 import io.realm.Realm
-import io.realm.RealmResults
-import io.realm.Sort
 import io.realm.kotlin.syncSession
 import io.realm.mongodb.sync.SyncConfiguration
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import org.bson.types.ObjectId
-import java.util.*
+import kotlinx.coroutines.launch
+import okhttp3.MediaType
+import okhttp3.RequestBody
+import org.json.JSONException
+import org.json.JSONObject
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Response
+import java.io.IOException
+import java.net.ConnectException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 
-class ItemsViewModel(flag:String): ViewModel() {
+class PrintViewModel(): ViewModel() {
 
     private var realm: Realm = Realm.getInstance(Realm.getDefaultConfiguration())
 
@@ -22,175 +35,108 @@ class ItemsViewModel(flag:String): ViewModel() {
             .Builder(realm.syncSession.user, "public")
             .build()
 
+    private val _print = MutableStateFlow(Print())
+    val print: StateFlow<Print> get() = _print
 
-    private val _articulos = MutableStateFlow(ListItems())
-    val articles: StateFlow<ListItems> get() = _articulos
+    private val _printList = MutableStateFlow(ListPrint())
+    val printList: StateFlow<ListPrint> get() = _printList
 
-    private val _articulo = MutableStateFlow(ItemsResponse())
-    val article: StateFlow<ItemsResponse> get() = _articulo
+    private val _statusPrint = MutableStateFlow("")
+    val statusPrint: StateFlow<String> get() = _statusPrint
 
-    class ArticleViewModelFactory(private var flag:String): ViewModelProvider.Factory {
+    class PrintViewModelFactory(): ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return ItemsViewModel(flag) as T
+            return PrintViewModel() as T
         }
     }
 
     init {
-        if(flag=="init"){
-            getMasterDataArticle()
-        }
+        listPrinter()
     }
 
-    fun resetArticleStatus(){
-        _articulo.value=ItemsResponse()
+    fun resetItemStatus(){
+        _print.value=Print()
     }
 
-    fun getArticle(value:String,idHeader:String=""){
-        _articulo.value=ItemsResponse(article=Items(),status="cargando")
+    fun setPrint(print:Print){
+        _print.value=print
+    }
 
-        val count:Int = value.split("|").size
-
-        var lote:String = ""
-        var itemCodeNew:String = ""
-        var quantity:Double = 1.0
-
-        when(count){
-            0->{}
-            1->{
-                itemCodeNew=value.split("|")[0]
-            }
-            2->{
-                itemCodeNew=value.split("|")[0]
-                lote=value.split("|")[1]
-            }else->{
-                itemCodeNew=value.split("|")[0]
-                lote=value.split("|")[1]
-                quantity = try{
-                    value.split("|")[2].toDouble()
-                }catch(e:Exception){
-                    1.0
-                }
-            }
-        }
+    fun getArticle(value:String){
+        _print.value=Print(status="cargando")
 
         Realm.getInstanceAsync(configPublic, object : Realm.Callback() {
             override fun onSuccess(r: Realm) {
 
-                Log.e("JEPICAMDA=>idHeader","==>"+idHeader+" > "+idHeader+" > "+itemCodeNew)
+                val article = r.where(Items::class.java)
+                    .equalTo("ItemCode",value)
+                    .findFirst()
 
-                if(idHeader!=""){
-
-                    val documentBody = r.where(StockTransferBody::class.java)
-                        .equalTo("_StockTransferHeader", ObjectId(idHeader))
-                        .equalTo("ItemCode",itemCodeNew)
-
-                    if(documentBody!=null){
-                        val article = r.where(Items::class.java)
-                            .equalTo("ItemCode",itemCodeNew)
-                            .findFirst()
-
-                        if (article != null) {
-                            _articulo.value= ItemsResponse(article=article,status="ok",lote=lote,quantity=quantity)
-                        }else{
-                            _articulo.value=ItemsResponse(article=Items(),status="El artículo $itemCodeNew, no se encuentra en el maestro de artículos")
-                        }
-                    }else{
-                        _articulo.value=ItemsResponse(article=Items(),status="El artículo $itemCodeNew, no existe en el documento actual.")
-                    }
-
+                if (article != null) {
+                    _print.value= Print(
+                        itemName=article.ItemName,
+                        itemCode=article.ItemCode,
+                        itemUom=article.UoMGroupEntry,
+                        status="ok"
+                    )
                 }else{
-                    val article = r.where(Items::class.java)
-                        .equalTo("ItemCode",itemCodeNew)
-                        .findFirst()
-
-                    if (article != null) {
-                        _articulo.value= ItemsResponse(article=article,status="ok",lote=lote,quantity=quantity)
-                    }else{
-                        _articulo.value=ItemsResponse(article=Items(),status="vacio")
-                    }
+                    _print.value=Print(status="vacio")
                 }
             }
             override fun onError(exception: Throwable) {
-                _articulo.value= ItemsResponse(article=Items(),status=" ${exception.message}")
+                _print.value=Print(status=exception.message.toString())
             }
-        })
+        }).toString()
     }
 
-    /*
-    fun addNote(noteTitle: String, noteDescription: String) {
+    fun listPrinter(){
+        _printList.value = ListPrint(prints=emptyList(), "cargando")
 
-        realm.executeTransactionAsync { r: Realm ->
-
-            Log.e("JEPICAME","==>>>enrrr")
-
-            val note = r.createObject(Note::class.java, ObjectId().toHexString())
-            note.title = noteTitle
-            note.descripcion = noteDescription
-            note.realm_id = "627bcacb088b6bca472c86c8"
-
-
-            r.insertOrUpdate(note)
-        }
-
-        //getAllNotes()
-    }
-*/
-
-    /*
-    * RealmResults<City> cities = realm.where(City.class).findAll();
-      City city = cities.where().equalTo(CityFields.NAME, strCity).findFirst();
-    *
-    */
-
-     fun getMasterDataArticle(){
-
-         Realm.getInstanceAsync(configPublic, object : Realm.Callback() {
-             override fun onSuccess(r: Realm) {
-                 val articulos = r.where(Items::class.java).sort("ItemCode", Sort.ASCENDING).findAll()
-
-                 articulos?.let { data:RealmResults<Items> ->
-
-                     val noteTemp:List<Items> = data.subList(0, data.size)
-                     _articulos.value =  ListItems(listArticle=noteTemp,status="ok", fechaDescarga = Date())
-
-                 }
-
-                 //r.close()
-             }
-             override fun onError(exception: Throwable) {
-                 _articulos.value = ListItems(listArticle= emptyList(),status="error",fechaDescarga = Date())
-             }
-         })
-     }
-
-/*
-    fun updateNote(id: String, noteTitle: String, noteDesc: String) {
-        val target = realm.where(Note::class.java)
-            .equalTo("id", id)
-            .findFirst()
-
-        realm.executeTransaction {
-          //  target?.title = noteTitle
-            //target?.description = noteDesc
-            realm.insertOrUpdate(target)
+        viewModelScope.launch(Dispatchers.Default){
+            APIService.getInstance().listPrint ("http://192.168.254.20:89/vs1.0/printer").enqueue( object :Callback<ListPrint> {
+                override fun onResponse(call: Call<ListPrint>, response: Response<ListPrint>) {
+                    if(response.isSuccessful){
+                        _printList.value=ListPrint(prints = response.body()?.prints!!,status="ok")
+                    }else{
+                        _printList.value=ListPrint(prints=emptyList(),status="InternalServerError")
+                    }
+                }
+                override fun onFailure(call: Call<ListPrint>, error: Throwable) {
+                    _printList.value=ListPrint(prints=emptyList(),status=error.message.toString())
+                }
+            })
         }
     }
 
-    fun deleteNote(id: String) {
-        val notes = realm.where(Note::class.java)
-            .equalTo("id", id)
-            .findFirst()
+    fun sendPrint(print:Print){
+        _statusPrint.value = "cargando"
 
-        realm.executeTransaction {
-            notes!!.deleteFromRealm()
+        print.ipAddress=print.printer.ip
+        print.portNumber=print.printer.port.toInt()
+
+        val jsonBody: RequestBody = RequestBody.create(
+            MediaType.parse("application/json; charset=utf-8"),
+            JSONObject(
+                Gson().toJson(
+                    print
+                )
+            ).toString()
+        )
+
+        viewModelScope.launch(Dispatchers.Default){
+            APIService.getInstance().sendPrint("http://192.168.254.20:89/vs1.0/printer",jsonBody).enqueue(object :Callback<Void> {
+                override fun onResponse(call: Call<Void>, response: Response<Void>) {
+                    if(response.isSuccessful){
+                        _statusPrint.value="ok"
+                    }else{
+                        _statusPrint.value="InternalServerError"
+                    }
+                }
+                override fun onFailure(call: Call<Void>, error: Throwable) {
+                    _statusPrint.value=error.message.toString()
+                }
+            })
         }
     }
-
-    fun deleteAllNotes() {
-        realm.executeTransaction { r: Realm ->
-            r.delete(Note::class.java)
-        }
-    }
-*/
 }

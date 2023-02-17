@@ -1,5 +1,6 @@
 package com.vistony.wms.screen
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
@@ -26,20 +27,19 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import com.vistony.wms.R
 import com.vistony.wms.component.*
-import com.vistony.wms.enum_.OptionsDowns
+import com.vistony.wms.num.OptionsDowns
 import com.vistony.wms.model.StockTransferHeader
 import com.vistony.wms.model.TaskManagement
 import com.vistony.wms.ui.theme.AzulVistony201
-import com.vistony.wms.ui.theme.AzulVistony202
 import com.vistony.wms.util.Routes
 import com.vistony.wms.viewmodel.StockTransferHeaderViewModel
 import kotlinx.coroutines.launch
 
 
+@SuppressLint("UnusedMaterialScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterialApi::class, ExperimentalComposeUiApi::class,
     ExperimentalFoundationApi::class
 )

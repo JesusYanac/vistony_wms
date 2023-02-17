@@ -1,22 +1,27 @@
 package com.vistony.wms.model
 
-import io.realm.RealmList
 import io.realm.RealmObject
 import io.realm.annotations.PrimaryKey
-import io.realm.annotations.Required
 import org.bson.types.ObjectId
 import java.util.*
 
-open class Warehouse(
+open class Warehouses(
     var Sucursal: String = "",
     var WarehouseCode: String = "",
     var WarehouseName: String = "",
     var EnableBinLocations: String = "",
+    var DefaultBin: Int = 0,
     var Realm_Id: String = "",
+    var WmsLocation: String = "",
 ): RealmObject() {
     @PrimaryKey
     var _id: ObjectId = ObjectId()
 }
+
+open class WarehouseBinLocation(
+    var warehouse: Warehouses = Warehouses(),
+    var defaultLocation: String = ""
+)
 
 open class BinLocations(
     var AbsEntry: Int = 0,
@@ -34,7 +39,7 @@ open class BinLocations(
 
 open class ResponseLocationAndItem(
     var locationResponse:LocationResponse= LocationResponse(),
-    var itemResponse:ItemsResponse= ItemsResponse()
+    var itemResponse:ItemResponse= ItemResponse()
 )
 
 open class LocationResponse(
@@ -45,7 +50,8 @@ open class LocationResponse(
 
 open class WarehouseResponse(
     var numLocation:List<Int> = emptyList(),
-    var warehouse: List<Warehouse> = emptyList(),
+    var defaultLocation:List<String> = emptyList(),
+    var warehouse: List<Warehouses> = emptyList(),
     var status: String = "",
     var fechaDescarga: Date =Date()
 )

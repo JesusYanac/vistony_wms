@@ -2,6 +2,7 @@ package com.vistony.wms.screen
 
 import android.Manifest
 import android.R.attr.*
+import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
 import android.util.Size
@@ -11,7 +12,7 @@ import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -26,6 +27,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
@@ -42,27 +44,27 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberPermissionState
 import com.google.common.util.concurrent.ListenableFuture
 import com.vistony.wms.component.*
-import com.vistony.wms.enum_.CallFor
-import com.vistony.wms.enum_.TypeReadSKU
-import com.vistony.wms.model.Counting
-import com.vistony.wms.model.CountingResponse
-import com.vistony.wms.model.UpdateLine
+import com.vistony.wms.num.TypeCode
+import com.vistony.wms.num.TypeReadSKU
+import com.vistony.wms.model.*
 import com.vistony.wms.ui.theme.AzulVistony201
 import com.vistony.wms.ui.theme.RedVistony202
 import com.vistony.wms.util.BarCodeAnalyser
+import com.vistony.wms.util.Routes
+import com.vistony.wms.util.isNumeric
 import com.vistony.wms.viewmodel.ItemsViewModel
 import com.vistony.wms.viewmodel.CountViewModel
 import com.vistony.wms.viewmodel.WarehouseViewModel
 import com.vistony.wms.viewmodel.ZebraViewModel
 import org.bson.types.ObjectId
-import java.util.*
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
+@SuppressLint("UnusedMaterialScaffoldPaddingParameter")
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
-fun ScanScreen(navController: NavHostController,whs:String,idInventory:String,status:String,zebraViewModel: ZebraViewModel){
+fun ScanScreen(navController: NavHostController,whs:String,idInventory:String,status:String,defaultLocation:String,zebraViewModel: ZebraViewModel,typeInventory:String){
 
     val context = LocalContext.current
     val cameraPermissionState = rememberPermissionState(permission = Manifest.permission.CAMERA)
@@ -78,59 +80,118 @@ fun ScanScreen(navController: NavHostController,whs:String,idInventory:String,st
     )
 
     val warehouseViewModel: WarehouseViewModel = viewModel(
-        factory = WarehouseViewModel.WarehouseViewModelFactory("")
+        factory = WarehouseViewModel.WarehouseViewModelFactory("","",0)
     )
 
     val homeValue = homeViewModel.counting.collectAsState()
+    val dataObs = homeViewModel.data.collectAsState()
     val articleValue = itemsViewModel.article.collectAsState()
     val zebraValue = zebraViewModel.data.collectAsState()
     val warehouseValue = warehouseViewModel.location.collectAsState()
 
-    var binLocationText by remember { mutableStateOf("") }
+    val openDialog = remember { mutableStateOf(FlagDialog()) }
+    var flagModal = remember { mutableStateOf(FlagDialog()) }
 
     if(zebraValue.value.isNotEmpty()){
 
-        if(zebraValue.value.length>=2 && zebraValue.value[0]=='B'){
-            warehouseViewModel.getLocations(zebraValue.value,whs)
+        //si no contiene | puede ser un ubicacion
+        //si  no es  un numerico
+        if(!zebraValue.value.contains("|") && !isNumeric(zebraValue.value)){
+
+            Log.e("JEPICAME","ENTRA A UBICACION")
+            if(defaultLocation=="+"){
+                warehouseViewModel.getLocations(zebraValue.value,whs)
+            }
         }else{
-            binLocationText=""
-            itemsViewModel.getArticle(zebraValue.value)
+            itemsViewModel.getArticle(value=zebraValue.value,typeInventario=typeInventory)
         }
 
         zebraViewModel.setData("")
-    }else{
-        binLocationText=""
     }
 
     Scaffold(
         topBar = {
             TopBarTitleCamera(
                 title="Conteo de inventario",
-                status= "Abierto"
-                ,
+                status= "Abierto",
+                objType=Routes.Inventory.value, //100
                 permission=cameraPermissionState,
                 onClick={
-                    typeRead=it
+
+                    when(it){
+                        TypeReadSKU.CERRAR_FICHA->{
+                            openDialog.value=FlagDialog(status = true,flag="Close")
+                        }
+                        TypeReadSKU.REENVIAR_FICHA->{
+                            openDialog.value=FlagDialog(status = true,flag="Resend")
+                        }
+                        else->{
+                            typeRead=it
+                        }
+                    }
                 }
             )
         }
     ){
+
+        if(flagModal.value.status){
+            lockMessageScreen(flagModal.value.flag,close={
+                flagModal.value=FlagDialog()
+            })
+        }
+
+       when(homeValue.value.statusEvent){
+            ""->{}
+            "cargando"->{
+                lockScreen("Ejecutando...")
+            }
+            "ok"->{
+                navController.navigateUp()
+                homeViewModel.resetCountingState()
+            }
+            else->{
+                Toast.makeText(context,homeValue.value.statusEvent, Toast.LENGTH_SHORT).show()
+                homeViewModel.resetCountingState()
+            }
+        }
+
         when(articleValue.value.status){
             ""->{}
             "cargando"->{
-                CustomProgressDialog("Buscando articulo...")
+                if(articleValue.value.type==TypeCode.QR){
+                    CustomProgressDialog("Buscando articulo...")
+                }else{
+                    CustomProgressDialog("Buscando SSCC...")
+                }
+            }
+            "locked"->{
+                //este producto tiene la presentación bloqueada
+                 flagModal.value = FlagDialog(true,"La presentación de este artículo esta bloqueado.")
+                 itemsViewModel.resetArticleStatus()
             }
             "ok"->{
-                val body:Counting= Counting()
+                val countings:List<Counting> = articleValue.value.items.map {
 
-                body.itemCode=articleValue.value.article.ItemCode
-                body.itemName=articleValue.value.article.ItemName
-                body.lote=articleValue.value.lote
-                body.location = ""+Calendar.getInstance().time
+                    Counting(
+                        sscc = articleValue.value.nameSscc,
+                        interfaz = typeRead.toString(),
+                        itemCode=it.item.ItemCode,
+                        itemName=it.item.ItemName,
+                        lote=it.lote,
+                        location = if(dataObs.value.counting.isNotEmpty()){dataObs.value.counting[0].location}else{""},
+                        quantity=if(dataObs.value.counting.isNotEmpty() && dataObs.value.counting[0].quantity>0.0 ){dataObs.value.counting[0].quantity}else{it.quantity}, //if(it.quantity>1.0){ it.quantity}else{dataObs.value.counting[0].quantity},
+                        Realm_Id=it.expireDate
+                    )
+                }
 
-                body.quantity=1.0
+                homeViewModel.writeData(body=
+                    CustomCounting(
+                        counting = countings,
+                        typeCode = articleValue.value.type,
+                        defaultLocationSSCC=articleValue.value.defaultLocation
+                    )
+                )
 
-                homeViewModel.insertData(body)
                 itemsViewModel.resetArticleStatus()
             }
             "vacio"->{
@@ -144,15 +205,44 @@ fun ScanScreen(navController: NavHostController,whs:String,idInventory:String,st
         }
 
         when(warehouseValue.value.status){
-            ""->{
-                binLocationText=""
-            }
+            ""->{}
             "cargando"->{
                 CustomProgressDialog("Buscando ubicación...")
             }
-            "ok"->{
-                binLocationText=warehouseValue.value.location.BinCode
-                //binLocationText=" "+Calendar.getInstance().time
+            "ok"-> {
+                var tempp: List<Counting> = emptyList()
+
+                if(dataObs.value.counting.isNullOrEmpty()){
+                    tempp= listOf(
+                        Counting(
+                            location = warehouseValue.value.location.BinCode
+                        )
+                    )
+                }else{
+                    tempp = dataObs.value.counting.map { counting ->
+
+                        //dataObs.value.
+                        Counting(
+                            interfaz=typeRead.toString(),
+                            sscc=counting.sscc,
+                            itemCode = counting.itemCode,
+                            itemName = counting.itemName,
+                            lote = counting.lote,
+                            quantity = counting.quantity,
+                            location = warehouseValue.value.location.BinCode,
+                            Realm_Id = counting.Realm_Id
+                        )
+                    }
+                }
+
+                homeViewModel.writeData(body=
+                    CustomCounting(
+                        counting = tempp,
+                        typeCode = dataObs.value.typeCode, //articleValue.value.type,
+                        defaultLocationSSCC = articleValue.value.defaultLocation
+                    )
+                )
+
                 warehouseViewModel.resetLocationStatus()
             }
             "vacio"->{
@@ -160,13 +250,74 @@ fun ScanScreen(navController: NavHostController,whs:String,idInventory:String,st
                 warehouseViewModel.resetLocationStatus()
             }
             else->{
-                Toast.makeText(context, "Ocurrio un error:\n ${warehouseValue.value.status}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, warehouseValue.value.status, Toast.LENGTH_SHORT).show()
                 warehouseViewModel.resetLocationStatus()
             }
         }
 
+        if(dataObs.value.counting.isNotEmpty()){
+            CustomDialogVs2(
+                zebraViewModel=zebraViewModel,
+                defaultLocation=defaultLocation,
+                context=context,
+                customCounting=dataObs.value,
+                typeRead=typeRead,
+                newValue = {
+                    it.forEach { counting ->
+                        if(counting.Realm_Id=="Y"){
+                            homeViewModel.writeData(CustomCounting())
+                        }else{
+
+                            Log.e("JEPICAME","@@@=>"+counting.interfaz +"  {"+counting.lote + " }"+counting.location + "-"+counting.quantity)
+                            if(counting.quantity==0.0 && counting.location.isEmpty() && counting.itemName.isEmpty()){
+                                homeViewModel.writeData(CustomCounting())
+                            }else{
+                                if(counting.itemName.isEmpty() && counting.location.isNotEmpty()){
+
+                                    counting.quantity=0.0
+                                    counting.itemCode="0000000"
+                                    counting.itemName="UBICACIÓN VACIA"
+
+                                    homeViewModel.insertData(counting)
+                                    homeViewModel.writeData(CustomCounting())
+
+                                }else{
+                                    if(counting.quantity>0.0 && counting.location.isNotEmpty()){
+                                        homeViewModel.insertData(counting)
+                                        homeViewModel.writeData(CustomCounting())
+                                    }
+                                }
+                            }
+
+                            ///////////////////////
+                        }
+                    }
+                }
+            )
+        }
+
+        if(openDialog.value.status){
+            CustomDialogResendOrClose(
+                title="Conteo de inventario",
+                flag=openDialog.value.flag,
+                openDialog={ response ->
+                    if(response){
+                        if(openDialog.value.flag=="Close"){
+                            homeViewModel.updateStatusClose()
+                        }else if(openDialog.value.flag=="Resend"){
+                            homeViewModel.resendToSap()
+                        }
+                    }
+                    openDialog.value=FlagDialog(false)
+                }
+            )
+        }
+
         divContainer(
-            binLocation=binLocationText,
+            defaultLocation=defaultLocation,
+            zebraViewModel=zebraViewModel,
+            binLocation=if(dataObs.value.counting.isNullOrEmpty()){""}else{dataObs.value.counting[0].location},
+           // binLocation=binLocationText,
             status=status,
             whs=whs,
             context = context,
@@ -181,7 +332,7 @@ fun ScanScreen(navController: NavHostController,whs:String,idInventory:String,st
 }
 
 @Composable
-private fun divContainer(binLocation:String, status:String, whs:String, context:Context, typeRead:TypeReadSKU, counting: CountingResponse=CountingResponse(), homeViewModel: CountViewModel, itemsViewModel: ItemsViewModel, warehouseViewModel:WarehouseViewModel){
+private fun divContainer(defaultLocation:String,zebraViewModel:ZebraViewModel,binLocation:String, status:String, whs:String, context:Context, typeRead:TypeReadSKU, counting: CountingResponse=CountingResponse(), homeViewModel: CountViewModel, itemsViewModel: ItemsViewModel, warehouseViewModel:WarehouseViewModel){
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier=Modifier.fillMaxSize()
@@ -206,6 +357,33 @@ private fun divContainer(binLocation:String, status:String, whs:String, context:
                 Text(text ="Almacen")
                 Text(text = "$whs ",color=Color.Gray)
             }
+
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier=Modifier.fillMaxWidth()
+            ) {
+                Text(text ="Ubicación ")
+
+                when(defaultLocation){
+                    "-"->{
+                        Text(text = "No controlada",color=Color.Gray)
+                    }
+                    "+"->{
+                        Text(text = "Multiple",color=Color.Gray)
+                    }
+                    else->{
+                        Text(text = "$defaultLocation",color=Color.Gray)
+                    }
+                }
+            }
+
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier=Modifier.fillMaxWidth()
+            ) {
+                Text(text ="Estado")
+                Text(text = "$status ",color=Color.Gray)
+            }
         }
 
         if(status=="Abierto"){
@@ -213,10 +391,8 @@ private fun divContainer(binLocation:String, status:String, whs:String, context:
             when(typeRead){
                 TypeReadSKU.CAMERA->{
                     CameraForm(
-                        whs=whs,
-                        calledFor=CallFor.Article,
+                        zebraViewModel=zebraViewModel,
                         context = context,
-                        itemsViewModel= itemsViewModel,
                         cameraProviderFuture=cameraProviderFuture,
                         cameraProvider=cameraProvider
                     )
@@ -227,8 +403,8 @@ private fun divContainer(binLocation:String, status:String, whs:String, context:
                     Divider()
 
                     formHandheld(
-                        onPress={
-                            itemsViewModel.getArticle(it)
+                        onPress={ payloadX ->
+                            itemsViewModel.getArticle(payloadX)
                         }
                     )
 
@@ -249,6 +425,7 @@ private fun divContainer(binLocation:String, status:String, whs:String, context:
                             .align(Alignment.End)
                     )
                 }
+                else->{}
             }
         }else{
             Text(
@@ -269,9 +446,10 @@ private fun divContainer(binLocation:String, status:String, whs:String, context:
             }
             "ok-data"->{
                 dataad(
-                    whs=whs,
+                    //whs=whs,
                     warehouseViewModel=warehouseViewModel,
                     context=context,
+                    zebraViewModel=zebraViewModel,
                     typeRead=typeRead,
                     binLocation=binLocation,
                     status=status,
@@ -341,7 +519,7 @@ private fun formHandheld(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun dataad(whs:String,warehouseViewModel:WarehouseViewModel,context:Context,typeRead:TypeReadSKU ,binLocation:String,status:String,listBody:List<Counting> = emptyList(),onChangeQuantity:(Counting)->Unit,onDeleteArticle:(ObjectId)->Unit){
+private fun dataad(warehouseViewModel:WarehouseViewModel,zebraViewModel:ZebraViewModel,context:Context,typeRead:TypeReadSKU ,binLocation:String,status:String,listBody:List<Counting> = emptyList(),onChangeQuantity:(Counting)->Unit,onDeleteArticle:(ObjectId)->Unit){
 
     val openDialog = remember { mutableStateOf("") }
 
@@ -365,66 +543,88 @@ private fun dataad(whs:String,warehouseViewModel:WarehouseViewModel,context:Cont
                     )
 
             ){
-                Row(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ){
-                    Column(
-                        Modifier
-                            .weight(0.75f)
-                            .padding(20.dp)
+                Column{
+                    Row(
+                        modifier = Modifier.fillMaxSize().background(if(line.itemCode=="0000000"){Color.Red.copy(0.5f)}else{Color.Unspecified}),
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ){
-                        var colorLocation=if(line.location.isNullOrEmpty()){Color.Red}else{Color.Unspecified}
-                        var colorLote=if(line.lote.isNullOrEmpty()){Color.Red}else{Color.Gray}
+                        Column(
+                            Modifier
+                                .weight(0.75f)
+                                .padding(20.dp)
+                        ){
+                            var colorLocation=if(line.location.isNullOrEmpty()){Color.Red}else{Color.Unspecified}
+                            var colorLote=if(line.lote.isNullOrEmpty()){Color.Red}else{Color.Gray}
 
-                        Text(
-                            text="Artículo ${line.itemCode} ",
-                            color=colorLocation
-                        )
-                        Text(
-                            text="${line.itemName} ",
-                            color=if(line.location.isNullOrEmpty()){Color.Red}else{Color.Gray},
-                            fontSize =13.sp
-                        )
+                            if(line.itemCode!="0000000"){
+                                Text(
+                                    text="Artículo ${line.itemCode} ",
+                                    color=colorLocation
+                                )
 
-                        Text(
-                            text=if(line.location.isNullOrEmpty()){"SIN UBICACIÓN"}else{"Ubicación ${line.location} "},
-                            color=colorLocation
-                        )
-                        Text(
-                            text=if(line.lote.isNullOrEmpty()){"SIN LOTE"}else{"Lote ${line.lote} "},
-                            color=colorLote
-                        )
-                    }
-
-                    Column(
-                        Modifier.weight(0.25f)
-                    ){
-                        Stepper(
-                            whs=whs,
-                            warehouseViewModel=warehouseViewModel,
-                            context=context,
-                            typeRead=typeRead,
-                            binLocation=binLocation,
-                            itemName=line.itemName,
-                            status=(status=="Abierto"),
-                            location=line.location,
-                            count=line.quantity,
-                            lote=line.lote,
-                            onCountChanged={
-
-                                val lineUpdate=Counting()
-                                lineUpdate._id=line._id
-                                lineUpdate.quantity = it.count
-                                lineUpdate.location = it.locationName
-                                lineUpdate.inventoryId = line.inventoryId
-                                lineUpdate.lote=it.lote
-
-                                onChangeQuantity(lineUpdate)
+                                Text(
+                                    text="${line.itemName} ",
+                                    color=if(line.location.isNullOrEmpty()){Color.Red}else{Color.Gray},
+                                    fontSize =13.sp
+                                )
                             }
-                        )
-                    }
 
+                            if(line.itemCode!="0000000"){
+                                if(line.location!="NO CONTROLA UBICACIÓN"){
+                                    Text(
+                                        text=if(line.location.isNullOrEmpty()){"SIN UBICACIÓN"}else{"Ubicación ${line.location} "},
+                                        color=colorLocation
+                                    )
+                                }
+                            }else{
+                                Text(
+                                    text=if(line.location.isNullOrEmpty()){"SIN UBICACIÓN"}else{"Ubicación ${line.location} esta vacia "},
+                                    color=colorLocation
+                                )
+                            }
+
+
+                            if(line.itemCode!="0000000"){
+                                Text(
+                                    text=if(line.lote.isNullOrEmpty()){"SIN LOTE"}else{"Lote ${line.lote} "},
+                                    color=colorLote
+                                )
+                            }
+                        }
+
+                        if(line.itemCode!="0000000") {
+                            Column(
+                                Modifier.weight(0.25f)
+                            ) {
+                                Stepper(
+                                    warehouseViewModel = warehouseViewModel,
+                                    context = context,
+                                    typeRead = typeRead,
+                                    zebraViewModel=zebraViewModel,
+                                    binLocation = binLocation,
+                                    itemName = line.itemName,
+                                    status = (status == "Abierto"),
+                                    location = line.location,
+                                    count = line.quantity,
+                                    //lote = line.lote,
+                                    onCountChanged = {
+
+                                        val lineUpdate = Counting()
+                                        lineUpdate._id = line._id
+                                        lineUpdate.quantity = it.count
+                                        lineUpdate.location = it.locationName
+                                        lineUpdate.inventoryId = line.inventoryId
+                                       // lineUpdate.lote = it.lote
+
+                                        onChangeQuantity(lineUpdate)
+                                    }
+                                )
+                            }
+                        }
+                    }
+                    if(line.sscc.isNotEmpty() ){
+                        Text(text="SSCC ${line.sscc}",modifier=Modifier.padding(start=20.dp,bottom=20.dp))
+                    }
                 }
             }
         }
@@ -443,27 +643,31 @@ private fun dataad(whs:String,warehouseViewModel:WarehouseViewModel,context:Cont
 }
 
 @Composable
-private fun Stepper(whs:String,context:Context,warehouseViewModel: WarehouseViewModel,typeRead:TypeReadSKU ,binLocation:String,itemName:String,status:Boolean,location:String?,count: Double,lote:String, onCountChanged: (UpdateLine) -> Unit) {
+private fun Stepper(context:Context,zebraViewModel:ZebraViewModel,warehouseViewModel: WarehouseViewModel,typeRead:TypeReadSKU ,binLocation:String,itemName:String,status:Boolean,location:String?,count: Double, onCountChanged: (UpdateLine) -> Unit) {
     var text by remember { mutableStateOf("$count") }
-    var textLote by remember { mutableStateOf(lote) }
     var visible by remember { mutableStateOf(false) }
 
     if(visible){
 
         CustomDialogChangeNumber(
-            whs=whs,
             context=context,
             warehouseViewModel=warehouseViewModel,
             typeRead=typeRead,
+            zebraViewModel=zebraViewModel,
             binLocation=binLocation,
             itemName=itemName,
             location=location,
             value=text,
-            valueLote = textLote,
+            //valueLote = textLote,
             newValue = {
 
-                if(it.count!=0.0){
+                if(itemName=="UBICACIÓN VACIA"){
+                    it.count=0.0
                     onCountChanged(it)
+                }else{
+                    if(it.count>=1.0){
+                        onCountChanged(it)
+                    }
                 }
 
                 visible=!visible
@@ -472,11 +676,11 @@ private fun Stepper(whs:String,context:Context,warehouseViewModel: WarehouseView
     }
 
     TextField(
-        modifier=Modifier.clickable {
+        /*modifier=Modifier.clickable {
             if(status){
                 visible=true
             }
-        },
+        },*/
         enabled=false,
         value = text,
         onValueChange = { text = it }
@@ -485,7 +689,7 @@ private fun Stepper(whs:String,context:Context,warehouseViewModel: WarehouseView
 }
 
 @Composable
-fun CameraForm(whs:String,calledFor:CallFor, context:Context, warehouseViewModel: WarehouseViewModel= WarehouseViewModel(""), itemsViewModel:ItemsViewModel=ItemsViewModel(""), cameraProviderFuture: ListenableFuture<ProcessCameraProvider>, cameraProvider: ProcessCameraProvider){
+fun CameraForm(zebraViewModel:ZebraViewModel,context:Context, cameraProviderFuture: ListenableFuture<ProcessCameraProvider>, cameraProvider: ProcessCameraProvider){
 
     var flash by remember { mutableStateOf(false) }
 
@@ -498,15 +702,7 @@ fun CameraForm(whs:String,calledFor:CallFor, context:Context, warehouseViewModel
             cameraProvider=cameraProvider,
             context=context,
             valueText = { textDecode ->
-
-                Log.e("JEPICAME","==>"+textDecode)
-
-                if(calledFor== CallFor.Article){
-                    itemsViewModel.getArticle(textDecode)
-
-                }else if(calledFor== CallFor.Location){
-                    warehouseViewModel.getLocations(textDecode,whs)
-                }
+                zebraViewModel.setData(textDecode)
             }
         )
 
@@ -550,7 +746,7 @@ private fun CameraPreview(
         modifier = Modifier
             .fillMaxWidth(1f)
             .fillMaxHeight(0.3f)
-            .padding(20.dp),
+            .padding(20.dp).clipToBounds(),
         update = { previewView ->
 
             val cameraSelector: CameraSelector = CameraSelector.Builder()

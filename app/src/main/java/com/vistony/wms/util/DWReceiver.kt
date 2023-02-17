@@ -9,8 +9,6 @@ import com.vistony.wms.ObservableObject
 class DWReceiver() : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
-
-        Log.e("JEPICAME","ñañañañ")
         ObservableObject.instance.updateValue(intent)
 
     }

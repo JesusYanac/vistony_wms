@@ -63,7 +63,12 @@ class TaskManagementViewModel: ViewModel() {
                                 .equalTo("ObjType", it.ObjType)
                                 .findFirst()
 
-                            list.add(TaskMngmtAndHeaderDoc(Task=it,Document=documentHeader!!))
+                            if(documentHeader==null){
+                                Log.e("JEPICAME","==>"+it._id)
+                                _task.value =  TaskManagementResponse(data=list,status = "La tarea no tiene un documento relacionado.")
+                            }else{
+                                list.add(TaskMngmtAndHeaderDoc(Task=it,Document=documentHeader!!))
+                            }
                         }
 
                         _task.value =  TaskManagementResponse(data=list,status = "ok")

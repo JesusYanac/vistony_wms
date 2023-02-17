@@ -3,11 +3,12 @@ package com.vistony.wms.util
 import com.vistony.wms.R
 
 sealed class Routes(val route: String,val title:String,val icon:Int,val value:Int) {
-    object Recuento : Routes("Recuento","Toma de inventario", R.drawable.ic_baseline_insert_drive_file_24,0)
-    object InventoryCounting : Routes("InventoryCounting/idInventory={idInventory}&whs={whs}&status={status}","Crear conteo", R.drawable.ic_baseline_insert_drive_file_24,0)
+    object InventoryCreate : Routes("Recuento","Toma de inventario", R.drawable.ic_baseline_insert_drive_file_24,0)
+    object InventoryDetail : Routes("InventoryCounting/idInventory={idInventory}&whs={whs}&status={status}&defaultLocation={defaultLocation}&typeInventory={typeInventory}","Crear conteo", R.drawable.ic_baseline_insert_drive_file_24,0)
+    object Inventory : Routes("ListInventory","Toma de inventario", R.drawable.ic_baseline_keyboard_24,100)
+
     object MasterArticle : Routes("MasterArticle","Maestro de artículos", R.drawable.ic_baseline_cloud_download_24,0)
     object MasterWarehouse : Routes("MasterWarehouse","Maestro de almacenes", R.drawable.ic_baseline_cloud_download_24,0)
-    object ListInventory : Routes("ListInventory","Historial de conteos", R.drawable.ic_baseline_keyboard_24,0)
     object TaskManager : Routes("TaskManager","Asignación de tareas ", R.drawable.ic_baseline_keyboard_24,0)
 
     object Merchandise  : Routes("Merchandise/objType={objType}","Transferencia ", R.drawable.ic_baseline_swipe_left_24,67)
@@ -35,8 +36,8 @@ val RoutesOptionDashboard = listOf(
     Routes.Recepcion,
     Routes.Almacenamiento,
     Routes.Slotting,
-    Routes.Recuento,
-    Routes.ListInventory,
+    //Routes.Recuento,
+    Routes.Inventory,
     Routes.ImprimirEtiqueta,
 )
 

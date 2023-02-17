@@ -6,10 +6,7 @@ import android.widget.Toast
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
@@ -22,7 +19,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -34,17 +30,13 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.toSize
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.vistony.wms.R
-import com.vistony.wms.enum_.TypeReadSKU
+import com.vistony.wms.num.TypeReadSKU
 import com.vistony.wms.model.*
 import com.vistony.wms.ui.theme.AzulVistony202
-import com.vistony.wms.ui.theme.ColorDestine
-import com.vistony.wms.ui.theme.ColorOrigin
 import com.vistony.wms.viewmodel.*
-import kotlin.math.abs
 
 @ExperimentalComposeUiApi
 @ExperimentalFoundationApi
@@ -56,6 +48,8 @@ fun SheetLayout(currentScreen: BottomSheetScreen,onCloseBottomSheet :()->Unit,sh
                 SelectWarehouseModal(context=currentScreen.context,selected=currentScreen.selected)
             is BottomSheetScreen.SelectTypeModal ->
                 SelectTypeModal(selected=currentScreen.selected)
+            is BottomSheetScreen.ShowMessageModal ->
+                ShowMessageModal(message =currentScreen.message )
             is BottomSheetScreen.SelectCountryModal ->
                 SelectCountryModal(selected=currentScreen.selected)
             is BottomSheetScreen.SelectWitOptionsModal ->
@@ -91,9 +85,10 @@ fun SheetLayout(currentScreen: BottomSheetScreen,onCloseBottomSheet :()->Unit,sh
 }
 
 sealed class BottomSheetScreen(){
-    class SelectWarehouseModal(val context: Context,val selected: (Warehouse) -> Unit) : BottomSheetScreen()
+    class SelectWarehouseModal(val context: Context,val selected: (WarehouseBinLocation) -> Unit) : BottomSheetScreen()
     class SelectWitOptionsModal(val title: String,val listOptions:List<Options>,val selected:(Options)->Unit) : BottomSheetScreen()
     class SelectTypeModal(val selected: (TypeInventario) -> Unit) : BottomSheetScreen()
+    class ShowMessageModal(val message:String) : BottomSheetScreen()
     class SelectCountryModal(val selected: (CountryLocation) -> Unit):BottomSheetScreen()
     class SelectOriginModal(val idHeader:String,val value:String="", val context: Context, val type:TypeReadSKU,
                             val selected: (StockTransferBodyPayload) -> Unit,val whsOrigin:String,val objType:Int):BottomSheetScreen()
@@ -237,15 +232,14 @@ fun SelectDestineModal(
         factory = SuggestionViewModel.SuggestionViewModelFactory()
     )
 
-    Log.e("JEPICAME","PALABRA "+value+"  size "+value.split("-").size)
-    //if(value.isNotEmpty() && value.split("-").size==1){
-
     if(value.isNotEmpty() && value.contains("|")){
 
         stockTransferBodyViewModel.getBodyAndSubBody(value)
 
-        if(objType==22){
-            suggestionViewModel.getSuggestionList("-",wareHouseDestine)
+        if(objType==22) {
+            suggestionViewModel.getSuggestionList("-", wareHouseDestine)
+        }else if(objType==1701){
+                //PICKING NO APLICA UBICACIONES DESTINO
         }else{
             suggestionViewModel.getSuggestionList("PICKING",wareHouseDestine)
         }
@@ -384,8 +378,15 @@ fun Rowasd(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             modifier= Modifier.fillMaxWidth()
                         ) {
-                            Text(text ="Almacén Dst.")
-                            Text(text = " ${wareHouseDestine}",color= Color.Gray)
+                            if(objType==1701){
+                                /*Text(text ="Proveedor")
+                                Text(text = " ${wareHouseOrigin}",color= Color.Gray)*/
+                            }else{
+                                Text(text ="Almacén Dst.")
+                                Text(text = " ${wareHouseDestine}",color= Color.Gray)
+                            }
+
+
                         }
 
                         Row(
@@ -406,28 +407,26 @@ fun Rowasd(
 
                         Divider()
 
-
-                        Log.e("JEPICMAR","ALGO APSA")
                         /////////////////////////////////////UBICACION SUGERIDA DESTINO/////////////////////////////////////
 
                         var destineLocation by remember { mutableStateOf(BinLocation()) }
                         Text("")
-                        Log.e("JEPICMAR","ALGO APSA")
 
-                        Text("Ubicación destino sugerida "+if(destineLocation.text.isNullOrEmpty()){""}else{"[${destineLocation.text}]"}, fontWeight = FontWeight.Bold)
-                        Text("")
+                        if(objType!=1701){ //ES DIFERENTE A PICKING
+                            Text("Ubicación destino sugerida "+if(destineLocation.text.isNullOrEmpty()){""}else{"[${destineLocation.text}]"}, fontWeight = FontWeight.Bold)
+                            Text("")
 
-                        xdd(
-                            stockTransferBandSRpsValue=stockTransferBandSRpsValue,
-                            suggestions=suggestionValue.value,
-                            value=if(destineLocation.text.isNotEmpty() || destineLocation.text!=value){value}else{""},
-                            onLoader = {
-                                Log.e("JEPICMAR","VALUE ES =>"+it.text)
-                                if(it.text!=destineLocation.text || value.split("-").size<3){
-                                    destineLocation=it
+                            xdd(
+                                stockTransferBandSRpsValue=stockTransferBandSRpsValue,
+                                suggestions=suggestionValue.value,
+                                value=if(destineLocation.text.isNotEmpty() || destineLocation.text!=value){value}else{""},
+                                onLoader = {
+                                    if(it.text!=destineLocation.text || value.split("-").size<3){
+                                        destineLocation=it
+                                    }
                                 }
-                            }
-                        )
+                            )
+                        }
 
                         FormLocationDestine(
                             quantityValidation=0.0,
@@ -441,16 +440,36 @@ fun Rowasd(
                                 if(locationOrigins.isEmpty()){
                                     Toast.makeText(context, "Stock Insuficiente", Toast.LENGTH_LONG).show()
                                 }else{
-                                    if(destineLocation.text.isNullOrEmpty()){
+                                    if(destineLocation.text.isNullOrEmpty() && objType!=1701){
                                         Toast.makeText(context, "Es necesario ingresar una ubicación destino", Toast.LENGTH_LONG).show()
                                     }else{
 
-                                        it.idBody=stockTransferBandSRpsValue.stockTransferBody._id
-                                        it.batch=stockTransferBandSRpsValue.stockTransferSubBody[0].Batch
-                                        it.origin=locationOrigins
-                                        it.destine=destineLocation
+                                        when(objType){
+                                            1701->{
+                                                if(stockTransferBandSRpsValue.stockTransferSubBody.sumOf{it.Quantity}==it.quantity){
+                                                    it.idBody=stockTransferBandSRpsValue.stockTransferBody._id
+                                                    it.batch=stockTransferBandSRpsValue.stockTransferSubBody[0].Batch
+                                                    it.origin=locationOrigins
+                                                    it.destine=destineLocation
+                                                    onSelect(it)
+                                                }else{
+                                                    Toast.makeText(context, "Es necesario que la cantidad ingresada sea igual a la cantidad solicitada.", Toast.LENGTH_LONG).show()
+                                                }
+                                            }
+                                            else->{
+                                                it.idBody=stockTransferBandSRpsValue.stockTransferBody._id
+                                                it.batch=stockTransferBandSRpsValue.stockTransferSubBody[0].Batch
+                                                it.origin=locationOrigins
+                                                it.destine=destineLocation
 
-                                        onSelect(it)
+                                                onSelect(it)
+                                            }
+                                        }
+
+
+
+
+
 
                                     }
                                 }
@@ -710,7 +729,11 @@ fun SelectTypescanModal(
     )
 
     val warehouseViewModel: WarehouseViewModel = viewModel(
-        factory = WarehouseViewModel.WarehouseViewModelFactory("")
+        factory = WarehouseViewModel.WarehouseViewModelFactory("",whsOrigin,objType)
+    )
+
+    val stockTransferBodyViewModel: StockTransferBodyViewModel = viewModel(
+        factory = StockTransferBodyViewModel.StockTransferBodyViewModelModelFactory(idHeader)
     )
 
     val qualityViewModel: QualityViewModel = viewModel(
@@ -726,11 +749,13 @@ fun SelectTypescanModal(
     qualityViewModel.getQuality(objType)
 
     ASJDHASJKD(
+        wareHouseOrigin=whsOrigin,
         idHeader=idHeader,
         context=context,
         qualityViewModel=qualityViewModel,
         itemsViewModel = itemsViewModel,
         warehouseViewModel=warehouseViewModel,
+        documentBodyVm=stockTransferBodyViewModel,
         type=type,
         objType=objType,
         onPress = {
@@ -743,7 +768,12 @@ fun SelectTypescanModal(
 
 @Composable
 private fun ASJDHASJKD(
-    idHeader:String,context: Context,itemsViewModel: ItemsViewModel,warehouseViewModel:WarehouseViewModel,
+    wareHouseOrigin:String,
+    idHeader:String,
+    context: Context,
+    itemsViewModel: ItemsViewModel,
+    warehouseViewModel:WarehouseViewModel,
+    documentBodyVm:StockTransferBodyViewModel,
                        qualityViewModel: QualityViewModel,
                        type:TypeReadSKU=TypeReadSKU.HANDHELD,
                        objType:Int,
@@ -753,10 +783,15 @@ private fun ASJDHASJKD(
     val articleValue = itemsViewModel.article.collectAsState()
     val warehouseValue = warehouseViewModel.location.collectAsState()
     val qualityValue = qualityViewModel.quality.collectAsState()
+    val documentBodyValue = documentBodyVm.documentBody.collectAsState()
+
+    if(articleValue.value.items[0].defaultBinLocation.isNotEmpty()){
+        warehouseViewModel.getLocations(articleValue.value.items[0].defaultBinLocation,wareHouseOrigin)
+    }
 
     var binLocation by remember { mutableStateOf(LocationResponse()) }
     var quality by remember { mutableStateOf(QualityControlResponse()) }
-    var itemResponse by remember { mutableStateOf(ItemsResponse()) }
+    var itemResponse by remember { mutableStateOf(ItemResponse()) }
 
     when(qualityValue.value.status){
         ""->{}
@@ -777,22 +812,44 @@ private fun ASJDHASJKD(
         }
     }
 
-    when(articleValue.value.status){
-        ""->{}
-        "cargando"->{
-            CustomProgressDialog("Buscando articulo...")
+    if(objType==22){
+        when(documentBodyValue.value.status){
+            ""->{}
+            "cargando"->{
+                CustomProgressDialog("Buscando articulo...")
+            }
+            "ok"->{
+                itemResponse=ItemResponse(Items(ItemName = documentBodyValue.value.body.ItemName, ItemCode = documentBodyValue.value.body.ItemCode))
+                documentBodyVm.resetDocumentBody()
+            }
+            "vacio"->{
+                Toast.makeText(context, "El código escaneado no se encuentra en el maestro de articulos", Toast.LENGTH_LONG).show()
+                documentBodyVm.resetDocumentBody()
+            }
+            else->{
+                Toast.makeText(context, "Ocurrio un error:\n ${articleValue.value.status}", Toast.LENGTH_LONG).show()
+                documentBodyVm.resetDocumentBody()
+            }
         }
-        "ok"->{
-            itemResponse=articleValue.value
-            itemsViewModel.resetArticleStatus()
-        }
-        "vacio"->{
-            Toast.makeText(context, "El código escaneado no se encuentra en el maestro de articulos", Toast.LENGTH_LONG).show()
-            //itemsViewModel.resetArticleStatus()
-        }
-        else->{
-            Toast.makeText(context, "Ocurrio un error:\n ${articleValue.value.status}", Toast.LENGTH_LONG).show()
-            //itemsViewModel.resetArticleStatus()
+    }
+    else{
+        when(articleValue.value.status){
+            ""->{}
+            "cargando"->{
+                CustomProgressDialog("Buscando articulo...")
+            }
+            "ok"->{
+                itemResponse=articleValue.value.items[0]
+                itemsViewModel.resetArticleStatus()
+            }
+            "vacio"->{
+                Toast.makeText(context, "El código escaneado no se encuentra en el maestro de articulos", Toast.LENGTH_LONG).show()
+                itemsViewModel.resetArticleStatus()
+            }
+            else->{
+                Toast.makeText(context, "Ocurrio un error:\n ${articleValue.value.status}", Toast.LENGTH_LONG).show()
+                itemsViewModel.resetArticleStatus()
+            }
         }
     }
 
@@ -817,9 +874,9 @@ private fun ASJDHASJKD(
     }
 
 
-    Column(modifier=Modifier.padding(top=20.dp, bottom = 10.dp)) {
+    Column(modifier=Modifier.padding(top=20.dp, bottom = 10.dp)){
         Text(
-            text = if(itemResponse.article.ItemName.isNullOrEmpty()){"Registrar artículo"}else{itemResponse.article.ItemName},
+            text = if(itemResponse.item.ItemName.isNullOrEmpty()){"Registrar artículo"}else{itemResponse.item.ItemName},
             color = Color.Gray,
             modifier = Modifier.padding(start = 20.dp, bottom = 10.dp,end=50.dp)
         )
@@ -852,12 +909,33 @@ private fun ASJDHASJKD(
                             objType=objType,
                             TopresponseLocationAndItem=ResponseLocationAndItem(locationResponse = binLocation,itemResponse=itemResponse),
                             onPress={
-                                onPress(it)
+
+                                /*if(objType==22){
+                                    if(articleValue.value.documentBody.TotalQuantity+it.Quantity>articleValue.value.documentBody.Quantity){
+                                        Toast.makeText(context, "La cantidad ingresada no puede ser mayor a la cantidad asignada en el documento.", Toast.LENGTH_LONG).show()
+                                    }else{
+                                        onPress(it)
+                                    }
+                                }else{*/
+
+                                    onPress(it)
+
+                                    itemResponse=ItemResponse(Items(ItemCode = "", ItemName = ""))
+                               // }
+
                             },onClosePressed={
+                                /*if(objType==22){
+                                    documentBodyVm.resetDocumentBody()
+                                }*/
+
                                 onClosePressed()
                             },
                             onSearch = {
-                                itemsViewModel.getArticle(it,idHeader)
+                                if(objType==22){
+                                    documentBodyVm.getArticleFromBody(it)
+                                }else{
+                                    itemsViewModel.getArticle(it,idHeader)
+                                }
                             }
                         )
 
@@ -865,6 +943,7 @@ private fun ASJDHASJKD(
 
 
                 }
+                else->{}
             }
         }
     }
@@ -884,7 +963,7 @@ private fun formHandheld(
 
     responseLocationAndItem=TopresponseLocationAndItem
 
-    var idArticle by    remember {mutableStateOf(responseLocationAndItem.itemResponse.article.ItemCode)}
+    var idArticle by    remember {mutableStateOf(responseLocationAndItem.itemResponse.item.ItemCode)}
     var textLote by   remember { mutableStateOf( responseLocationAndItem.itemResponse.lote)}
 
     var idLocation by    remember {mutableStateOf(responseLocationAndItem.locationResponse.location.AbsEntry )}
@@ -903,8 +982,8 @@ private fun formHandheld(
     idLocation = responseLocationAndItem.locationResponse.location.AbsEntry
     textLocation = responseLocationAndItem.locationResponse.location.BinCode
 
-    if(!responseLocationAndItem.itemResponse.article.ItemCode.isNullOrEmpty()){
-        idArticle =responseLocationAndItem.itemResponse.article.ItemCode
+    if(!responseLocationAndItem.itemResponse.item.ItemCode.isNullOrEmpty()){
+        idArticle =responseLocationAndItem.itemResponse.item.ItemCode
     }
 
     if(!responseLocationAndItem.itemResponse.lote.isNullOrEmpty()){
@@ -919,9 +998,9 @@ private fun formHandheld(
     }
 
     OutlinedTextField(
-        enabled= responseLocationAndItem.itemResponse.article.ItemCode.isNullOrEmpty(),
+        enabled= !responseLocationAndItem.itemResponse.item.ItemCode.isNullOrEmpty(),
         singleLine=true,
-        value = if(responseLocationAndItem.itemResponse.article.ItemCode.isNullOrEmpty()){idArticle}else{responseLocationAndItem.itemResponse.article.ItemCode},
+        value = if(responseLocationAndItem.itemResponse.item.ItemCode.isNullOrEmpty()){idArticle}else{responseLocationAndItem.itemResponse.item.ItemCode},
         onValueChange = {
             idArticle = it
         },
@@ -1029,13 +1108,13 @@ private fun formHandheld(
                     try{
                         if(quantity.toDouble()!=0.0){
 
-                            if(responseLocationAndItem.itemResponse.article.ItemCode.isNullOrEmpty()){
+                            if(responseLocationAndItem.itemResponse.item.ItemCode.isNullOrEmpty()){
                                 haveError="Es necesario buscar en el documento el artículo a ingresar"
                             }else{
                                 onPress(
                                     StockTransferBodyPayload(
-                                        ItemCode=responseLocationAndItem.itemResponse.article.ItemCode,
-                                        ItemName = responseLocationAndItem.itemResponse.article.ItemName,
+                                        ItemCode=responseLocationAndItem.itemResponse.item.ItemCode,
+                                        ItemName = responseLocationAndItem.itemResponse.item.ItemName,
                                         Batch = if(responseLocationAndItem.itemResponse.lote.isNullOrEmpty()){textLote}else{responseLocationAndItem.itemResponse.lote},
                                         LocationCode = ""+responseLocationAndItem.locationResponse.location.AbsEntry,
                                         LocationName = responseLocationAndItem.locationResponse.location.BinCode,
@@ -1044,15 +1123,15 @@ private fun formHandheld(
                                     )
                                 )
 
-                                Log.e("JEPICAME","=>se limpiara agregar antes "+responseLocationAndItem.itemResponse.article.ItemCode)
+                                Log.e("JEPICAME","=>se limpiara agregar antes "+responseLocationAndItem.itemResponse.item.ItemCode)
                                 responseLocationAndItem=ResponseLocationAndItem(
                                     locationResponse = LocationResponse(),
-                                    itemResponse = ItemsResponse(
-                                        article = Items(ItemCode="")
+                                    itemResponse = ItemResponse(
+                                        item = Items(ItemCode="")
                                     )
                                 )
 
-                                Log.e("JEPICAME","=>se limpiara agregar dsp "+responseLocationAndItem.itemResponse.article.ItemCode)
+                                Log.e("JEPICAME","=>se limpiara agregar dsp "+responseLocationAndItem.itemResponse.item.ItemCode)
                             }
                         }else{
                             haveError="La cantidad debe ser mayor o igual a 1.00 "
@@ -1197,7 +1276,7 @@ fun SelectCountryModal(selected: (CountryLocation) -> Unit){
 }
 
 @Composable
-fun SelectWarehouseModal(context: Context, selected: (Warehouse) -> Unit){
+fun SelectWarehouseModal(context: Context, selected: (WarehouseBinLocation) -> Unit){
 
     val werehouseViewModel: WarehouseViewModel = viewModel(
         factory = WarehouseViewModel.WarehouseViewModelFactory ("init")
@@ -1211,8 +1290,6 @@ fun SelectWarehouseModal(context: Context, selected: (Warehouse) -> Unit){
             CustomProgressDialog("listando almacenes...")
         }
         "ok"->{
-
-
             Column(modifier=Modifier.padding(top=20.dp, bottom = 10.dp)) {
                 Text(
                     text = "Selecciona tu almacén",
@@ -1227,24 +1304,34 @@ fun SelectWarehouseModal(context: Context, selected: (Warehouse) -> Unit){
 
                 LazyColumn(
                     contentPadding = PaddingValues(16.dp)
-                ) {
-                    itemsIndexed(warehouseValue.value.warehouse) { _, line ->
+                ){
+                    itemsIndexed(warehouseValue.value.warehouse) { index, line ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable(onClick = {
-                                    selected(line)
+                                    selected(
+                                        WarehouseBinLocation(
+                                            warehouse = line,
+                                            defaultLocation = warehouseValue.value.defaultLocation[index]
+                                        )
+                                    )
                                 })
-                                .height(55.dp)
+                                //.height(55.dp)
                                 .padding(start = 25.dp), verticalAlignment = Alignment.CenterVertically
-                        ) {
+                        ){
                             Icon(painter = painterResource(id = R.drawable.ic_baseline_domain_24), contentDescription = null, tint = AzulVistony202)
                             Spacer(modifier = Modifier.width(10.dp))
                             Column{
                                 Text(text = line.WarehouseCode, color = Color.DarkGray)
                                 Text(text = line.WarehouseName, color = Color.DarkGray)
+                                if(warehouseValue.value.defaultLocation[index]!="-" && warehouseValue.value.defaultLocation[index]!="+"){
+                                    Text(text =warehouseValue.value.defaultLocation[index], color = Color.Gray)
+                                }else{
+                                    Text(text= if(line.WmsLocation!="Y"){"No controla ubicaciones"}else{"Controla Ubicaciones"}, color = Color.Gray)
+                                }
+                                Text("")
                             }
-
                         }
                     }
                 }
@@ -1326,6 +1413,25 @@ fun SelectTypeModal(selected: (TypeInventario) -> Unit){
 
     }
 }
+
+@Composable
+fun ShowMessageModal(message:String){
+    Column(modifier=Modifier.padding(top=20.dp, bottom = 10.dp)) {
+        Text(
+            text = " Ocurrio un error",
+            color = Color.Gray,
+            modifier = Modifier.padding(start = 20.dp, bottom = 10.dp, end = 50.dp)
+        )
+
+        Divider()
+
+        Column(modifier= Modifier
+            .padding(20.dp)) {
+            Text(message)
+        }
+    }
+}
+
 
 @Composable
 fun BottomSheetWithCloseDialog(onClosePressed: () -> Unit,closeButtonColor: Color = Color.White,showIconClose:Boolean,content: @Composable() () -> Unit){

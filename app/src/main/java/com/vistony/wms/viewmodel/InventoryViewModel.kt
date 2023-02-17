@@ -2,10 +2,7 @@ package com.vistony.wms.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.vistony.wms.model.Counting
-import com.vistony.wms.model.DocumentInventory
-import com.vistony.wms.model.Inventory
-import com.vistony.wms.model.InventoryResponse
+import com.vistony.wms.model.*
 import io.realm.Realm
 import io.realm.RealmResults
 import io.realm.Sort
@@ -42,7 +39,7 @@ class InventoryViewModel(): ViewModel() {
         }
     }
 
-    fun addInventoryHeader(inventory:Inventory){
+    fun addInventoryHeader(payload: InventoryPayload){
 
         val customUserData : Document? = realm.syncSession.user.customData
         val employeeId=customUserData?.getInteger("EmployeeId")?:0
@@ -53,20 +50,21 @@ class InventoryViewModel(): ViewModel() {
 
                 val obj = r.createObject(Inventory::class.java, ObjectId().toHexString())
 
-                obj.name=inventory.name
-                obj.wareHouse=inventory.wareHouse
+                obj.name=payload.inventory.name
+                obj.wareHouse=payload.inventory.wareHouse
                 obj.Realm_Id=realm.syncSession.user.id
-                obj.status=inventory.status
-                obj.type=inventory.type
+                obj.status=payload.inventory.status
+                obj.type=payload.inventory.type
                 obj.owner=employeeId
+                obj.defaultLocation=payload.defaultLocation
                 obj.country=country
 
                 r.insert(obj)
 
                 val recovery=r.copyToRealmOrUpdate(obj)
 
-                if(recovery!=null ){
-                    _idInventoryHeader.value=DocumentInventory(recovery._id.toHexString(),recovery.wareHouse)
+                if(recovery!=null){
+                    _idInventoryHeader.value=DocumentInventory(idInventoryHeader=recovery._id.toHexString(),idWhs=recovery.wareHouse,defaultLocation=payload.defaultLocation,type=payload.inventory.type)
                 }else{
                     _idInventoryHeader.value=DocumentInventory("error")
                 }

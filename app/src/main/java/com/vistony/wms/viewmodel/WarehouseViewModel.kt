@@ -9,21 +9,17 @@ import io.realm.RealmResults
 import io.realm.Sort
 import io.realm.kotlin.syncSession
 import io.realm.mongodb.sync.SyncConfiguration
-import io.sentry.Sentry
-import io.sentry.util.StringUtils
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import org.bson.Document
-import org.bson.types.ObjectId
-import java.nio.charset.Charset
 import java.util.*
 
-class WarehouseViewModel(flag:String): ViewModel() {
+class WarehouseViewModel(flag:String,warehouse:String="",objType:Int=0): ViewModel() {
 
     private var realm: Realm = Realm.getInstance(Realm.getDefaultConfiguration())
     private val customUserData: Document? = realm.syncSession.user.customData
 
-    private var configCountry = SyncConfiguration
+    private var configBranch = SyncConfiguration
         .Builder(realm.syncSession.user, customUserData?.getString("Branch") ?: "")
         .build()
 
@@ -33,17 +29,20 @@ class WarehouseViewModel(flag:String): ViewModel() {
     private val _location = MutableStateFlow(LocationResponse())
     val location: StateFlow<LocationResponse> get() = _location
 
-
-    class WarehouseViewModelFactory(private var flag: String) : ViewModelProvider.Factory {
+    class WarehouseViewModelFactory(private var flag: String,private var wareHouse:String="",private var objType:Int=0) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            return WarehouseViewModel(flag) as T
+            return WarehouseViewModel(flag, wareHouse,objType ) as T
         }
     }
 
-    init {
+    init{
         if (flag == "init") {
             getMasterDataWarehouse()
+        }
+
+        if(warehouse!="" && objType!=22){
+            getDefaultLocations(warehouse)
         }
     }
 
@@ -61,18 +60,19 @@ class WarehouseViewModel(flag:String): ViewModel() {
         Log.e("JEPICAME","Cargando")
         _almacenes.value = WarehouseResponse(warehouse = emptyList(), status = "cargando")
 
-        Realm.getInstanceAsync(configCountry, object : Realm.Callback() {
+        Realm.getInstanceAsync(configBranch, object : Realm.Callback() {
             override fun onSuccess(r: Realm) {
-                val almacenes = r.where(Warehouse::class.java)
+                val almacenes = r.where(Warehouses::class.java)
                     .sort("WarehouseName", Sort.ASCENDING).findAll()
 
-                almacenes?.let { data: RealmResults<Warehouse> ->
+                almacenes?.let { data: RealmResults<Warehouses> ->
 
-                    val temp: List<Warehouse> = data.subList(0, data.size)
+                    val temp: List<Warehouses> = data.subList(0, data.size)
 
                     if (temp.isNotEmpty()) {
 
                         val numLocation: MutableList<Int> = mutableListOf()
+                        val defaultLocation: MutableList<String> = mutableListOf()
 
                         temp.forEach{ i->
                             val whsx = r.where(BinLocations::class.java)
@@ -81,20 +81,31 @@ class WarehouseViewModel(flag:String): ViewModel() {
 
                             whsx?.let { datax: RealmResults<BinLocations> ->
                                 val temp2: List<BinLocations> = datax.subList(0, datax.size)
-                                numLocation.add(temp2.size)
+
+                                if(i.WmsLocation == "N" ){
+                                    defaultLocation.add("-")
+                                    numLocation.add(0)
+                                }else{
+                                    if(temp2.size==1){
+                                        defaultLocation.add(temp2[0].BinCode)
+                                    }else if(temp2.size>1){
+                                        defaultLocation.add("+")
+                                    }else{
+                                        defaultLocation.add("-")
+                                    }
+
+                                    numLocation.add(temp2.size)
+                                }
                             }
 
                         }
-                        _almacenes.value = WarehouseResponse(numLocation=numLocation,warehouse = temp, status = "ok",fechaDescarga = Date())
+                        _almacenes.value = WarehouseResponse(defaultLocation=defaultLocation,numLocation=numLocation,warehouse = temp, status = "ok",fechaDescarga = Date())
                     } else {
                         _almacenes.value =
                             WarehouseResponse(warehouse = emptyList(), status = "vacio", fechaDescarga = Date())
                     }
                 }
-
-                //r.close()
             }
-
             override fun onError(exception: Throwable) {
                 _almacenes.value = WarehouseResponse(warehouse = emptyList(), status = " ${exception.message}",fechaDescarga = Date())
             }
@@ -105,28 +116,59 @@ class WarehouseViewModel(flag:String): ViewModel() {
 
         _location.value= LocationResponse(location= BinLocations(),status="cargando")
 
-        //val convertText=AbsEntry.replace("B", "")
-
-        Realm.getInstanceAsync(configCountry, object : Realm.Callback() {
+        Realm.getInstanceAsync(configBranch, object : Realm.Callback() {
             override fun onSuccess(r: Realm) {
 
-                val almacen = r.where(Warehouse::class.java)
+                val almacen = r.where(Warehouses::class.java)
                     .equalTo("WarehouseCode",whsOrigin)
                     .findFirst()
 
-                val location = r.where(BinLocations::class.java)
-                    .equalTo("BinCode",AbsEntry)
-                    .equalTo("Warehouse",whsOrigin)
+                if(almacen!=null){
+                    val location = r.where(BinLocations::class.java)
+                        .equalTo("BinCode",AbsEntry)
+                        .equalTo("Warehouse",whsOrigin)
+                        .findFirst()
+
+                    if (location != null) {
+                        _location.value= LocationResponse(location=location,status="ok", EnableBinLocations = almacen.EnableBinLocations                                                                        )
+                    }else{
+                        _location.value=LocationResponse(location=BinLocations(),status="La ubicación ${AbsEntry}, no se encuentra como dato maestro o no pertenece al almacén ${whsOrigin}.")
+                    }
+                }else{
+                    _location.value=LocationResponse(location=BinLocations(),status="El almacén ${whsOrigin}, no se encuentra como dato maestro.")
+                }
+            }
+            override fun onError(exception: Throwable) {
+                _location.value= LocationResponse(location=BinLocations(),status=" ${exception.message}")
+            }
+        })
+    }
+
+    fun getDefaultLocations(whsOrigin:String){
+
+        _location.value= LocationResponse(location= BinLocations(),status="cargando")
+
+        Realm.getInstanceAsync(configBranch, object : Realm.Callback() {
+            override fun onSuccess(r: Realm) {
+
+                val almacen = r.where(Warehouses::class.java)
+                    .equalTo("WarehouseCode",whsOrigin)
                     .findFirst()
 
+                if(almacen!=null){
+                    val location = r.where(BinLocations::class.java)
+                        .equalTo("AbsEntry",almacen.DefaultBin)
+                        .equalTo("Warehouse",whsOrigin)
+                        .findFirst()
 
-                if (location != null && almacen !=null) {
-
-                    _location.value= LocationResponse(location=location,status="ok", EnableBinLocations = almacen.EnableBinLocations                                                                        )
+                    if (location != null) {
+                        _location.value= LocationResponse(location=location,status="ok", EnableBinLocations = almacen.EnableBinLocations)
+                    }/*else{
+                        _location.value=LocationResponse(location=BinLocations(),status="El almacén ${whsOrigin}, no cuenta con ubicaciones por defecto.")
+                    }*/
                 }else{
-                    _location.value=LocationResponse(location=BinLocations(),status="vacio")
+                    _location.value=LocationResponse(location=BinLocations(),status="El almacén ${whsOrigin}, no se encuentra como dato maestro.")
                 }
-
             }
             override fun onError(exception: Throwable) {
                 _location.value= LocationResponse(location=BinLocations(),status=" ${exception.message}")

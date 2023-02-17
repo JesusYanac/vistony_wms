@@ -2,8 +2,8 @@
 
 package com.vistony.wms.screen
 
+import android.annotation.SuppressLint
 import android.content.Context
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
@@ -33,23 +33,19 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.vistony.wms.R
 import com.vistony.wms.component.*
-import com.vistony.wms.enum_.OptionsDowns
+import com.vistony.wms.num.OptionsDowns
 import com.vistony.wms.model.TaskManagement
 import com.vistony.wms.model.TaskMngmtAndHeaderDoc
 import com.vistony.wms.model.TaskMngmtDataForm
 import com.vistony.wms.ui.theme.AzulVistony201
 import com.vistony.wms.ui.theme.RedVistony202
-import com.vistony.wms.util.Routes
 import com.vistony.wms.viewmodel.StockTransferHeaderViewModel
 import com.vistony.wms.viewmodel.TaskManagementViewModel
-import com.vistony.wms.viewmodel.WarehouseViewModel
 import kotlinx.coroutines.launch
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.util.*
 
+@SuppressLint("UnusedMaterialScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterialApi::class, ExperimentalComposeUiApi::class,
     ExperimentalFoundationApi::class
 )
@@ -118,40 +114,39 @@ fun TaskManagerScreen(navController: NavHostController, context: Context) {
                         navController.navigate("MerchandiseMovementDetail/idMerchandise=${it.Document._id}&status=${it.Document.Status}&whs=${URLEncoder.encode(it.Document.WarehouseOrigin, StandardCharsets.UTF_8.toString())}&whsDestine=${URLEncoder.encode(it.Document.WarehouseDestine, StandardCharsets.UTF_8.toString())}&objType=${it.Task.ObjType}")
                         closeSheet()
                     }else{
-                        stockTransferHeaderViewModel.getMerchandise(it.Task,
-                            TaskMngmtDataForm(
-                                serie = it.Document.SerieDocument,
-                                correlativo = it.Document.CorrelativoDocument,
-                                comentario = it.Document.Comment
-                            ))
-
-                       /* stockTransferHeaderViewModel.onFormChanged(
-                            TaskMngmtDataForm(
-                                serie = it.Document.SerieDocument,
-                                correlativo = it.Document.CorrelativoDocument,
-                                comentario = it.Document.Comment
-                            )
-                        )*/
-
-                        openSheet(
-                            BottomSheetScreen.SelectFormHeaderTask(
-                                payloadForm=TaskMngmtDataForm(
+                        if(it.Task.ObjType==1701){ //PICKING
+                            navController.navigate("MerchandiseMovementDetail/idMerchandise=${it.Document._id}&status=${it.Document.Status}&whs=${it.Document.WarehouseOrigin}&whsDestine=NULL&objType=${it.Task.ObjType}")
+                            closeSheet()
+                        }else{
+                            stockTransferHeaderViewModel.getMerchandise(it.Task,
+                                TaskMngmtDataForm(
                                     serie = it.Document.SerieDocument,
                                     correlativo = it.Document.CorrelativoDocument,
                                     comentario = it.Document.Comment
-                                ),
-                                stockTransferHeaderViewModel=stockTransferHeaderViewModel,
-                                taskManagement=it,
-                                context = context,
-                                onSendBody = {
-                                    navController.navigate("MerchandiseMovementDetail/idMerchandise=${it.id}&status=${it.status}&whs=${URLEncoder.encode(it.cardCode, StandardCharsets.UTF_8.toString())}&whsDestine=${URLEncoder.encode(it.cardName, StandardCharsets.UTF_8.toString())}&objType=${it.objType}")
-                                    closeSheet()
-                                }
+                                )
                             )
-                        )
+
+                            openSheet(
+                                BottomSheetScreen.SelectFormHeaderTask(
+                                    payloadForm=TaskMngmtDataForm(
+                                        serie = it.Document.SerieDocument,
+                                        correlativo = it.Document.CorrelativoDocument,
+                                        comentario = it.Document.Comment
+                                    ),
+                                    stockTransferHeaderViewModel=stockTransferHeaderViewModel,
+                                    taskManagement=it,
+                                    context = context,
+                                    onSendBody = {
+                                        navController.navigate("MerchandiseMovementDetail/idMerchandise=${it.id}&status=${it.status}&whs=${URLEncoder.encode(it.cardCode, StandardCharsets.UTF_8.toString())}&whsDestine=${URLEncoder.encode(it.cardName, StandardCharsets.UTF_8.toString())}&objType=${it.objType}")
+                                        closeSheet()
+                                    }
+                                )
+                            )
+                        }
                     }
                 }
             )
+
         }
     }
 
@@ -181,7 +176,6 @@ private fun body(taskManagementViewModel: TaskManagementViewModel,context: Conte
 
                 //Text(text = "${inventoryValue.value.ownerName } ",color= Color.Gray)
             }
-
         }
         items(taskValue.value.data){ data ->
 

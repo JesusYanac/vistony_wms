@@ -1,5 +1,6 @@
 package com.vistony.wms.screen
 
+import android.annotation.SuppressLint
 import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -17,14 +18,15 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.vistony.wms.component.TopBar
-import com.vistony.wms.model.Warehouse
+import com.vistony.wms.model.Warehouses
 import com.vistony.wms.viewmodel.WarehouseViewModel
 
+@SuppressLint("UnusedMaterialScaffoldPaddingParameter")
 @Composable
 fun WarehouseScreen(navController: NavHostController){
 
     val warehouseViewModel: WarehouseViewModel = viewModel(
-        factory = WarehouseViewModel.WarehouseViewModelFactory("init")
+        factory = WarehouseViewModel.WarehouseViewModelFactory("init","",0)
     )
 
     val warehouseValue = warehouseViewModel.almacenes.collectAsState()
@@ -64,7 +66,7 @@ fun WarehouseScreen(navController: NavHostController){
 }
 
 @Composable
-private fun formWhs(warehouse: Warehouse,numLocation:Int){
+private fun formWhs(warehouse: Warehouses,numLocation:Int){
     Card(
         elevation = 4.dp,
         modifier=Modifier.padding(10.dp).fillMaxWidth()

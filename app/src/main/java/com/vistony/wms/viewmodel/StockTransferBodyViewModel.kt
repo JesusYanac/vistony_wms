@@ -31,6 +31,9 @@ class StockTransferBodyViewModel(idMerchandise:String): ViewModel() {
     private val _merchandiseBody = MutableStateFlow(StockTransferBodyResponse())
     val merchandiseBody: StateFlow<StockTransferBodyResponse> get() = _merchandiseBody
 
+    private val _documentBody = MutableStateFlow(StockTransferBodyAndSubBody())
+    val documentBody: StateFlow<StockTransferBodyAndSubBody> get() = _documentBody
+
     private val _stockTransferBodyAndSubBodyResponse = MutableStateFlow(StockTransferBodyAndSubBodyResponse())
     val stockTransferBodyAndSubBodyResponse: StateFlow<StockTransferBodyAndSubBodyResponse> get() = _stockTransferBodyAndSubBodyResponse
 
@@ -49,6 +52,10 @@ class StockTransferBodyViewModel(idMerchandise:String): ViewModel() {
 
     fun resetDestineState(){
         _destine.value= ""
+    }
+
+    fun resetDocumentBody(){
+        _documentBody.value=StockTransferBodyAndSubBody(body= StockTransferBody(),subBody=emptyList(),status="")
     }
 
     fun resetBodyAndSubBodyState(){
@@ -108,7 +115,6 @@ class StockTransferBodyViewModel(idMerchandise:String): ViewModel() {
             }
         })
     }
-
 
     fun addDestine(stockTransferPayloadVal:StockTransferPayloadVal){
         _destine.value="cargando"
@@ -237,7 +243,58 @@ class StockTransferBodyViewModel(idMerchandise:String): ViewModel() {
 
     }
 
-    fun insertData(body: StockTransferBodyPayload){
+    fun getArticleFromBody(value:String){
+
+        _documentBody.value=StockTransferBodyAndSubBody(body= StockTransferBody(),subBody=emptyList(),status="cargando")
+
+        val count:Int = value.split("|").size
+
+        var lote:String = ""
+        var itemCodeNew:String = ""
+        var quantity:Double = 1.0
+
+        when(count){
+            0->{}
+            1->{
+                itemCodeNew=value.split("|")[0]
+            }
+            2->{
+                itemCodeNew=value.split("|")[0]
+                lote=value.split("|")[1]
+            }else->{
+                itemCodeNew=value.split("|")[0]
+                lote=value.split("|")[1]
+                quantity = try{
+                    value.split("|")[2].toDouble()
+                }catch(e:Exception){
+                    1.0
+                }
+            }
+        }
+
+        Realm.getInstanceAsync(realm.configuration, object : Realm.Callback() {
+            override fun onSuccess(r: Realm) {
+
+                val documentBody = r.where(StockTransferBody::class.java)
+                    .equalTo("_StockTransferHeader", ObjectId(idMerchandise))
+                    .equalTo("ItemCode",itemCodeNew)
+                    .findFirst()
+
+                if(documentBody!=null){
+                    _documentBody.value=StockTransferBodyAndSubBody(body= documentBody,subBody=emptyList(),status="ok")
+                }else{
+                    _documentBody.value=StockTransferBodyAndSubBody(body= StockTransferBody(),subBody=emptyList(),status="El artículo $itemCodeNew, no existe en el documento actual.")
+                }
+            }
+            override fun onError(exception: Throwable) {
+                _documentBody.value=StockTransferBodyAndSubBody(body= StockTransferBody(),subBody=emptyList(),status=" ${exception.message}")
+            }
+        })
+    }
+
+    fun insertData(body: StockTransferBodyPayload,objType:Int){
+
+        Log.e("JEPICAME","INSERTAR DATAAA")
 
         _merchandiseBody.value= StockTransferBodyResponse(emptyList(),"cargando")
 
@@ -296,47 +353,99 @@ class StockTransferBodyViewModel(idMerchandise:String): ViewModel() {
                 }else{
                     _merchandiseBody.value= StockTransferBodyResponse(emptyList(),"error")
                 }
-
             }else{
 
-                Article.TotalQuantity= Article.TotalQuantity+body.Quantity
-                Article.UpdateAt= Date()
-                r.insertOrUpdate(Article)
 
-                val ArticleDetail = r.where(StockTransferSubBody::class.java)
-                    .equalTo("Batch",body.Batch)
-                    .equalTo("LocationName",body.LocationName)
-                    .equalTo("Delete","N")
-                    .equalTo("_StockTransferBody",Article._id)
-                    .findFirst()
-
-                if(ArticleDetail == null){
-
-                    Log.e("JEPICAME","2PERCONA-->ENTRO A CARGAR SUBDETALLE")
-
-                    val sub = r.createObject(StockTransferSubBody::class.java, ObjectId().toHexString())
-
-                    sub.Quantity=body.Quantity
-                    sub.LocationName=body.LocationName
-                    sub.LocationCode=body.LocationCode
-                    sub.Batch=body.Batch
-                    sub._StockTransferBody= Article._id
-                    sub.Realm_Id=realm.syncSession.user.id
-
-                    r.insert(sub)
-
-                }else{
-
-                    if(body.Quantity!=0.0){
-                        ArticleDetail.Quantity=ArticleDetail.Quantity+body.Quantity
+                /*
+                if(objType ==22){ //SOLO PARA ORDEN DE COMPRA
+                    if(Article.TotalQuantity+body.Quantity>Article.Quantity){
+                        _merchandiseBody.value= StockTransferBodyResponse(emptyList(),"Ocurrio un error, la cantidad total ingresada no puede superar la asignada en la OC.")
+                        Log.e("JEPICAME","OCURRIO UN ERROR YNO SE PINTA tipo 2 mayor AA")
                     }else{
-                        ArticleDetail.Quantity=ArticleDetail.Quantity+1
+                        Log.e("JEPICAME","OCURRIO UN ERROR YNO SE PINTA tipo 2 menor AA")
+
+                        Article.TotalQuantity= Article.TotalQuantity+body.Quantity
+                        Article.UpdateAt= Date()
+                        r.insertOrUpdate(Article)
+
+                        val ArticleDetail = r.where(StockTransferSubBody::class.java)
+                            .equalTo("Batch",body.Batch)
+                            .equalTo("LocationName",body.LocationName)
+                            .equalTo("Delete","N")
+                            .equalTo("_StockTransferBody",Article._id)
+                            .findFirst()
+
+                        if(ArticleDetail == null){
+
+                            Log.e("JEPICAME","2PERCONA-->ENTRO A CARGAR SUBDETALLE")
+
+                            val sub = r.createObject(StockTransferSubBody::class.java, ObjectId().toHexString())
+
+                            sub.Quantity=body.Quantity
+                            sub.LocationName=body.LocationName
+                            sub.LocationCode=body.LocationCode
+                            sub.Batch=body.Batch
+                            sub._StockTransferBody= Article._id
+                            sub.Realm_Id=realm.syncSession.user.id
+
+                            r.insert(sub)
+
+                        }else{
+
+                            if(body.Quantity!=0.0){
+                                ArticleDetail.Quantity=ArticleDetail.Quantity+body.Quantity
+                            }else{
+                                ArticleDetail.Quantity=ArticleDetail.Quantity+1
+                            }
+
+                            ArticleDetail.UpdateAt=Date()
+
+                            r.insertOrUpdate(ArticleDetail)
+                        }
+                    }
+                }else{
+                    */
+
+                    Article.TotalQuantity= Article.TotalQuantity+body.Quantity
+                    Article.UpdateAt= Date()
+                    r.insertOrUpdate(Article)
+
+                    val ArticleDetail = r.where(StockTransferSubBody::class.java)
+                        .equalTo("Batch",body.Batch)
+                        .equalTo("LocationName",body.LocationName)
+                        .equalTo("Delete","N")
+                        .equalTo("_StockTransferBody",Article._id)
+                        .findFirst()
+
+                    if(ArticleDetail == null){
+
+                        Log.e("JEPICAME","2PERCONA-->ENTRO A CARGAR SUBDETALLE")
+
+                        val sub = r.createObject(StockTransferSubBody::class.java, ObjectId().toHexString())
+
+                        sub.Quantity=body.Quantity
+                        sub.LocationName=body.LocationName
+                        sub.LocationCode=body.LocationCode
+                        sub.Batch=body.Batch
+                        sub._StockTransferBody= Article._id
+                        sub.Realm_Id=realm.syncSession.user.id
+
+                        r.insert(sub)
+
+                    }else{
+
+                        if(body.Quantity!=0.0){
+                            ArticleDetail.Quantity=ArticleDetail.Quantity+body.Quantity
+                        }else{
+                            ArticleDetail.Quantity=ArticleDetail.Quantity+1
+                        }
+
+                        ArticleDetail.UpdateAt=Date()
+
+                        r.insertOrUpdate(ArticleDetail)
                     }
 
-                    ArticleDetail.UpdateAt=Date()
-
-                    r.insertOrUpdate(ArticleDetail)
-                }
+               // }
             }
 
             _merchandiseBody.value= StockTransferBodyResponse(emptyList(),"ok")

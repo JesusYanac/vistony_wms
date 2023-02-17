@@ -96,7 +96,8 @@ open class StockTransferBodyPayload(
 
 open class StockTransferBodyAndSubBody(
     var body:StockTransferBody = StockTransferBody(),
-    var subBody:List<StockTransferSubBody> = emptyList()
+    var subBody:List<StockTransferSubBody> = emptyList(),
+    var status: String = ""
 )
 
 open class StockTransferBodyResponse(

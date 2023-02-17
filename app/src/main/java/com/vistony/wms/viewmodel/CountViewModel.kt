@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.vistony.wms.model.Counting
 import com.vistony.wms.model.CountingResponse
+import com.vistony.wms.model.CustomCounting
 import com.vistony.wms.model.Inventory
 import io.realm.Realm
 import io.realm.RealmResults
@@ -23,6 +24,12 @@ class CountViewModel(idInventory:String): ViewModel() {
     private val _count = MutableStateFlow(CountingResponse())
     val counting: StateFlow<CountingResponse> get() = _count
 
+    private val _data = MutableStateFlow(CustomCounting())
+    val data: StateFlow<CustomCounting> get() = _data
+
+    //private val _sendOrClose = MutableStateFlow("")
+    //val sendOrClose: StateFlow<String> get() = _sendOrClose
+
     class HomeViewModelFactory(private var idInventory:String): ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -36,8 +43,86 @@ class CountViewModel(idInventory:String): ViewModel() {
         }
     }
 
+    fun writeData(body: CustomCounting){
+        _data.value=body
+    }
+
+    fun resetSendOrClose(){
+        _count.value=CountingResponse(counting=  emptyList(),status = "",nameInventory = "",statusEvent="")
+    }
+
     fun resetCountingState(){
         _count.value=CountingResponse()
+    }
+
+    fun updateStatusClose(){
+        _count.value=CountingResponse(counting=  emptyList(),status = "",nameInventory = "",statusEvent="cargando")
+
+        realm.executeTransactionAsync ({ r:Realm->
+
+            val body: Inventory? =r.where(Inventory::class.java)
+                .equalTo("_id", ObjectId(idInventory))
+                .findFirst()
+
+            val count = r.where(Counting::class.java)
+                .equalTo("inventoryId",ObjectId(idInventory))
+                .findFirst()
+
+            if(body!=null){
+                if(count !=null){
+                    body.status ="Cerrado"
+                    body.response =""
+                    body.closeAt= Date()
+
+                    r.insertOrUpdate(body)
+                }else{
+                    _count.value=CountingResponse(counting=  emptyList(),status = "",nameInventory = "",statusEvent="La ficha de inventario no tiene conteos registrados.")
+                }
+            }else{
+                _count.value=CountingResponse(counting=  emptyList(),status = "",nameInventory = "",statusEvent="La ficha de inventario no se encontro.")
+            }
+
+        },{
+            _count.value=CountingResponse(counting=  emptyList(),status = "",nameInventory = "",statusEvent="ok")
+        },{
+            _count.value=CountingResponse(counting=  emptyList(),status = "",nameInventory = "",statusEvent=it.message.toString())
+        })
+    }
+
+    fun resendToSap(){
+
+        _count.value=CountingResponse(counting=  emptyList(),status = "",nameInventory = "",statusEvent="cargando")
+
+        realm.executeTransactionAsync ({ r:Realm->
+            var value:Int=0
+            val body: Inventory? =r.where(Inventory::class.java)
+                .equalTo("_id", ObjectId(idInventory))
+                .equalTo("codeSAP",value)
+                .equalTo("status","Cerrado")
+                .findFirst()
+
+            if(body!=null){
+                val count = r.where(Counting::class.java)
+                    .equalTo("inventoryId",ObjectId(idInventory))
+                    .findFirst()
+
+                if(count != null){
+                    body.response =""
+                    body.arrivalTimeSap= body.createAt
+                    body.arrivalTimeAtlas =Date()
+
+                    r.insertOrUpdate(body)
+                }else{
+                    _count.value=CountingResponse(counting=  emptyList(),status = "",nameInventory = "",statusEvent="La ficha de inventario no tiene conteos registrados.")
+                }
+            }else{
+                _count.value=CountingResponse(counting=  emptyList(),status = "",nameInventory = "",statusEvent="La ficha de inventario no se encontro.")
+            }
+        },{
+            _count.value=CountingResponse(counting=  emptyList(),status = "",nameInventory = "",statusEvent="ok")
+        },{
+            _count.value=CountingResponse(counting=  emptyList(),status = "",nameInventory = "",statusEvent=it.message.toString())
+        })
     }
 
     fun getData(){
@@ -76,31 +161,38 @@ class CountViewModel(idInventory:String): ViewModel() {
 
         realm.executeTransactionAsync { r: Realm ->
 
-            val count = r.where(Counting::class.java)
+            //body.forEach { body ->
+                val count = r.where(Counting::class.java)
+                    .equalTo("itemCode",body.itemCode)
+                    .equalTo("location",body.location)
+                    .equalTo("lote",body.lote)
+                    .equalTo("inventoryId",ObjectId(idInventory))
+                    .findFirst()
 
-                .equalTo("itemCode",body.itemCode)
-                .equalTo("location",body.location)
-                .equalTo("inventoryId",ObjectId(idInventory))
-                .findFirst()
+                if(count == null){
+                    val obj = r.createObject(Counting::class.java, ObjectId().toHexString())
 
-            if(count == null){
-                val obj = r.createObject(Counting::class.java, ObjectId().toHexString())
+                    obj.itemCode=body.itemCode
+                    obj.itemName=body.itemName
+                    obj.quantity=body.quantity
 
-                obj.itemCode=body.itemCode
-                obj.itemName=body.itemName
-                obj.quantity=body.quantity
-                obj.lote=body.lote
-                obj.inventoryId=ObjectId(idInventory)
-                obj.Realm_Id=realm.syncSession.user.id
+                    obj.location=body.location
+                    obj.sscc=body.sscc
+                    obj.interfaz=body.interfaz
+                    obj.lote=body.lote
+                    obj.inventoryId=ObjectId(idInventory)
+                    obj.Realm_Id=realm.syncSession.user.id
 
-                r.insert(obj)
+                    r.insert(obj)
 
-            }else{
+                }else{
 
-                count.quantity=count.quantity+1
+                    count.quantity=count.quantity+body.quantity
 
-                r.insertOrUpdate(count)
-            }
+                    r.insertOrUpdate(count)
+                }
+            //}
+
 
             _count.value=CountingResponse(emptyList(),"ok")
         }

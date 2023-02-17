@@ -26,7 +26,7 @@ class LoginViewModel(context: Context): ViewModel() {
     private var context:Context = context
 
     private val realmSync by lazy {
-        App(AppConfiguration.Builder("vistony_wms-nulgy").build())
+        App(AppConfiguration.Builder("appwms-bckdu").build())
     }
 
     private val _login = MutableStateFlow(LoginCustom(realmSync,0, message = ""))
