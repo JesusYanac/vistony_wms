@@ -75,10 +75,15 @@ class MainActivity : ComponentActivity(),Observer{
         super.onNewIntent(intent)
 
         if (intent.hasExtra(DWInterface.DATAWEDGE_SCAN_EXTRA_DATA_STRING)) {
-            if(navController.currentDestination?.route == Routes.InventoryDetail.route || navController.currentDestination?.route ==Routes.MerchandiseMovementDetail.route){
-                val data=intent.getStringExtra(DWInterface.DATAWEDGE_SCAN_EXTRA_DATA_STRING).toString()
-                zebraViewModel.setData(data)
+            if(navController.currentDestination?.route in listOf(Routes.InventoryDetail.route,Routes.MerchandiseMovementDetail.route,Routes.ImprimirEtiquetaSSCC.route,Routes.TrackingSSCC.route )){
 
+                Log.e("JEPICAME","TYPE SCAN=>"+intent.getStringExtra(DWInterface.DATAWEDGE_SCAN_EXTRA_LABEL_TYPE).toString())
+
+                zebraViewModel.setData(zebraPayload(
+                    Payload=intent.getStringExtra(DWInterface.DATAWEDGE_SCAN_EXTRA_DATA_STRING).toString(),
+                    Type=intent.getStringExtra(DWInterface.DATAWEDGE_SCAN_EXTRA_LABEL_TYPE).toString()
+                    )
+                )
             }
         }
     }
@@ -223,7 +228,15 @@ class MainActivity : ComponentActivity(),Observer{
                 }
 
                 composable(Routes.ImprimirEtiqueta.route) {
-                    PrintScreen(
+                    PrintQrScreen(
+                        navController = navController,
+                        context = applicationContext
+                    )
+                }
+
+                composable(Routes.ImprimirEtiquetaSSCC.route) {
+                    PrintSSccScreen(
+                        zebraViewModel=zebraViewModel,
                         navController = navController,
                         context = applicationContext
                     )
@@ -329,31 +342,46 @@ class MainActivity : ComponentActivity(),Observer{
                         objType=TaskManagement(ObjType=671)
                     )
                 }
+
+                composable(Routes.TrackingSSCC.route) {
+                    TrackingPaletScreen(
+                        navController = navController,
+                        context = applicationContext,
+                        zebraViewModel=zebraViewModel
+                    )
+                }
+
+                composable(Routes.ProdcnTrmReport.route) {
+                    ProductionReceiptScreen(
+                        navController = navController,
+                        context = applicationContext
+                    )
+                }
+
             }
 
         }
     }
 
     private fun createDataWedgeProfile() {
-        //  Create and configure the DataWedge profile associated with this application
-        //  For readability's sake, I have not defined each of the keys in the DWInterface file
+
         dwInterface.sendCommandString(this, DWInterface.DATAWEDGE_SEND_CREATE_PROFILE,PROFILE_NAME)
         val profileConfig = Bundle()
         profileConfig.putString("PROFILE_NAME", PROFILE_NAME)
-        profileConfig.putString("PROFILE_ENABLED", "true") //  These are all strings
+        profileConfig.putString("PROFILE_ENABLED", "true")
         profileConfig.putString("CONFIG_MODE", "UPDATE")
         val barcodeConfig = Bundle()
         barcodeConfig.putString("PLUGIN_NAME", "BARCODE")
-        barcodeConfig.putString("RESET_CONFIG", "true") //  This is the default but never hurts to specify
+        barcodeConfig.putString("RESET_CONFIG", "true")
         val barcodeProps = Bundle()
         barcodeConfig.putBundle("PARAM_LIST", barcodeProps)
         profileConfig.putBundle("PLUGIN_CONFIG", barcodeConfig)
         val appConfig = Bundle()
-        appConfig.putString("PACKAGE_NAME",this.packageName)      //  Associate the profile with this app
+        appConfig.putString("PACKAGE_NAME",this.packageName)
         appConfig.putStringArray("ACTIVITY_LIST", arrayOf("*"))
         profileConfig.putParcelableArray("APP_LIST", arrayOf(appConfig))
         dwInterface.sendCommandBundle(this, DWInterface.DATAWEDGE_SEND_SET_CONFIG, profileConfig)
-        //  You can only configure one plugin at a time in some versions of DW, now do the intent output
+
         profileConfig.remove("PLUGIN_CONFIG")
         val intentConfig = Bundle()
         intentConfig.putString("PLUGIN_NAME", "INTENT")
@@ -361,7 +389,7 @@ class MainActivity : ComponentActivity(),Observer{
         val intentProps = Bundle()
         intentProps.putString("intent_output_enabled", "true")
         intentProps.putString("intent_action", PROFILE_INTENT_ACTION)
-        intentProps.putString("intent_delivery", PROFILE_INTENT_START_ACTIVITY)  //  "0"
+        intentProps.putString("intent_delivery", PROFILE_INTENT_START_ACTIVITY)
         intentConfig.putBundle("PARAM_LIST", intentProps)
         profileConfig.putBundle("PLUGIN_CONFIG", intentConfig)
         dwInterface.sendCommandBundle(this, DWInterface.DATAWEDGE_SEND_SET_CONFIG, profileConfig)

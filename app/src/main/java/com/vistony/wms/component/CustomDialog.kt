@@ -136,7 +136,7 @@ fun CustomDialogQuestion(openDialog:(Boolean)->Unit){
             Text(text = "Eliminar línea")
         },
         text = {
-            Text(text="¿Está seguro de que desea eliminar este línea en el documento actual?")
+            Text(text="¿Está seguro de que desea eliminar esta línea en el documento actual?")
         },
         confirmButton = {
             Button(
@@ -172,7 +172,6 @@ fun CustomDialogVs2(
     newValue:(List<Counting>)->Unit
 ){
 
-    Log.e("JEPICAMR","LOTE {}=>"+if(customCounting.counting.isNotEmpty() && customCounting.counting[0].lote.isNotEmpty()){ customCounting.counting[0].lote }else{ "nada" })
     var locationTemp by remember { mutableStateOf( TextFieldValue(  if(customCounting.defaultLocationSSCC.isEmpty()){ if(customCounting.counting.isNotEmpty() && customCounting.counting[0].location.isNotEmpty()){ customCounting.counting[0].location }else{ "" }}else{customCounting.defaultLocationSSCC} ))}
     var textNumber by remember { mutableStateOf( customCounting.counting[0].quantity.toString()) }
     var textLote by remember { mutableStateOf( if(customCounting.counting.isNotEmpty() && customCounting.counting[0].lote.isNotEmpty()){ customCounting.counting[0].lote }else{ "" } ) }
@@ -274,7 +273,7 @@ fun CustomDialogVs2(
                                     .aspectRatio(1f)
                                     .fillMaxWidth()
                                     .padding(5.dp)
-                            ) {
+                            ){
                                 Column(modifier=Modifier.padding(10.dp)){
                                     Text(
                                         item.itemCode +" "+item.itemName
@@ -290,8 +289,6 @@ fun CustomDialogVs2(
                                     )
                                 }
                             }
-
-
                         })
                     }
                 }
@@ -657,7 +654,7 @@ fun CustomDialogSignOut(onPress:(Boolean)->Unit){
         },
         dismissButton = {
             Button(
-                enabled = false,
+                //enabled = false,
                 onClick = {
                     onPress(true)
                 },

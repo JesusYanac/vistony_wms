@@ -51,7 +51,6 @@ import com.vistony.wms.ui.theme.AzulVistony201
 import com.vistony.wms.ui.theme.RedVistony202
 import com.vistony.wms.util.BarCodeAnalyser
 import com.vistony.wms.util.Routes
-import com.vistony.wms.util.isNumeric
 import com.vistony.wms.viewmodel.ItemsViewModel
 import com.vistony.wms.viewmodel.CountViewModel
 import com.vistony.wms.viewmodel.WarehouseViewModel
@@ -92,21 +91,20 @@ fun ScanScreen(navController: NavHostController,whs:String,idInventory:String,st
     val openDialog = remember { mutableStateOf(FlagDialog()) }
     var flagModal = remember { mutableStateOf(FlagDialog()) }
 
-    if(zebraValue.value.isNotEmpty()){
+    if(zebraValue.value.Payload.isNotEmpty()){
 
         //si no contiene | puede ser un ubicacion
         //si  no es  un numerico
-        if(!zebraValue.value.contains("|") && !isNumeric(zebraValue.value)){
-
-            Log.e("JEPICAME","ENTRA A UBICACION")
+        //value.Payload.split("-").size==4 && value.Type!="LABEL-TYPE-QRCODE"
+        //if(!zebraValue.value.Payload.contains("|") && !isNumeric(zebraValue.value.Payload)){
+        if(zebraValue.value.Payload.split("-").size==4 && zebraValue.value.Type!="LABEL-TYPE-QRCODE"){
             if(defaultLocation=="+"){
-                warehouseViewModel.getLocations(zebraValue.value,whs)
+                warehouseViewModel.getLocations(zebraValue.value.Payload,whs)
             }
         }else{
-            itemsViewModel.getArticle(value=zebraValue.value,typeInventario=typeInventory)
+            itemsViewModel.getArticle(value=zebraValue.value.Payload,typeInventario=typeInventory)
         }
-
-        zebraViewModel.setData("")
+        zebraViewModel.setData(zebraPayload())
     }
 
     Scaffold(
@@ -269,6 +267,8 @@ fun ScanScreen(navController: NavHostController,whs:String,idInventory:String,st
                         }else{
 
                             Log.e("JEPICAME","@@@=>"+counting.interfaz +"  {"+counting.lote + " }"+counting.location + "-"+counting.quantity)
+                            Log.e("JEPICAME","@@@=>"+counting.itemName +"  {"+counting.location + " }"+counting.quantity)
+
                             if(counting.quantity==0.0 && counting.location.isEmpty() && counting.itemName.isEmpty()){
                                 homeViewModel.writeData(CustomCounting())
                             }else{
@@ -702,7 +702,7 @@ fun CameraForm(zebraViewModel:ZebraViewModel,context:Context, cameraProviderFutu
             cameraProvider=cameraProvider,
             context=context,
             valueText = { textDecode ->
-                zebraViewModel.setData(textDecode)
+                zebraViewModel.setData( zebraPayload(Payload=textDecode,Type="LABEL-TYPE-CAMERA"))
             }
         )
 

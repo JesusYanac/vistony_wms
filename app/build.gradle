@@ -13,12 +13,12 @@ android {
         minSdk 26
         targetSdk 31
         versionCode 1
-        versionName "1.2"
+        versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary true
         }
-        buildConfigField('String' , 'API_URL', '"https://msw.vistony.pe/vs1.0/"')
+        buildConfigField('String' , 'API_URL', '"http://192.168.254.20:93/vs1.0/"')
     }
 
     buildTypes {

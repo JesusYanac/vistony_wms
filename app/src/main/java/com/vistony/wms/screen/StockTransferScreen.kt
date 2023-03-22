@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -189,7 +188,6 @@ fun MerchandiseScreen(navController: NavHostController, context: Context,objType
     }
 }
 
-@OptIn(ExperimentalAnimationApi::class)
 @Composable
 private fun ExpandableListItem(merchandise: StockTransferHeader, navController: NavHostController, objType:TaskManagement,onPresChangeStatus:(String) ->Unit) {
     var expanded by remember { mutableStateOf(false) }

@@ -19,4 +19,5 @@ val AzulVistony2 = Color(0xFFDFDFDF)
 
 val ColorOrigin = Color(0xFFF5EDAB)
 val ColorDestine= Color(0xFFA0DAA2)
+val ColorRowDestine= Color(0xAEEE7A71)
 

@@ -5,6 +5,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
@@ -26,6 +27,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -53,8 +55,7 @@ import java.nio.charset.StandardCharsets
     ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class
 )
 @Composable
-fun MerchandiseDetailScreen(navController: NavHostController, context: Context,idMerchandise:String,status:String,zebraViewModel: ZebraViewModel,
-                            whsOrigin:String,whsDestine:String,objType:Int) {
+fun MerchandiseDetailScreen(navController: NavHostController, context: Context,idMerchandise:String,status:String,zebraViewModel: ZebraViewModel,whsOrigin:String,whsDestine:String,objType:Int) {
 
     val context = LocalContext.current
     val cameraPermissionState = rememberPermissionState(permission = Manifest.permission.CAMERA)
@@ -107,7 +108,7 @@ fun MerchandiseDetailScreen(navController: NavHostController, context: Context,i
         }
     }
 
-    if(zebraValue.value.isNotEmpty()){
+    if(zebraValue.value.Payload.isNotEmpty()){
 
         when(status){
             "Abierto"->{
@@ -146,7 +147,7 @@ fun MerchandiseDetailScreen(navController: NavHostController, context: Context,i
             }
         }
 
-        zebraViewModel.setData("")
+        zebraViewModel.setData(zebraPayload())
     }
 
     ModalBottomSheetLayout(
@@ -178,7 +179,10 @@ fun MerchandiseDetailScreen(navController: NavHostController, context: Context,i
                                     newStatus = if(it==TypeReadSKU.CERRAR_ORIGEN){"OrigenCerrado"}else{"FichaCerrada"}
                                 )
 
-                                when(objType){
+                                //COMO TODO SE VA  AGESTIONAR DESDE LA VENTA TAREAS, TODO REGRESA A LA VENTA TAREAS
+                                navController.navigate("TaskManager")
+
+                                /*when(objType){
                                     67->{
                                         navController.navigate("Merchandise/objType=${objType}")
                                     }
@@ -195,12 +199,14 @@ fun MerchandiseDetailScreen(navController: NavHostController, context: Context,i
                                         Log.e("JEPICAME","===>> ESTADO"+status)
                                     }*/
                                     22->{
+
+
                                         navController.navigate("TaskManager")
                                     }
                                     else->{
 
                                     }
-                                }
+                                }*/
 
                                 /*{
                                     popUpTo(navController.context.toString()) {
@@ -256,11 +262,11 @@ fun MerchandiseDetailScreen(navController: NavHostController, context: Context,i
                     openSheet(
                         BottomSheetScreen.SelectDestineModal(
                             objType=objType,
-                            value="${it.itemCode}|${it.batch}",
+                            value= zebraPayload(Payload="${it.itemCode}|${it.batch}",Type="LABEL-TYPE-QRCODE"),
                             context=context,
                             stockTransferBodyViewModel=stockTransferBodyViewModel,
-                            selected = {
-                                stockTransferBodyViewModel.addDestine(it)
+                            selected = { value->
+                                stockTransferBodyViewModel.addDestine(value)
                                 closeSheet()
                             },
                             wareHouseOrigin = whsOrigin,
@@ -438,8 +444,17 @@ private fun dataad(
                     if(status=="Abierto"){
                         onPressBody(it._id)
                     }else{
-                        var itemNameScape= HtmlCompat.fromHtml(line.body.ItemName, HtmlCompat.FROM_HTML_MODE_LEGACY)
+                        Log.e("JEPICAME","nvController=>"+navController.currentBackStackEntry?.destination?.route)
+                        Log.e("JEPICAME","nvController=>"+navController.currentBackStackEntry?.destination?.navigatorName)
+                        Log.e("JEPICAME","nvController=>"+navController.currentBackStackEntry?.destination?.displayName)
+                        //Log.e("JEPICAME","nvController=>"+navController.currentBackStackEntry?.destination?.addDeepLink())
+
                         navController.navigate("StockTransferDestine/SubBody=${it._id.toHexString()}&Producto=${URLEncoder.encode(line.body.ItemName, StandardCharsets.UTF_8.toString())}&objType=${objType}")
+                        /*{
+                            popUpTo(navController.previousBackStackEntry?.destination?.route!!) { inclusive = true }
+                        }*/
+
+
 
                     }
                 },
@@ -517,10 +532,6 @@ private fun ExpandableListItem(
                 )
             ) {
                 Column{
-
-                    //
-                    //
-
                     Row{
 
                         when(objType){
@@ -553,64 +564,90 @@ private fun ExpandableListItem(
                     Divider(modifier = Modifier.height(1.dp))
 
                     subBody.forEach{
-                        Row(
-                            modifier=Modifier
-                                .fillMaxWidth()
-                                .background(AzulVistony2)
-                                .combinedClickable(
-                                    onClick = {
-                                        onPressBody(it)
-                                    },
-                                    onLongClick = {
+                        Column(modifier=Modifier.combinedClickable(
+                            onClick = {
+                                onPressBody(it)
+                            },
+                            onLongClick = {
+                                onLongPressBody( DocumentLongPress(_id=it._id, batch = it.Batch))
+                            })){
+                            Row(
+                                modifier=Modifier
+                                    .fillMaxWidth()
+                                    .background(AzulVistony2)
+                                   /* .combinedClickable(
+                                        onClick = {
+                                            onPressBody(it)
+                                        },
+                                        onLongClick = {
+                                            onLongPressBody( DocumentLongPress(_id=it._id, batch = it.Batch))
+                                        })*/,
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ){
 
-                                        onLongPressBody( DocumentLongPress(_id=it._id, batch = it.Batch))
-                                    }),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ){
+                                when(objType){
+                                    22->{
+                                        if(status=="Abierto"){
+                                            TableCell(text = " ${it.Batch}", weight = .5f)
+                                            TableCell(text = " ${it.Quantity} ", weight = .5f)
+                                        }else{
 
-                            when(objType){
-                                22->{
-                                    if(status=="Abierto"){
-                                        TableCell(text = " ${it.Batch}", weight = .5f)
-                                        TableCell(text = " ${it.Quantity} ", weight = .5f)
-                                    }else{
+                                            val pendiente=(it.Quantity) - (it.Destine.sum("Quantity").toDouble()).toDouble()
+                                            var colores=Color.Unspecified
 
-                                        val pendiente=(it.Quantity) - (it.Destine.sum("Quantity").toDouble()).toDouble()
-                                        var colores=Color.Unspecified
+                                            if(pendiente > 0.00){
+                                                colores=Color.Red
+                                            }
 
-                                        if(pendiente > 0.00){
-                                            colores=Color.Red
+                                            TableCell(text = " ${it.Batch}", weight = .4f,color = colores)
+                                            TableCell(text = " ${BigDecimal(it.Destine.sum("Quantity").toString()).setScale(2, RoundingMode.HALF_UP)} de ${it.Quantity}", weight = .3f,color = colores)
+                                            TableCell(text = " ${BigDecimal(pendiente).setScale(2, RoundingMode.HALF_UP)}", weight = .3f, color = colores)
                                         }
+                                    }
+                                    else->{
+                                        if(status=="Abierto"){
+                                            TableCell(text = " ${it.LocationName}", weight = .4f)
+                                            TableCell(text = " ${it.Batch}", weight = .3f)
+                                            TableCell(text = " ${it.Quantity} ", weight = .3f)
+                                        }else{
 
-                                        TableCell(text = " ${it.Batch}", weight = .4f,color = colores)
-                                        TableCell(text = " ${BigDecimal(it.Destine.sum("Quantity").toString()).setScale(2, RoundingMode.HALF_UP)} de ${it.Quantity}", weight = .3f,color = colores)
-                                        TableCell(text = " ${BigDecimal(pendiente).setScale(2, RoundingMode.HALF_UP)}", weight = .3f, color = colores)
+                                            val pendiente=(it.Quantity) - (it.Destine.sum("Quantity").toDouble()).toDouble()
+                                            var colores=Color.Unspecified
+
+                                            if(pendiente > 0.00){
+                                                colores=Color.Red
+                                            }
+
+                                            TableCell(text = " ${it.LocationName}\n${it.Batch}", weight = .4f,color = colores)
+                                            TableCell(text = " ${BigDecimal(it.Destine.sum("Quantity").toString()).setScale(2, RoundingMode.HALF_UP)} de ${it.Quantity}", weight = .3f,color = colores)
+                                            TableCell(text = " ${BigDecimal(pendiente).setScale(2, RoundingMode.HALF_UP)}", weight = .3f, color = colores)
+                                        }
                                     }
                                 }
-                                else->{
+                            }
+
+                            if(it.Sscc!=null && it.Sscc!!.isNotEmpty() ){
+
+                                val pendiente=(it.Quantity) - (it.Destine.sum("Quantity").toDouble()).toDouble()
+                                var colores=Color.Unspecified
+
+                                if(pendiente > 0.00){
+                                    colores=Color.Red
+                                }
+
+                                Row(modifier=Modifier.fillMaxWidth().background(AzulVistony2)){
                                     if(status=="Abierto"){
-                                        TableCell(text = " ${it.LocationName}", weight = .4f)
-                                        TableCell(text = " ${it.Batch}", weight = .3f)
-                                        TableCell(text = " ${it.Quantity} ", weight = .3f)
+                                        Text(text= "SSCC ${it.Sscc!!}", textDecoration = TextDecoration.Underline,modifier=Modifier.padding(start=7.dp))
                                     }else{
-
-                                        val pendiente=(it.Quantity) - (it.Destine.sum("Quantity").toDouble()).toDouble()
-                                        var colores=Color.Unspecified
-
-                                        if(pendiente > 0.00){
-                                            colores=Color.Red
-                                        }
-
-                                        TableCell(text = " ${it.LocationName}\n${it.Batch}", weight = .4f,color = colores)
-                                        TableCell(text = " ${BigDecimal(it.Destine.sum("Quantity").toString()).setScale(2, RoundingMode.HALF_UP)} de ${it.Quantity}", weight = .3f,color = colores)
-                                        TableCell(text = " ${BigDecimal(pendiente).setScale(2, RoundingMode.HALF_UP)}", weight = .3f, color = colores)
+                                        Text(text= "SSCC ${it.Sscc!!}",color=colores, textDecoration = TextDecoration.Underline,modifier=Modifier.padding(start=7.dp))
                                     }
                                 }
                             }
                         }
-                    }
 
+                    }
+                    Text("",modifier=Modifier.fillMaxWidth().background(AzulVistony2))
                 }
 
             }
@@ -641,7 +678,7 @@ private fun RowScope.TableCell(
             text = text,
             modifier= Modifier
                 .weight(weight)
-                .padding(7.dp),fontSize = 13.sp,
+                .padding(start=7.dp,top=7.dp,end=7.dp),fontSize = 13.sp,
             color = color
         )
     }

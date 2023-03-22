@@ -33,12 +33,14 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.vistony.wms.R
 import com.vistony.wms.component.*
+import com.vistony.wms.model.Options
 import com.vistony.wms.num.OptionsDowns
 import com.vistony.wms.model.TaskManagement
 import com.vistony.wms.model.TaskMngmtAndHeaderDoc
 import com.vistony.wms.model.TaskMngmtDataForm
 import com.vistony.wms.ui.theme.AzulVistony201
 import com.vistony.wms.ui.theme.RedVistony202
+import com.vistony.wms.util.Routes
 import com.vistony.wms.viewmodel.StockTransferHeaderViewModel
 import com.vistony.wms.viewmodel.TaskManagementViewModel
 import kotlinx.coroutines.launch
@@ -90,9 +92,45 @@ fun TaskManagerScreen(navController: NavHostController, context: Context) {
 
                 TopBarTitleWithOptions(
                     options=listOptions,
-                    title= "Tareas asignadas" ,
+                    title= "Mis tareas" ,
                     onClick={
-                        //navController.navigate("MerchandiseMovementCreate/objType=$objType")
+
+
+                        val listWareHouse:MutableList<Options> = mutableListOf()
+
+                        listWareHouse.add(
+                            Options(
+                                value= Routes.Recepcion.route,
+                                text= Routes.Recepcion.title,
+                                icono=Routes.Recepcion.icon
+                            )
+                        )
+                        listWareHouse.add(
+                            Options(
+                                value= Routes.MerchandiseMovementCreate.route.replace("{objType}",""+Routes.Slotting.value),
+                                text= Routes.Slotting.title,
+                                icono=Routes.Slotting.icon
+                            )
+                        )
+                        listWareHouse.add(
+                            Options(
+                                value=Routes.MerchandiseMovementCreate.route.replace("{objType}",""+Routes.Merchandise.value),
+                                text= Routes.MerchandiseMovementCreate.title,
+                                icono=Routes.MerchandiseMovementCreate.icon
+                            )
+                        )
+
+                        openSheet(
+                            BottomSheetScreen.SelectWitOptionsModal(
+                                title = "Seleciona un tipo de tarea",
+                                listOptions = listWareHouse,
+                                selected = {
+                                    navController.navigate(it.value.replace("{objType}",""+it.value))
+                                    closeSheet()
+                                })
+                        )
+
+
                     }
                 )
             }
@@ -305,16 +343,21 @@ private fun formBodyTask(expanded:Boolean,data:TaskManagement){
         Divider(modifier = Modifier.height(1.dp))
         Column(modifier = Modifier.padding(start = 15.dp, end = 15.dp, bottom = 15.dp)) {
 
-            Spacer(modifier = Modifier.height(10.dp))
+            if(data.Type!="Libre"){
+                Spacer(modifier = Modifier.height(10.dp))
 
-            ExtraItem(item = Item(
-                title="Fecha de Asignación",
-                date= data.DateAssignment.getUIStringTimeStampWithDate()
-            )
-            )
+                ExtraItem(
+                    item = Item(
+                        title="Fecha de Asignación",
+                        date= data.DateAssignment.getUIStringTimeStampWithDate()
+                    )
+                )
 
-            Spacer(modifier = Modifier.height(10.dp))
-            Divider(modifier = Modifier.height(1.dp))
+                Spacer(modifier = Modifier.height(10.dp))
+                Divider(modifier = Modifier.height(1.dp))
+            }
+
+
             Spacer(modifier = Modifier.height(10.dp))
 
             ExtraItem(item = Item(
@@ -329,7 +372,7 @@ private fun formBodyTask(expanded:Boolean,data:TaskManagement){
 
             ExtraItem(item = Item(
                 title="Fecha de Term.",
-                date=if(data.EndDate.getUIStringTimeStampWithDate() != "02-ene.-0001 18:51"){"${data.EndDate.getUIStringTimeStampWithDate()} "}else{" "}
+                date=if(data.EndDate.getUIStringTimeStampWithDate() != data.StartDate.getUIStringTimeStampWithDate()){"${data.EndDate.getUIStringTimeStampWithDate()} "}else{" "}
             )
             )
 

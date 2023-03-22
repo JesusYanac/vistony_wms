@@ -26,7 +26,7 @@ class WarehouseViewModel(flag:String,warehouse:String="",objType:Int=0): ViewMod
     private val _almacenes = MutableStateFlow(WarehouseResponse())
     val almacenes: StateFlow<WarehouseResponse> get() = _almacenes
 
-    private val _location = MutableStateFlow(LocationResponse())
+    private val _location = MutableStateFlow(LocationResponse(status=""))
     val location: StateFlow<LocationResponse> get() = _location
 
     class WarehouseViewModelFactory(private var flag: String,private var wareHouse:String="",private var objType:Int=0) : ViewModelProvider.Factory {
@@ -37,11 +37,14 @@ class WarehouseViewModel(flag:String,warehouse:String="",objType:Int=0): ViewMod
     }
 
     init{
+        //"",whsOrigin,objType)
         if (flag == "init") {
             getMasterDataWarehouse()
         }
+Log.e("JEPICAME INIT WHS","=>"+warehouse+"--"+objType)
 
         if(warehouse!="" && objType!=22){
+            Log.e("JEPICAME","ENTRO A ESTE INITT")
             getDefaultLocations(warehouse)
         }
     }
@@ -55,7 +58,6 @@ class WarehouseViewModel(flag:String,warehouse:String="",objType:Int=0): ViewMod
     }
 
     fun getMasterDataWarehouse() {
-
 
         Log.e("JEPICAME","Cargando")
         _almacenes.value = WarehouseResponse(warehouse = emptyList(), status = "cargando")
@@ -112,6 +114,30 @@ class WarehouseViewModel(flag:String,warehouse:String="",objType:Int=0): ViewMod
         })
     }
 
+    fun verificationLocation(binCode:String){
+        Log.e("JEPICAME","===>"+binCode)
+
+        _location.value= LocationResponse(location= BinLocations(),status="cargando")
+
+        Realm.getInstanceAsync(configBranch, object : Realm.Callback() {
+            override fun onSuccess(r: Realm) {
+
+                val location = r.where(BinLocations::class.java)
+                    .equalTo("BinCode",binCode)
+                    .findFirst()
+
+                if (location != null) {
+                    _location.value= LocationResponse(location=location,status="ok", EnableBinLocations = "tYES")
+                }else{
+                    _location.value=LocationResponse(location=BinLocations(),status="La ubicación ${binCode}, no se encuentra como dato maestro.")
+                }
+            }
+            override fun onError(exception: Throwable) {
+                _location.value= LocationResponse(location=BinLocations(),status=" ${exception.message}")
+            }
+        })
+    }
+
     fun getLocations(AbsEntry:String,whsOrigin:String){
 
         _location.value= LocationResponse(location= BinLocations(),status="cargando")
@@ -130,11 +156,12 @@ class WarehouseViewModel(flag:String,warehouse:String="",objType:Int=0): ViewMod
                         .findFirst()
 
                     if (location != null) {
-                        _location.value= LocationResponse(location=location,status="ok", EnableBinLocations = almacen.EnableBinLocations                                                                        )
+                        _location.value= LocationResponse(location=location,status="ok", EnableBinLocations = almacen.EnableBinLocations)
                     }else{
                         _location.value=LocationResponse(location=BinLocations(),status="La ubicación ${AbsEntry}, no se encuentra como dato maestro o no pertenece al almacén ${whsOrigin}.")
                     }
                 }else{
+
                     _location.value=LocationResponse(location=BinLocations(),status="El almacén ${whsOrigin}, no se encuentra como dato maestro.")
                 }
             }
@@ -145,6 +172,8 @@ class WarehouseViewModel(flag:String,warehouse:String="",objType:Int=0): ViewMod
     }
 
     fun getDefaultLocations(whsOrigin:String){
+
+        Log.e("JEPICAMR","ENTRO A BUSCAR UNICACION +XDD")
 
         _location.value= LocationResponse(location= BinLocations(),status="cargando")
 
@@ -163,11 +192,12 @@ class WarehouseViewModel(flag:String,warehouse:String="",objType:Int=0): ViewMod
 
                     if (location != null) {
                         _location.value= LocationResponse(location=location,status="ok", EnableBinLocations = almacen.EnableBinLocations)
-                    }/*else{
-                        _location.value=LocationResponse(location=BinLocations(),status="El almacén ${whsOrigin}, no cuenta con ubicaciones por defecto.")
-                    }*/
+                    }else{
+                        Log.e("JEPICAMR","ENTRO A AQUI X ESO NO ACTUALIZAA +XDD")
+                        _location.value=LocationResponse(location=BinLocations(),status="El almacén ${whsOrigin}, no tiene la ubicaciones por defecto cargada en el maestro.")
+                    }
                 }else{
-                    _location.value=LocationResponse(location=BinLocations(),status="El almacén ${whsOrigin}, no se encuentra como dato maestro.")
+                    _location.value=LocationResponse(location=BinLocations(),status="El almacén ${whsOrigin}, no se encuentra en el maestro.")
                 }
             }
             override fun onError(exception: Throwable) {

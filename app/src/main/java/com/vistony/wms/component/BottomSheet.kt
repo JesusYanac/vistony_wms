@@ -6,6 +6,8 @@ import android.widget.Toast
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -29,12 +31,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.vistony.wms.R
 import com.vistony.wms.num.TypeReadSKU
 import com.vistony.wms.model.*
+import com.vistony.wms.num.TypeCode
 import com.vistony.wms.ui.theme.AzulVistony202
 import com.vistony.wms.viewmodel.*
 
@@ -90,12 +94,12 @@ sealed class BottomSheetScreen(){
     class SelectTypeModal(val selected: (TypeInventario) -> Unit) : BottomSheetScreen()
     class ShowMessageModal(val message:String) : BottomSheetScreen()
     class SelectCountryModal(val selected: (CountryLocation) -> Unit):BottomSheetScreen()
-    class SelectOriginModal(val idHeader:String,val value:String="", val context: Context, val type:TypeReadSKU,
-                            val selected: (StockTransferBodyPayload) -> Unit,val whsOrigin:String,val objType:Int):BottomSheetScreen()
-    class SelectDestineModal(val objType:Int=0,val value:String="",val context: Context,val wareHouseOrigin: String,
+    class SelectOriginModal(val idHeader:String,val value:zebraPayload=zebraPayload(), val context: Context, val type:TypeReadSKU,
+                            val selected: (List<StockTransferBodyPayload>) -> Unit,val whsOrigin:String,val objType:Int):BottomSheetScreen()
+    class SelectDestineModal(val objType:Int=0,val value:zebraPayload = zebraPayload(),val context: Context,val wareHouseOrigin: String,
                              val wareHouseDestine:String,
                              val stockTransferBodyViewModel:StockTransferBodyViewModel,
-                             val selected: (StockTransferPayloadVal) -> Unit): BottomSheetScreen()
+                             val selected: (List<StockTransferPayloadVal>) -> Unit): BottomSheetScreen()
     class SelectFormHeaderTask(
         val payloadForm:TaskMngmtDataForm,
         val stockTransferHeaderViewModel:StockTransferHeaderViewModel,
@@ -220,36 +224,36 @@ fun SelectWitOptionsModal(title:String,listOptions:List<Options>,selected:(Optio
 @Composable
 fun SelectDestineModal(
     objType:Int=0,
-    value:String="",
+    value:zebraPayload=zebraPayload(),
     context:Context,
     stockTransferBodyViewModel:StockTransferBodyViewModel,
     wareHouseOrigin: String,
     wareHouseDestine: String,
-    selected: (StockTransferPayloadVal) -> Unit,
+    selected: (List<StockTransferPayloadVal>) -> Unit,
     onCloseBottomSheet :()->Unit
 ){
     val suggestionViewModel: SuggestionViewModel = viewModel(
         factory = SuggestionViewModel.SuggestionViewModelFactory()
     )
 
-    if(value.isNotEmpty() && value.contains("|")){
-
+    if(value.Payload.isNotEmpty() && value.Type in listOf("LABEL-TYPE-QRCODE","LABEL-TYPE-EAN128")){
         stockTransferBodyViewModel.getBodyAndSubBody(value)
 
-        if(objType==22) {
-            suggestionViewModel.getSuggestionList("-", wareHouseDestine)
-        }else if(objType==1701){
-                //PICKING NO APLICA UBICACIONES DESTINO
-        }else{
+        if(value.Type=="LABEL-TYPE-QRCODE" && objType!=1701){
             suggestionViewModel.getSuggestionList("PICKING",wareHouseDestine)
         }
     }
 
     Rowasd(
         objType=objType,
-        value,stockTransferBodyViewModel,
-        suggestionViewModel,context,wareHouseOrigin,wareHouseDestine,onSelect={
-            selected(it)
+        value=value,
+        stockTransferBodyViewModel=stockTransferBodyViewModel,
+        suggestionViewModel=suggestionViewModel,
+        context=context,
+        wareHouseOrigin=wareHouseOrigin,
+        wareHouseDestine=wareHouseDestine,
+        onSelect={
+          selected( it )
         },Onclose={
             onCloseBottomSheet()
         }
@@ -259,23 +263,21 @@ fun SelectDestineModal(
 @Composable
 fun Rowasd(
     objType:Int,
-    value:String,
+    value:zebraPayload,
     stockTransferBodyViewModel:StockTransferBodyViewModel,
     suggestionViewModel: SuggestionViewModel,
     context: Context,
     wareHouseOrigin:String,
     wareHouseDestine:String,
-    onSelect: (StockTransferPayloadVal) -> Unit,
+    onSelect: (List<StockTransferPayloadVal>) -> Unit,
     Onclose :()->Unit
 ){
-    val stockTransferBodyAndSubBodyResponseValue = stockTransferBodyViewModel.stockTransferBodyAndSubBodyResponse.collectAsState()
+    val stockTrnsfBySbRspnsValue = stockTransferBodyViewModel.stockTransferBodyAndSubBodyResponse.collectAsState()
     val suggestionValue = suggestionViewModel.suggtn.collectAsState()
-    //val locationValue = warehouseViewModel.location.collectAsState()
 
-    var stockTransferBandSRpsValue by remember { mutableStateOf(StockTransferBodyAndSubBodyResponse()) }
-    // var locationResponseValue by remember { mutableStateOf(BinLocations()) }
+    //var stockTransferBandSRpsValue by remember { mutableStateOf(StockTransferBodyAndSubBodyResponse()) }
 
-    when(stockTransferBodyAndSubBodyResponseValue.value.status){
+    /*when(stockTransferBodyAndSubBodyResponseValue.value.status){
         ""->{}
         "cargando"->{
             Column(modifier=Modifier.padding(top=20.dp, bottom = 10.dp)) {
@@ -284,12 +286,9 @@ fun Rowasd(
                     color = Color.Gray,
                     modifier = Modifier.padding(start = 20.dp, bottom = 10.dp, end = 50.dp)
                 )
-
-                Column(modifier= Modifier
-                    .padding(20.dp)) {
-                    Text( "...")
+                Column(modifier= Modifier.padding(20.dp)) {
+                    Text("...")
                 }
-
             }
         }
         "ok"->{
@@ -301,14 +300,10 @@ fun Rowasd(
             stockTransferBandSRpsValue=stockTransferBodyAndSubBodyResponseValue.value
             stockTransferBodyViewModel.resetBodyAndSubBodyState()
         }
-    }
+    }*/
 
-    when(stockTransferBandSRpsValue.status){
-       /* ""->{
-            if(value.isEmpty()){
-                Text("ES VACIOOO")
-            }
-        }*/
+    when(stockTrnsfBySbRspnsValue.value.status){
+        ""->{}
         "cargando"->{
             Column(
                 modifier = Modifier
@@ -328,39 +323,25 @@ fun Rowasd(
         }
         "ok"->{
 
-            if(stockTransferBandSRpsValue.stockTransferSubBody.sumOf { it.Quantity } <= stockTransferBandSRpsValue.quantityDestine ) {
-                Column(modifier = Modifier.padding(top = 20.dp, bottom = 10.dp)) {
+            val mergedList = stockTrnsfBySbRspnsValue.value.response.merge()
+
+            if(stockTrnsfBySbRspnsValue.value.type==TypeCode.SSCC){
+                Column(
+                    modifier=Modifier.padding(top=20.dp, bottom = 10.dp)
+                ){
+
                     Text(
-                        text = " Ocurrio un error",
+                        text = " SSCC ${mergedList[0].Sscc}",
                         color = Color.Gray,
                         modifier = Modifier.padding(start = 20.dp, bottom = 10.dp, end = 50.dp)
                     )
-
-                    Divider()
 
                     Column(
-                        modifier = Modifier
-                            .padding(20.dp)
-                    ) {
-                        Text(
-                            "El producto ${stockTransferBandSRpsValue.stockTransferBody.ItemCode} con lote ${stockTransferBandSRpsValue.stockTransferSubBody[0].Batch}," +
-                                    " no tiene stock pendiente de ubicar."
-                        )
-                    }
-                }
-            }else{
-
-                Column(modifier=Modifier.padding(top=20.dp, bottom = 10.dp)) {
-                    Text(
-                        text = " ${stockTransferBandSRpsValue.stockTransferBody.ItemName}",
-                        color = Color.Gray,
-                        modifier = Modifier.padding(start = 20.dp, bottom = 10.dp, end = 50.dp)
-                    )
-
-                    Column(modifier= Modifier
-                        .padding(start = 20.dp, end = 20.dp)
-                        .fillMaxHeight()
-                        .verticalScroll(rememberScrollState())) {
+                        modifier= Modifier
+                            .padding(start = 20.dp, end = 20.dp)
+                            .fillMaxHeight()
+                            .verticalScroll(rememberScrollState())
+                    ){
                         Row(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             modifier= Modifier.fillMaxWidth()
@@ -372,12 +353,12 @@ fun Rowasd(
                                 Text(text ="Almacén Orig.")
                                 Text(text = " ${wareHouseOrigin}",color= Color.Gray)
                             }
-
                         }
+
                         Row(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             modifier= Modifier.fillMaxWidth()
-                        ) {
+                        ){
                             if(objType==1701){
                                 /*Text(text ="Proveedor")
                                 Text(text = " ${wareHouseOrigin}",color= Color.Gray)*/
@@ -385,33 +366,459 @@ fun Rowasd(
                                 Text(text ="Almacén Dst.")
                                 Text(text = " ${wareHouseDestine}",color= Color.Gray)
                             }
-
-
                         }
 
+                        Divider()
+                        Text("")
+
+                        LazyRow(modifier = Modifier
+                            .fillMaxWidth()
+                            .fillMaxHeight(0.6f)){
+                            items(items = mergedList, itemContent = { item ->
+                                Card(
+                                    backgroundColor = if(item.Quantity<=item.QuantityDestine){Color.Gray}else{Color.White},
+                                    elevation = 10.dp,
+                                    modifier = Modifier.fillMaxWidth().padding(5.dp)
+                                ){
+                                    Column(modifier = Modifier.padding(16.dp)) {
+                                        Row{
+                                            Icon(
+                                                painter = painterResource(id = R.drawable.ic_baseline_palet_on_24),
+                                                contentDescription = "Palet",
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                            Text(
+                                                text = " Código "+item.ItemCode,
+                                                style = MaterialTheme.typography.subtitle1,
+                                                color = MaterialTheme.colors.primary
+                                            )
+
+                                        }
+
+                                        Text(
+                                            maxLines=2,
+                                            overflow=TextOverflow.Ellipsis,
+                                            modifier=Modifier.widthIn(max=200.dp),
+                                            text = item.ItemName,
+                                            style = MaterialTheme.typography.subtitle2,
+                                            color = MaterialTheme.colors.onBackground
+                                        )
+
+                                        Spacer(modifier = Modifier.height(16.dp))
+                                        /////
+                                        Row {
+                                            Text(
+                                                text = "Cantidad Encontrada: ",
+                                                style = MaterialTheme.typography.subtitle1,
+                                                color = MaterialTheme.colors.onBackground
+                                            )
+                                            Text(
+                                                text = ""+item.Quantity,
+                                                style = MaterialTheme.typography.subtitle1,
+                                                color = MaterialTheme.colors.primary
+                                            )
+                                        }
+                                        Row {
+                                            Text(
+                                                text = "Cantidad Ubicada: ",
+                                                style = MaterialTheme.typography.subtitle1,
+                                                color = MaterialTheme.colors.onBackground
+                                            )
+                                            Text(
+                                                text = ""+item.QuantityDestine,
+                                                style = MaterialTheme.typography.subtitle1,
+                                                color = MaterialTheme.colors.primary
+                                            )
+                                        }
+                                        Row {
+                                            Text(
+                                                text = "Lote: ",
+                                                style = MaterialTheme.typography.subtitle1,
+                                                color = MaterialTheme.colors.onBackground
+                                            )
+                                            Text(
+                                                text = item.Batch,
+                                                style = MaterialTheme.typography.subtitle1,
+                                                color = MaterialTheme.colors.primary
+                                            )
+                                        }
+                                    }
+                                }
+
+                            })
+                        }
+
+                        Text("")
+
+                        var  saldo = mergedList.map {
+                            it.Quantity==it.QuantityDestine
+                        }
+
+                        val result = saldo.reduce { acc, b -> acc && b }
+
+                        /////////////////////////////////////UBICACION SUGERIDA DESTINO/////////////////////////////////////
+                        if(result){
+                            Text("No hay articulos pendientes de ubicar en este SSCC")
+                        }else{
+                            /////////////////////////////////////TIPO DE UBICACION/////////////////////////////////////
+                            var typeLocation by remember { mutableStateOf("") }
+                            var destineLocation by remember { mutableStateOf(BinLocation()) }
+
+                            if(objType!=1701){
+                                Text("Tipo de ubicación "+if(typeLocation.isNullOrEmpty()){""}else{"[${typeLocation}]"}, fontWeight = FontWeight.Bold)
+
+                                showTypeLocation(
+                                    objType=objType,
+                                    //type=stockTrnsfBySbRspnsValue.value.type,
+                                    value=typeLocation,
+                                    onSelect={
+                                        typeLocation=it
+                                        suggestionViewModel.getSuggestionList(it,wareHouseDestine)
+                                    }
+                                )
+                            }
+
+                            Text("")
+                            ////////////////////////////////////////////////////////////////////////
+                            if(objType!=1701 && typeLocation.isNotEmpty()){ //ES DIFERENTE A PICKING
+                                Text("Ubicación destino "+if(destineLocation.text.isNullOrEmpty()){""}else{"[${destineLocation.text}]"}, fontWeight = FontWeight.Bold)
+                                xddVs2(
+                                    stockTransferBandSRpsValue=mergedList,
+                                    suggestions=suggestionValue.value,
+                                    value=if(destineLocation.text.isNotEmpty() || destineLocation.text!=value.Payload){value.Payload}else{""},
+                                    onLoader = {
+                                        Log.e("JEPICAME","LA UBICACIO SUGERIDA ES "+it.text )
+                                        if(it.text!=destineLocation.text || value.Payload.split("-").size<3){
+                                            destineLocation=it
+                                        }
+                                    }
+                                )
+                            }
+
+                            Row(
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                modifier = Modifier.fillMaxWidth()
+                            ){
+                                Button(
+                                    colors= ButtonDefaults.buttonColors(backgroundColor = Color.Gray),
+                                    onClick = {
+
+                                        Log.e("JEPICAME","VA A AGREGARLO")
+
+                                        //val tempList = mergedList.filter{it.Quantity<=it.QuantityDestine}.map{
+                                        val tempList = mergedList.map{
+                                            StockTransferPayloadVal(
+                                                quantity=it.Quantity, //_StockTransferBody
+                                                idBody = it._StockTransferBody, // stockTransferBandSRpsValue.stockTransferBody._id,
+                                                batch=it.Batch,
+                                                sscc=it.Sscc!!,
+                                                origin=listOf(
+                                                    ManyToOne(
+                                                        id=it._StockTransferSubBody,
+                                                        locationCode = it.LocationCode,
+                                                        locationName = it.LocationName,
+                                                        quantityNow =0.0,
+                                                        quantityUsed = it.Quantity,
+                                                        quantityAvailable = 0.0
+                                                    )
+                                                ),
+                                                destine=destineLocation
+                                            )
+                                        }
+
+                                        Log.e("JEPICAME","VA A AGREGARLO "+tempList.size)
+
+                                        onSelect(tempList)
+                                    }
+                                ){
+                                    Text(
+                                        text = "Agregar",
+                                        color=Color.White
+                                    )
+                                }
+                                Button( onClick = {
+                                    Onclose()
+                                }
+                                ){
+                                    Text(
+                                        text = "Cancelar"
+                                    )
+                                }
+                            }
+                        }
+
+                    }
+                }
+            }
+            else{
+                if(mergedList.size!=1){
+                    showMessageModalError("Solo los códigos SSCC pueden albergar más de un producto")
+                }else{
+                    Column(
+                        modifier=Modifier.padding(top=20.dp, bottom = 10.dp)
+                    ){
+                        Text(
+                            text = " ${mergedList[0].ItemName}",
+                            color = Color.Gray,
+                            modifier = Modifier.padding(start = 20.dp, bottom = 10.dp, end = 50.dp)
+                        )
+
+                        Column(
+                            modifier= Modifier
+                                .padding(start = 20.dp, end = 20.dp)
+                                .fillMaxHeight()
+                                .verticalScroll(rememberScrollState())
+                        ){
+                            Row(
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                modifier= Modifier.fillMaxWidth()
+                            ) {
+                                if(objType==22){
+                                    Text(text ="Proveedor")
+                                    Text(text = " ${wareHouseOrigin}",color= Color.Gray)
+                                }else{
+                                    Text(text ="Almacén Orig.")
+                                    Text(text = " ${wareHouseOrigin}",color= Color.Gray)
+                                }
+                            }
+
+                            Row(
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                modifier= Modifier.fillMaxWidth()
+                            ){
+                                if(objType==1701){
+                                    /*Text(text ="Proveedor")
+                                    Text(text = " ${wareHouseOrigin}",color= Color.Gray)*/
+                                }else{
+                                    Text(text ="Almacén Dst.")
+                                    Text(text = " ${wareHouseDestine}",color= Color.Gray)
+                                }
+                            }
+
+                            Row(
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                modifier= Modifier.fillMaxWidth()
+                            ){
+                                Text(text ="Lote")
+                                Text(text = " ${mergedList[0].Batch}",color= Color.Gray)
+                            }
+
+                            Row(
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                modifier= Modifier.fillMaxWidth()
+                            ){
+                                Text(text ="Cantidad pendiente")
+                                Text(text = " ${mergedList[0].Quantity - mergedList[0].QuantityDestine}",color= Color.Gray)
+                            }
+
+                            Divider()
+                            Text("")
+
+                            /////////////////////////////////////TIPO DE UBICACION/////////////////////////////////////
+                            var destineLocation by remember { mutableStateOf(BinLocation()) }
+
+                            if(objType!=1701){ //ES DIFERENTE A PICKING
+                                Text("Ubicación destino sugerida "+if(destineLocation.text.isNullOrEmpty()){""}else{"[${destineLocation.text}]"}, fontWeight = FontWeight.Bold)
+                                Text("")
+
+                                xddVs2(
+                                    stockTransferBandSRpsValue=mergedList,
+                                    suggestions=suggestionValue.value,
+                                    value=if(destineLocation.text.isNotEmpty() || destineLocation.text!=value.Payload){value.Payload}else{""},
+                                    onLoader = {
+                                        if(it.text!=destineLocation.text || value.Payload.split("-").size<3){
+                                            destineLocation=it
+                                        }
+                                    }
+                                )
+                            }
+
+                           FormLocationDestine(
+                               quantityText=if(objType==1701){"${mergedList[0].Quantity - mergedList[0].QuantityDestine}"}else{"1.00"},
+                               onPress={
+
+                                    val locationOrigins:List<ManyToOne> = calculateBinLocationOrigin(it.quantity,mergedList)
+
+                                    if(locationOrigins.isEmpty()){
+                                        Toast.makeText(context, "Stock Insuficiente", Toast.LENGTH_LONG).show()
+                                    }else{
+                                        if(destineLocation.text.isNullOrEmpty() && objType!=1701){
+                                            Toast.makeText(context, "Es necesario ingresar una ubicación destino", Toast.LENGTH_LONG).show()
+                                        }else{
+                                            when(objType){
+                                                1701->{
+                                                    if(mergedList.sumOf{it.Quantity}==it.quantity){
+                                                        it.idBody=mergedList[0]._StockTransferBody
+                                                        it.batch=mergedList[0].Batch
+                                                        it.origin=locationOrigins
+                                                        it.destine=destineLocation
+                                                        onSelect( listOf(it))
+                                                    }else{
+                                                        Toast.makeText(context, "Es necesario que la cantidad ingresada sea igual a la cantidad solicitada.", Toast.LENGTH_LONG).show()
+                                                    }
+                                                }
+                                                else->{
+                                                    it.idBody=mergedList[0]._StockTransferBody
+                                                    it.batch=mergedList[0].Batch
+                                                    it.origin=locationOrigins
+                                                    it.destine=destineLocation
+
+                                                    onSelect( listOf(it))
+                                                }
+                                            }
+                                        }
+                                    }
+
+                               },onClosePressed={
+                                   Onclose()
+                               }
+                           )
+                        }
+                    }
+                }
+            }
+
+
+   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/*
+            if( stockTransferBandSRpsValue.stockTransferSubBody.sumOf { it.Quantity } <= stockTransferBandSRpsValue.quantityDestine ) {
+                showMessageModal("El producto ${stockTransferBandSRpsValue.stockTransferBody.ItemCode} con lote ${stockTransferBandSRpsValue.stockTransferSubBody[0].Batch}, no tiene stock pendiente de ubicar.")
+            }
+            else{
+                Column(
+                    modifier=Modifier.padding(top=20.dp, bottom = 10.dp)
+                ){
+                    if(value.Payload.length==18){
+                        Text(
+                            text = " SSCC ${value.Payload}",
+                            color = Color.Gray,
+                            modifier = Modifier.padding(start = 20.dp, bottom = 10.dp, end = 50.dp)
+                        )
+                    }else{
+                        Text(
+                            text = " ${stockTransferBandSRpsValue.stockTransferBody.ItemName}",
+                            color = Color.Gray,
+                            modifier = Modifier.padding(start = 20.dp, bottom = 10.dp, end = 50.dp)
+                        )
+                    }
+
+                    Column(
+                        modifier= Modifier
+                        .padding(start = 20.dp, end = 20.dp)
+                        .fillMaxHeight()
+                        .verticalScroll(rememberScrollState())
+                    ){
                         Row(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             modifier= Modifier.fillMaxWidth()
                         ) {
-                            Text(text ="Lote")
-                            Text(text = " ${stockTransferBandSRpsValue.stockTransferSubBody[0].Batch}",color= Color.Gray)
+                            if(objType==22){
+                                Text(text ="Proveedor")
+                                Text(text = " ${wareHouseOrigin}",color= Color.Gray)
+                            }else{
+                                Text(text ="Almacén Orig.")
+                                Text(text = " ${wareHouseOrigin}",color= Color.Gray)
+                            }
                         }
 
                         Row(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             modifier= Modifier.fillMaxWidth()
                         ){
-                            Text(text ="Cantidad pendiente")
-                            Text(text = " ${(stockTransferBandSRpsValue.stockTransferSubBody.sumOf { it.Quantity } )-(stockTransferBandSRpsValue.quantityDestine)}",color= Color.Gray)
+                            if(objType==1701){
+                                /*Text(text ="Proveedor")
+                                Text(text = " ${wareHouseOrigin}",color= Color.Gray)*/
+                            }else{
+                                Text(text ="Almacén Dst.")
+                                Text(text = " ${wareHouseDestine}",color= Color.Gray)
+                            }
                         }
 
-                        Divider()
+                        if(stockTransferBandSRpsValue.stockTransferSubBody[0].Sscc!!.length!=18){
+                            Row(
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                modifier= Modifier.fillMaxWidth()
+                            ){
+                                Text(text ="Lote")
+                                Text(text = " ${stockTransferBandSRpsValue.stockTransferSubBody[0].Batch}",color= Color.Gray)
+                            }
+
+                            Row(
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                modifier= Modifier.fillMaxWidth()
+                            ){
+                                Text(text ="Cantidad pendiente")
+                                Text(text = " ${(stockTransferBandSRpsValue.stockTransferSubBody.sumOf { it.Quantity } )-(stockTransferBandSRpsValue.quantityDestine)}",color= Color.Gray)
+                            }
+
+                            Divider()
+                            Text("")
+                        }
+                        else{
+                            Divider()
+                            Text("")
+
+                            LazyRow(modifier = Modifier
+                                .fillMaxWidth()
+                                .fillMaxHeight(0.6f)) {
+                                items(items = stockTransferBandSRpsValue.stockTransferSubBody, itemContent = { item ->
+
+                                    Card(
+                                        backgroundColor = Color.White,
+                                        elevation = 10.dp,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(5.dp)
+                                    ){
+                                        Column(modifier = Modifier.padding(16.dp)) {
+                                            Text(
+                                                text = stockTransferBandSRpsValue.stockTransferBody.ItemCode +"\n"+stockTransferBandSRpsValue.stockTransferBody.ItemName,
+                                                style = MaterialTheme.typography.subtitle2,
+                                                color = MaterialTheme.colors.onBackground
+                                            )
+                                            Row {
+                                                Text(
+                                                    text = "Cantidad: ",
+                                                    style = MaterialTheme.typography.subtitle1,
+                                                    color = MaterialTheme.colors.onBackground
+                                                )
+                                                Text(
+                                                    text = ""+item.Quantity,
+                                                    style = MaterialTheme.typography.subtitle1,
+                                                    color = MaterialTheme.colors.primary
+                                                )
+                                            }
+                                            Row {
+                                                Text(
+                                                    text = "Lote: ",
+                                                    style = MaterialTheme.typography.subtitle1,
+                                                    color = MaterialTheme.colors.onBackground
+                                                )
+                                                Text(
+                                                    text = item.Batch,
+                                                    style = MaterialTheme.typography.subtitle1,
+                                                    color = MaterialTheme.colors.primary
+                                                )
+                                            }
+                                        }
+                                    }
+
+                                })
+                            }
+                            Text("")
+                        }
 
                         /////////////////////////////////////UBICACION SUGERIDA DESTINO/////////////////////////////////////
 
                         var destineLocation by remember { mutableStateOf(BinLocation()) }
-                        Text("")
-
                         if(objType!=1701){ //ES DIFERENTE A PICKING
                             Text("Ubicación destino sugerida "+if(destineLocation.text.isNullOrEmpty()){""}else{"[${destineLocation.text}]"}, fontWeight = FontWeight.Bold)
                             Text("")
@@ -419,107 +826,150 @@ fun Rowasd(
                             xdd(
                                 stockTransferBandSRpsValue=stockTransferBandSRpsValue,
                                 suggestions=suggestionValue.value,
-                                value=if(destineLocation.text.isNotEmpty() || destineLocation.text!=value){value}else{""},
+                                value=if(destineLocation.text.isNotEmpty() || destineLocation.text!=value.Payload){value.Payload}else{""},
                                 onLoader = {
-                                    if(it.text!=destineLocation.text || value.split("-").size<3){
+                                    if(it.text!=destineLocation.text || value.Payload.split("-").size<3){
                                         destineLocation=it
                                     }
                                 }
                             )
                         }
 
-                        FormLocationDestine(
-                            quantityValidation=0.0,
-                            onPress={
-                                stockTransferBandSRpsValue.stockTransferSubBody.forEach{
-                                    Log.e("JEPICAME","=>"+it.LocationName +" "+it.Batch + " "+it.Quantity + " "+it.Destine.sum("Quantity"))
-                                }
+                        if(stockTransferBandSRpsValue.stockTransferSubBody[0].Sscc!!.length!=18){
+                            FormLocationDestine(
+                                onPress={
+                                    val locationOrigins:List<ManyToOne> = calculateBinLocationOrigin(it.quantity,stockTransferBandSRpsValue.stockTransferSubBody)
 
-                                val locationOrigins:List<ManyToOne> = calculateBinLocationOrigin(it.quantity,stockTransferBandSRpsValue.stockTransferSubBody)
-
-                                if(locationOrigins.isEmpty()){
-                                    Toast.makeText(context, "Stock Insuficiente", Toast.LENGTH_LONG).show()
-                                }else{
-                                    if(destineLocation.text.isNullOrEmpty() && objType!=1701){
-                                        Toast.makeText(context, "Es necesario ingresar una ubicación destino", Toast.LENGTH_LONG).show()
+                                    if(locationOrigins.isEmpty()){
+                                        Toast.makeText(context, "Stock Insuficiente", Toast.LENGTH_LONG).show()
                                     }else{
-
-                                        when(objType){
-                                            1701->{
-                                                if(stockTransferBandSRpsValue.stockTransferSubBody.sumOf{it.Quantity}==it.quantity){
+                                        if(destineLocation.text.isNullOrEmpty() && objType!=1701){
+                                            Toast.makeText(context, "Es necesario ingresar una ubicación destino", Toast.LENGTH_LONG).show()
+                                        }else{
+                                            when(objType){
+                                                1701->{
+                                                    if(stockTransferBandSRpsValue.stockTransferSubBody.sumOf{it.Quantity}==it.quantity){
+                                                        it.idBody=stockTransferBandSRpsValue.stockTransferBody._id
+                                                        it.batch=stockTransferBandSRpsValue.stockTransferSubBody[0].Batch
+                                                        it.origin=locationOrigins
+                                                        it.destine=destineLocation
+                                                        onSelect( listOf(it))
+                                                    }else{
+                                                        Toast.makeText(context, "Es necesario que la cantidad ingresada sea igual a la cantidad solicitada.", Toast.LENGTH_LONG).show()
+                                                    }
+                                                }
+                                                else->{
                                                     it.idBody=stockTransferBandSRpsValue.stockTransferBody._id
                                                     it.batch=stockTransferBandSRpsValue.stockTransferSubBody[0].Batch
                                                     it.origin=locationOrigins
                                                     it.destine=destineLocation
-                                                    onSelect(it)
-                                                }else{
-                                                    Toast.makeText(context, "Es necesario que la cantidad ingresada sea igual a la cantidad solicitada.", Toast.LENGTH_LONG).show()
+
+                                                    onSelect( listOf(it))
                                                 }
                                             }
-                                            else->{
-                                                it.idBody=stockTransferBandSRpsValue.stockTransferBody._id
-                                                it.batch=stockTransferBandSRpsValue.stockTransferSubBody[0].Batch
-                                                it.origin=locationOrigins
-                                                it.destine=destineLocation
+                                        }
+                                    }
 
-                                                onSelect(it)
-                                            }
+                                },onClosePressed={
+                                    Onclose()
+                                }
+                            )
+                        }
+                        else{
+                            Text("")
+                            Row(
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                modifier = Modifier.fillMaxWidth()
+                            ){
+                                Button(
+                                    colors= ButtonDefaults.buttonColors(backgroundColor = Color.Gray),
+                                    onClick = {
+                                        val tempList = stockTransferBandSRpsValue.stockTransferSubBody.map{
+                                            StockTransferPayloadVal(
+                                                quantity=it.Quantity,
+                                                idBody = stockTransferBandSRpsValue.stockTransferBody._id,
+                                                batch=it.Batch,
+                                                origin=listOf(
+                                                    ManyToOne(
+                                                        id=it._id,
+                                                        locationCode = it.LocationCode,
+                                                        locationName = it.LocationName,
+                                                        quantityNow =0.0,
+                                                        quantityUsed = it.Quantity,
+                                                        quantityAvailable = 0.0
+                                                    )
+                                                ),
+                                                destine=destineLocation
+                                            )
                                         }
 
-
-
-
-
-
+                                        Log.e("JEPCIAME","TODO OK")
+                                        onSelect(tempList)
                                     }
+                                ){
+                                    Text(
+                                        text = "Agregar",
+                                        color=Color.White
+                                    )
                                 }
-
-                            },onClosePressed={
-                                Onclose()
+                                Button( onClick = {
+                                    Onclose()
+                                }
+                                ){
+                                    Text(
+                                        text = "Cancelar"
+                                    )
+                                }
                             }
-                        )
-
+                        }
                     }
                 }
             }
 
+            */
         }
         else->{
-            Column(modifier=Modifier.padding(top=20.dp, bottom = 10.dp)) {
-                Text(
-                    text = " Ocurrio un error",
-                    color = Color.Gray,
-                    modifier = Modifier.padding(start = 20.dp, bottom = 10.dp, end = 50.dp)
-                )
+            showMessageModalError(stockTrnsfBySbRspnsValue.value.status)
+        }
+    }
+    /*
+        coroutineScope.launch {
 
-                Divider()
+            val visibleItemsInfo = listState.layoutInfo.visibleItemsInfo
+            val visibleSet = visibleItemsInfo.map { it.index }.toSet()
+            if (locationDestine.indexOf(binLocation) == visibleItemsInfo.last().index) {
+                listState.animateScrollToItem(index=locationDestine.indexOf(binLocation))
 
-                Column(modifier= Modifier
-                    .padding(20.dp)) {
-                    Text( "${stockTransferBandSRpsValue.status}.")
-                }
+            } else if (visibleSet.contains(locationDestine.indexOf(binLocation)) && locationDestine.indexOf(binLocation) != 0) {
+                listState.animateScrollToItem(index=(locationDestine.indexOf(binLocation) - 1))
             }
+
         }
-    }
-/*
-    coroutineScope.launch {
-
-        val visibleItemsInfo = listState.layoutInfo.visibleItemsInfo
-        val visibleSet = visibleItemsInfo.map { it.index }.toSet()
-        if (locationDestine.indexOf(binLocation) == visibleItemsInfo.last().index) {
-            listState.animateScrollToItem(index=locationDestine.indexOf(binLocation))
-
-        } else if (visibleSet.contains(locationDestine.indexOf(binLocation)) && locationDestine.indexOf(binLocation) != 0) {
-            listState.animateScrollToItem(index=(locationDestine.indexOf(binLocation) - 1))
-        }
-
-    }
-
-*/
+    */
 
 }
 
-private fun calculateBinLocationOrigin(cantidadSolicitada:Double,listSubBody:List<StockTransferSubBody>):List<ManyToOne>{
+@Composable
+private fun showMessageModalError(mensaje:String){
+    Column(modifier = Modifier.padding(top = 20.dp, bottom = 10.dp)) {
+        Text(
+            text = " Ocurrio un error",
+            color = Color.Gray,
+            modifier = Modifier.padding(start = 20.dp, bottom = 10.dp, end = 50.dp)
+        )
+
+        Divider()
+
+        Column(
+            modifier = Modifier
+                .padding(20.dp)
+        ) {
+            Text(mensaje)
+        }
+    }
+}
+
+private fun calculateBinLocationOrigin(cantidadSolicitada:Double,listSubBody:List<MergedStockTransfer>):List<ManyToOne>{
 
     val mutableList: MutableList<ManyToOne> = object : ArrayList<ManyToOne>(){}
     /////////////////////////////////////////////////////
@@ -546,7 +996,7 @@ private fun calculateBinLocationOrigin(cantidadSolicitada:Double,listSubBody:Lis
                 var temp=(item.Quantity- item.Destine.sum("Quantity").toDouble())-resto
 
                 mutableList.add(ManyToOne(
-                    id=item._id,
+                    id=item._StockTransferSubBody,
                     locationCode = item.LocationCode,
                     locationName = item.LocationName,
                     quantityNow =item.Quantity,
@@ -559,7 +1009,7 @@ private fun calculateBinLocationOrigin(cantidadSolicitada:Double,listSubBody:Lis
             }else if((item.Quantity- item.Destine.sum("Quantity").toDouble())==resto){
 
                 mutableList.add(ManyToOne(
-                    id=item._id,
+                    id=item._StockTransferSubBody,
                     locationCode = item.LocationCode,
                     locationName = item.LocationName,
                     quantityNow =item.Quantity,
@@ -572,7 +1022,7 @@ private fun calculateBinLocationOrigin(cantidadSolicitada:Double,listSubBody:Lis
             }else if((item.Quantity - item.Destine.sum("Quantity").toDouble())< resto){
 
                 mutableList.add(ManyToOne(
-                    id=item._id,
+                    id=item._StockTransferSubBody,
                     locationCode = item.LocationCode,
                     locationName = item.LocationName,
                     quantityNow =(item.Quantity- item.Destine.sum("Quantity").toDouble()),
@@ -604,21 +1054,18 @@ private fun calculateBinLocationOrigin(cantidadSolicitada:Double,listSubBody:Lis
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun FormLocationDestine(
-    quantityValidation:Double=0.0,
+    quantityText:String,
     onPress:(StockTransferPayloadVal)->Unit,
     onClosePressed: () -> Unit
 ){
 
-    var quantity by remember { mutableStateOf("1.00") }
+    var quantity by remember { mutableStateOf(quantityText) }
     var optionAdd by remember { mutableStateOf(false) }
     var optionCancell by remember { mutableStateOf(false) }
     var haveError by remember { mutableStateOf("") }
 
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
-
-
-
 
     OutlinedTextField(
         enabled= true,
@@ -717,11 +1164,11 @@ fun FormLocationDestine(
 fun SelectTypescanModal(
     idHeader:String,
     context:Context,
-    value:String="",
+    value:zebraPayload=zebraPayload(),
     type:TypeReadSKU,
     whsOrigin:String="",
     objType:Int=0,
-    selected: (StockTransferBodyPayload) -> Unit,
+    selected: (List<StockTransferBodyPayload>) -> Unit,
     onCloseBottomSheet :()->Unit){
 
     val itemsViewModel: ItemsViewModel = viewModel(
@@ -740,10 +1187,16 @@ fun SelectTypescanModal(
         factory = QualityViewModel.QualityViewModelFactory()
     )
 
-    if(value.split("-").size>=3){
-        warehouseViewModel.getLocations(value,whsOrigin)
-    }else if(value.isNotEmpty()){
-        itemsViewModel.getArticle(value)
+
+    if(value.Payload.split("-").size==4 && value.Type!="LABEL-TYPE-QRCODE"){
+        warehouseViewModel.getLocations(value.Payload,whsOrigin)
+    }else if(value.Payload.isNotEmpty()){
+        Log.e("Jepicame idJehdaer","=>SE EJEUCTA DESDE 1158")
+        itemsViewModel.getArticle(
+            value=value.Payload,
+            idHeader=idHeader,
+            typeInventario=""
+        )
     }
 
     qualityViewModel.getQuality(objType)
@@ -774,24 +1227,26 @@ private fun ASJDHASJKD(
     itemsViewModel: ItemsViewModel,
     warehouseViewModel:WarehouseViewModel,
     documentBodyVm:StockTransferBodyViewModel,
-                       qualityViewModel: QualityViewModel,
-                       type:TypeReadSKU=TypeReadSKU.HANDHELD,
-                       objType:Int,
-                       onPress:(StockTransferBodyPayload)->Unit,
-                       onClosePressed: () -> Unit){
+   qualityViewModel: QualityViewModel,
+   type:TypeReadSKU=TypeReadSKU.HANDHELD,
+   objType:Int,
+   onPress:(List<StockTransferBodyPayload>)->Unit,
+   onClosePressed: () -> Unit
+){
 
     val articleValue = itemsViewModel.article.collectAsState()
     val warehouseValue = warehouseViewModel.location.collectAsState()
     val qualityValue = qualityViewModel.quality.collectAsState()
     val documentBodyValue = documentBodyVm.documentBody.collectAsState()
 
-    if(articleValue.value.items[0].defaultBinLocation.isNotEmpty()){
+    if(articleValue.value.items.isNotEmpty() && articleValue.value.items[0].defaultBinLocation.isNotEmpty()){
         warehouseViewModel.getLocations(articleValue.value.items[0].defaultBinLocation,wareHouseOrigin)
     }
 
     var binLocation by remember { mutableStateOf(LocationResponse()) }
     var quality by remember { mutableStateOf(QualityControlResponse()) }
-    var itemResponse by remember { mutableStateOf(ItemResponse()) }
+    var itemResponse:ItemsResponse by remember { mutableStateOf(ItemsResponse()) }
+
 
     when(qualityValue.value.status){
         ""->{}
@@ -812,6 +1267,7 @@ private fun ASJDHASJKD(
         }
     }
 
+    //22 ES codigo de recepcion de mercaderia de las orden de compra
     if(objType==22){
         when(documentBodyValue.value.status){
             ""->{}
@@ -819,7 +1275,14 @@ private fun ASJDHASJKD(
                 CustomProgressDialog("Buscando articulo...")
             }
             "ok"->{
-                itemResponse=ItemResponse(Items(ItemName = documentBodyValue.value.body.ItemName, ItemCode = documentBodyValue.value.body.ItemCode))
+
+                itemResponse=ItemsResponse(
+                    items= listOf(
+                        ItemResponse(
+                            item=Items(ItemName = documentBodyValue.value.body.ItemName, ItemCode = documentBodyValue.value.body.ItemCode)
+                        )
+                    )
+                )
                 documentBodyVm.resetDocumentBody()
             }
             "vacio"->{
@@ -836,10 +1299,23 @@ private fun ASJDHASJKD(
         when(articleValue.value.status){
             ""->{}
             "cargando"->{
-                CustomProgressDialog("Buscando articulo...")
+                if(articleValue.value.type==TypeCode.QR){
+                    CustomProgressDialog("Buscando articulo...")
+                }else{
+                    CustomProgressDialog("Buscando SSCC...")
+                }
             }
             "ok"->{
-                itemResponse=articleValue.value.items[0]
+                if(articleValue.value.type==TypeCode.SSCC){
+                    if(wareHouseOrigin==articleValue.value.warehouse){
+                        itemResponse=articleValue.value
+                    }else{
+                        Toast.makeText(context, "No puedes generar esta operación por que el almacén origen es $wareHouseOrigin y el palet escaneado actualmente se encuentra en el almacén ${articleValue.value.warehouse}", Toast.LENGTH_LONG).show()
+                    }
+                }else{
+                    itemResponse=articleValue.value
+                }
+
                 itemsViewModel.resetArticleStatus()
             }
             "vacio"->{
@@ -847,7 +1323,7 @@ private fun ASJDHASJKD(
                 itemsViewModel.resetArticleStatus()
             }
             else->{
-                Toast.makeText(context, "Ocurrio un error:\n ${articleValue.value.status}", Toast.LENGTH_LONG).show()
+                Toast.makeText(context, articleValue.value.status, Toast.LENGTH_LONG).show()
                 itemsViewModel.resetArticleStatus()
             }
         }
@@ -860,90 +1336,104 @@ private fun ASJDHASJKD(
         }
         "ok"->{
             binLocation=warehouseValue.value
-            warehouseViewModel.resetWarehouseStatus()
-            //warehouseViewModel.resetLocationStatus()
+            //warehouseViewModel.resetWarehouseStatus()
+            warehouseViewModel.resetLocationStatus()
         }
         "vacio"->{
             Toast.makeText(context, "El código escaneado no representa una ubicación del almacén origen.", Toast.LENGTH_LONG).show()
-            //warehouseViewModel.resetLocationStatus()
+            warehouseViewModel.resetLocationStatus()
         }
         else->{
             Toast.makeText(context, "Ocurrio un error:\n ${warehouseValue.value.status}", Toast.LENGTH_LONG).show()
-            //warehouseViewModel.resetLocationStatus()
+            warehouseViewModel.resetLocationStatus()
         }
     }
 
+    if(itemResponse.items.isNotEmpty()){
+        Column(modifier=Modifier.padding(top=20.dp)){
 
-    Column(modifier=Modifier.padding(top=20.dp, bottom = 10.dp)){
-        Text(
-            text = if(itemResponse.item.ItemName.isNullOrEmpty()){"Registrar artículo"}else{itemResponse.item.ItemName},
-            color = Color.Gray,
-            modifier = Modifier.padding(start = 20.dp, bottom = 10.dp,end=50.dp)
-        )
-        Divider(modifier = Modifier
-            .fillMaxWidth(0.8f)
-            .padding(start = 20.dp, bottom = 10.dp))
+            if(itemResponse.type==TypeCode.SSCC){
+                Text(
+                    //+" x"+itemResponse.items.size
+                    text = if(itemResponse.nameSscc.isNullOrEmpty()){"Codigo del SSCC [XXXX]"}else{"SSCC "+itemResponse.nameSscc},
+                    color = Color.Gray,
+                    modifier = Modifier.padding(start = 20.dp, bottom = 10.dp,end=50.dp)
+                )
+            }else{
+                Text(
+                    text = if(itemResponse.items.isNullOrEmpty() && itemResponse.items[0].item.ItemName.isNullOrEmpty()){"Registrar artículo"}else{itemResponse.items[0].item.ItemName},
+                    color = Color.Gray,
+                    modifier = Modifier.padding(start = 20.dp, bottom = 10.dp,end=50.dp)
+                )
+            }
 
-        Column(modifier= Modifier
-            .padding(16.dp)
-            .verticalScroll(rememberScrollState())){
-            when(type){
-                TypeReadSKU.CAMERA->{
-                    Text("Opción no habilitada.")
-                    /*CameraForm(
-                        calledFor= CallFor.Article,
-                        context = context,
-                        itemsViewModel= itemsViewModel,
-                        cameraProviderFuture=cameraProviderFuture,
-                        cameraProvider=cameraProvider
-                    )*/
-                }
-                TypeReadSKU.HANDHELD,
-                TypeReadSKU.KEYBOARD->{
-                    // cameraProvider.unbindAll()
+            Divider(modifier = Modifier.fillMaxWidth(0.8f).padding(start = 20.dp, bottom = 10.dp))
 
-                    if(quality.status=="ok"||quality.status=="" ){
+            Column(modifier= Modifier
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState())){
+                when(type){
+                    TypeReadSKU.CAMERA->{
+                        Text("Opción no habilitada.")
+                        /*CameraForm(
+                            calledFor= CallFor.Article,
+                            context = context,
+                            itemsViewModel= itemsViewModel,
+                            cameraProviderFuture=cameraProviderFuture,
+                            cameraProvider=cameraProvider
+                        )*/
+                    }
+                    TypeReadSKU.HANDHELD,
+                    TypeReadSKU.KEYBOARD->{
+                        // cameraProvider.unbindAll()
 
-                        formHandheld(
-                            quality=quality,
-                            objType=objType,
-                            TopresponseLocationAndItem=ResponseLocationAndItem(locationResponse = binLocation,itemResponse=itemResponse),
-                            onPress={
+                        if(quality.status=="ok"||quality.status=="" ){
+                            formHandheld(
+                                quality=quality,
+                                objType=objType,
+                                itemsResponse=itemResponse,
+                                TopresponseLocationAndItem=ResponseLocationAndItem(locationResponse = binLocation,itemResponse=itemResponse.items[0]),
+                                onPress={
 
-                                /*if(objType==22){
-                                    if(articleValue.value.documentBody.TotalQuantity+it.Quantity>articleValue.value.documentBody.Quantity){
-                                        Toast.makeText(context, "La cantidad ingresada no puede ser mayor a la cantidad asignada en el documento.", Toast.LENGTH_LONG).show()
-                                    }else{
-                                        onPress(it)
-                                    }
-                                }else{*/
+                                    /*if(objType==22){
+                                        if(articleValue.value.documentBody.TotalQuantity+it.Quantity>articleValue.value.documentBody.Quantity){
+                                            Toast.makeText(context, "La cantidad ingresada no puede ser mayor a la cantidad asignada en el documento.", Toast.LENGTH_LONG).show()
+                                        }else{
+                                            onPress(it)
+                                        }
+                                    }else{*/
 
                                     onPress(it)
 
-                                    itemResponse=ItemResponse(Items(ItemCode = "", ItemName = ""))
-                               // }
+                                    itemResponse=ItemsResponse()
+                                    // }
 
-                            },onClosePressed={
-                                /*if(objType==22){
-                                    documentBodyVm.resetDocumentBody()
-                                }*/
+                                },onClosePressed={
+                                    /*if(objType==22){
+                                        documentBodyVm.resetDocumentBody()
+                                    }*/
 
-                                onClosePressed()
-                            },
-                            onSearch = {
-                                if(objType==22){
-                                    documentBodyVm.getArticleFromBody(it)
-                                }else{
-                                    itemsViewModel.getArticle(it,idHeader)
+                                    onClosePressed()
+                                },
+                                onSearch = {
+                                    if(objType==22){
+                                        documentBodyVm.getArticleFromBody(it)
+                                    }else{
+                                        Log.e("Jepicame idJehdaer","=>SE EJEUCTA DESDE 1387")
+                                        itemsViewModel.getArticle(
+                                            value=it,
+                                            idHeader=idHeader,
+                                            typeInventario=""
+                                        )
+                                    }
                                 }
-                            }
-                        )
+                            )
+
+                        }
 
                     }
-
-
+                    else->{}
                 }
-                else->{}
             }
         }
     }
@@ -952,11 +1442,12 @@ private fun ASJDHASJKD(
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun formHandheld(
+    itemsResponse:ItemsResponse=ItemsResponse(),
     quality:QualityControlResponse,
     objType:Int,
     TopresponseLocationAndItem:ResponseLocationAndItem=ResponseLocationAndItem(),
     onSearch:(String)->Unit,
-    onPress:(StockTransferBodyPayload)->Unit,
+    onPress:(List<StockTransferBodyPayload>)->Unit,
     onClosePressed: () -> Unit){
 
     var responseLocationAndItem by  remember {mutableStateOf(TopresponseLocationAndItem)}
@@ -997,60 +1488,165 @@ private fun formHandheld(
         quantity=""+responseLocationAndItem.itemResponse.quantity
     }
 
-    OutlinedTextField(
-        enabled= !responseLocationAndItem.itemResponse.item.ItemCode.isNullOrEmpty(),
-        singleLine=true,
-        value = if(responseLocationAndItem.itemResponse.item.ItemCode.isNullOrEmpty()){idArticle}else{responseLocationAndItem.itemResponse.item.ItemCode},
-        onValueChange = {
-            idArticle = it
-        },
-        label = { Text(text = "Código del artículo") },
-        placeholder = { Text(text = "Ingresar código del artículo") },
-        trailingIcon = { Icon(imageVector = Icons.Default.Edit, contentDescription = null, tint = AzulVistony202) },
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text,imeAction = ImeAction.Search ),
-        keyboardActions = KeyboardActions(
-            onSearch = {
-                keyboardController?.hide()
-                onSearch(idArticle)
-            }
+    if(itemsResponse.type== TypeCode.QR){
+        OutlinedTextField(
+            enabled= !responseLocationAndItem.itemResponse.item.ItemCode.isNullOrEmpty(),
+            singleLine=true,
+            value = if(responseLocationAndItem.itemResponse.item.ItemCode.isNullOrEmpty()){idArticle}else{responseLocationAndItem.itemResponse.item.ItemCode},
+            onValueChange = {
+                idArticle = it
+            },
+            label = { Text(text = "Código del artículo") },
+            placeholder = { Text(text = "Ingresar código del artículo") },
+            trailingIcon = { Icon(imageVector = Icons.Default.Edit, contentDescription = null, tint = AzulVistony202) },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text,imeAction = ImeAction.Search ),
+            keyboardActions = KeyboardActions(
+                onSearch = {
+                    keyboardController?.hide()
+                    onSearch(idArticle)
+                }
+            )
         )
-    )
 
-    Text(text = " ")
+        Text(text = " ")
 
-    OutlinedTextField(
-        enabled= responseLocationAndItem.itemResponse.lote.isNullOrEmpty(),
-        singleLine=true,
-        value = if(responseLocationAndItem.itemResponse.lote.isNullOrEmpty()){textLote}else{responseLocationAndItem.itemResponse.lote},
-        onValueChange = { textLote = it },
-        label = { Text(text = "Lote") },
-        placeholder = { Text(text = "Ingresar el lote") },
-        trailingIcon = { Icon(painter = painterResource(id = R.drawable.ic_baseline_box_24), contentDescription = null, tint = AzulVistony202) },
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text,imeAction = ImeAction.Go ),
-        keyboardActions = KeyboardActions(
-            onGo = {keyboardController?.hide()}
+        OutlinedTextField(
+            enabled= responseLocationAndItem.itemResponse.lote.isNullOrEmpty(),
+            singleLine=true,
+            value = if(responseLocationAndItem.itemResponse.lote.isNullOrEmpty()){textLote}else{responseLocationAndItem.itemResponse.lote},
+            onValueChange = { textLote = it },
+            label = { Text(text = "Lote") },
+            placeholder = { Text(text = "Ingresar el lote") },
+            trailingIcon = { Icon(painter = painterResource(id = R.drawable.ic_baseline_box_24), contentDescription = null, tint = AzulVistony202) },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text,imeAction = ImeAction.Go ),
+            keyboardActions = KeyboardActions(
+                onGo = {keyboardController?.hide()}
+            )
         )
-    )
 
-    Text(text = " ")
+        Text(text = " ")
 
-    OutlinedTextField(
-        enabled= responseLocationAndItem.itemResponse.quantity==1.0,
-        singleLine=true,
-        value = quantity,
-        onValueChange = {
-            if (it.isEmpty() || it.matches("[0-9]{1,13}(\\.[0-9]*)?".toRegex())) quantity = it
-        },
-        label = { Text(text = "Cantidad") },
-        placeholder = { Text(text = "Ingresar la cantidad") },
-        trailingIcon = { Icon(painter = painterResource(id = R.drawable.ic_baseline_numbers_24), contentDescription = null, tint = AzulVistony202) },
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number,imeAction = ImeAction.Go ),
-        keyboardActions = KeyboardActions(
-            onGo = {keyboardController?.hide()}
+        OutlinedTextField(
+            enabled= responseLocationAndItem.itemResponse.quantity==1.0,
+            singleLine=true,
+            value = quantity,
+            onValueChange = {
+                if (it.isEmpty() || it.matches("[0-9]{1,13}(\\.[0-9]*)?".toRegex())) quantity = it
+            },
+            label = { Text(text = "Cantidad") },
+            placeholder = { Text(text = "Ingresar la cantidad") },
+            trailingIcon = { Icon(painter = painterResource(id = R.drawable.ic_baseline_numbers_24), contentDescription = null, tint = AzulVistony202) },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number,imeAction = ImeAction.Go ),
+            keyboardActions = KeyboardActions(
+                onGo = {keyboardController?.hide()}
+            )
         )
-    )
+    }
+    else{
+        Text("El palet contiene ${itemsResponse.items.size} producto(s)")
 
-    Text(text = " ")
+        LazyRow(modifier = Modifier
+            .fillMaxWidth()
+            .fillMaxHeight(0.6f)) {
+            items(items = itemsResponse.items, itemContent = { item ->
+
+                Card(
+                    backgroundColor = Color.White,
+                    elevation = 10.dp,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row{
+                            Icon(
+                                painter = painterResource(id = R.drawable.ic_baseline_palet_on_24),
+                                contentDescription = "Palet",
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Text(
+                                text = " Código "+item.item.ItemCode,
+                                style = MaterialTheme.typography.subtitle1,
+                                color = MaterialTheme.colors.primary
+                            )
+
+                        }
+
+                        Text(
+                            maxLines=2,
+                            overflow=TextOverflow.Ellipsis,
+                            modifier=Modifier.widthIn(max=200.dp),
+                            text = item.item.ItemName,
+                            style = MaterialTheme.typography.subtitle2,
+                            color = MaterialTheme.colors.onBackground
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Row {
+                            Text(
+                                text = "Cantidad: ",
+                                style = MaterialTheme.typography.subtitle1,
+                                color = MaterialTheme.colors.onBackground
+                            )
+                            Text(
+                                text = ""+item.quantity,
+                                style = MaterialTheme.typography.subtitle1,
+                                color = MaterialTheme.colors.primary
+                            )
+                        }
+                        Row {
+                            Text(
+                                text = "Lote: ",
+                                style = MaterialTheme.typography.subtitle1,
+                                color = MaterialTheme.colors.onBackground
+                            )
+                            Text(
+                                text = item.lote,
+                                style = MaterialTheme.typography.subtitle1,
+                                color = MaterialTheme.colors.primary
+                            )
+                        }
+                        Row {
+                            Text(
+                                text = "Fecha: ",
+                                style = MaterialTheme.typography.subtitle1,
+                                color = MaterialTheme.colors.onBackground
+                            )
+                            Text(
+                                text = item.expireDate,
+                                style = MaterialTheme.typography.subtitle1,
+                                color = MaterialTheme.colors.primary
+                            )
+                        }
+                    }
+                }
+
+                /*Card(
+                    backgroundColor = Color.White,
+                    elevation = 10.dp,
+                    modifier = Modifier
+                        .aspectRatio(1f)
+                        .fillMaxWidth()
+                        .padding(5.dp)
+                ){
+                    Column(modifier= Modifier.padding(10.dp)){
+                        Text(
+                            item.item.ItemCode +" "+item.item.ItemName
+                        )
+                        Text(
+                            "Cantidad: " +item.quantity
+                        )
+                        Text(
+                            "Lote: " +item.lote
+                        )
+                        Text(
+                            "Fecha: "+item.expireDate
+                        )
+                    }
+                }*/
+            })
+        }
+    }
 
     if(quality.data.Collection.size>0){
         ListBox(
@@ -1104,34 +1700,53 @@ private fun formHandheld(
             colors= ButtonDefaults.buttonColors(backgroundColor = Color.Gray),
             onClick = {
                 if(optionAdd){
-
                     try{
                         if(quantity.toDouble()!=0.0){
-
                             if(responseLocationAndItem.itemResponse.item.ItemCode.isNullOrEmpty()){
                                 haveError="Es necesario buscar en el documento el artículo a ingresar"
                             }else{
-                                onPress(
-                                    StockTransferBodyPayload(
-                                        ItemCode=responseLocationAndItem.itemResponse.item.ItemCode,
-                                        ItemName = responseLocationAndItem.itemResponse.item.ItemName,
-                                        Batch = if(responseLocationAndItem.itemResponse.lote.isNullOrEmpty()){textLote}else{responseLocationAndItem.itemResponse.lote},
-                                        LocationCode = ""+responseLocationAndItem.locationResponse.location.AbsEntry,
-                                        LocationName = responseLocationAndItem.locationResponse.location.BinCode,
-                                        Quantity = quantity.toDouble(),
-                                        Quality =quanlityVal
-                                    )
-                                )
+                                if(responseLocationAndItem.locationResponse.location.BinCode.isNullOrEmpty()){
+                                    haveError="Es necesario ingresar una ubicación"
+                                }else{
 
-                                Log.e("JEPICAME","=>se limpiara agregar antes "+responseLocationAndItem.itemResponse.item.ItemCode)
-                                responseLocationAndItem=ResponseLocationAndItem(
-                                    locationResponse = LocationResponse(),
-                                    itemResponse = ItemResponse(
-                                        item = Items(ItemCode="")
-                                    )
-                                )
+                                    val listPayloadBody:List<StockTransferBodyPayload> = itemsResponse.items.map {
 
-                                Log.e("JEPICAME","=>se limpiara agregar dsp "+responseLocationAndItem.itemResponse.item.ItemCode)
+                                        if(itemsResponse.type==TypeCode.SSCC){
+                                            StockTransferBodyPayload(
+                                                ItemCode=  it.item.ItemCode,
+                                                ItemName = it.item.ItemName,
+                                                Batch = it.lote,
+                                                Sscc=itemsResponse.nameSscc,
+                                                LocationCode = ""+responseLocationAndItem.locationResponse.location.AbsEntry,
+                                                LocationName = responseLocationAndItem.locationResponse.location.BinCode,
+                                                Quantity = it.quantity,
+                                                Quality =quanlityVal
+                                            )
+                                        }else{
+                                            StockTransferBodyPayload(
+                                                ItemCode=  responseLocationAndItem.itemResponse.item.ItemCode,
+                                                ItemName = responseLocationAndItem.itemResponse.item.ItemName,
+                                                Batch = if(responseLocationAndItem.itemResponse.lote.isNullOrEmpty()){textLote}else{responseLocationAndItem.itemResponse.lote},
+                                                LocationCode = ""+responseLocationAndItem.locationResponse.location.AbsEntry,
+                                                LocationName = responseLocationAndItem.locationResponse.location.BinCode,
+                                                Quantity = quantity.toDouble(),
+                                                Quality =quanlityVal
+                                            )
+                                        }
+                                    }
+
+                                    onPress(listPayloadBody)
+
+                                    Log.e("JEPICAME","=>se limpiara agregar antes "+responseLocationAndItem.itemResponse.item.ItemCode)
+                                    responseLocationAndItem=ResponseLocationAndItem(
+                                        locationResponse = LocationResponse(),
+                                        itemResponse = ItemResponse(
+                                            item = Items(ItemCode="")
+                                        )
+                                    )
+
+                                    Log.e("JEPICAME","=>se limpiara agregar dsp "+responseLocationAndItem.itemResponse.item.ItemCode)
+                                }
                             }
                         }else{
                             haveError="La cantidad debe ser mayor o igual a 1.00 "
@@ -1356,6 +1971,7 @@ fun SelectWarehouseModal(context: Context, selected: (WarehouseBinLocation) -> U
 fun SelectTypeModal(selected: (TypeInventario) -> Unit){
 
     val listTypeInventory = listOf(
+        TypeInventario("CP","Conteo de Producción"),
         TypeInventario("RI","Recepción Importación"),
         TypeInventario("RP","Recepción Producción"),
         TypeInventario("RS","Recepción Sucursales"),

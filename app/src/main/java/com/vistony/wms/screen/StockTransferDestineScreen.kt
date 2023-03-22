@@ -1,5 +1,6 @@
 package com.vistony.wms.screen
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
 import androidx.compose.foundation.background
@@ -11,23 +12,20 @@ import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import com.google.common.io.Files.append
 import com.vistony.wms.component.TopBar
-import com.vistony.wms.model.StockTransferSubBodyRI
 import com.vistony.wms.viewmodel.StockTransferSubBodyViewModel
 import org.bson.types.ObjectId
 
+@SuppressLint("UnusedMaterialScaffoldPaddingParameter")
 @Composable
 fun StockTransferDestineScreen(navController: NavHostController, context: Context,subBody:String,producto:String,objType:Int) {
 
@@ -39,15 +37,15 @@ fun StockTransferDestineScreen(navController: NavHostController, context: Contex
 
     Scaffold(
         topBar = {
-           TopBar(if(objType==67){"Transferencia de Stock - Destino"}else{"Slotting - Destino"})
+           TopBar(if(objType==67){"Transferencia de Stock - Destino"}else if(objType==1701){"Hoja de Alistado - Destino"}else{"Slotting - Destino"})
         }
     ){
-        resumen(stockTransferSubBodyViewModel,producto=producto)
+        resumen(stockTransferSubBodyViewModel,producto=producto,objType=objType)
     }
 }
 
 @Composable
-private fun resumen(stockTransferSubBodyViewModel:StockTransferSubBodyViewModel,producto:String){
+private fun resumen(stockTransferSubBodyViewModel:StockTransferSubBodyViewModel,producto:String,objType:Int){
 
     val stockTransferSubBodyValue = stockTransferSubBodyViewModel.stockTransferSubBody.collectAsState()
 
@@ -110,7 +108,11 @@ private fun resumen(stockTransferSubBodyViewModel:StockTransferSubBodyViewModel,
                         Row(modifier=Modifier.fillMaxWidth().background(Color.LightGray).padding(5.dp),horizontalArrangement = Arrangement.SpaceBetween){
                             Column(modifier=Modifier.weight(0.5f)){
                                 Text("Fecha ${line.CreateAt?.getUIStringTimeStampWithDate()}")
-                                Text("Ubicación ${line.LocationName}")
+
+                                if(objType!=1701){
+                                    Text("Ubicación ${line.LocationName}")
+                                }
+
                                 Text("Cantidad ${line.Quantity}")
                             }
                         }

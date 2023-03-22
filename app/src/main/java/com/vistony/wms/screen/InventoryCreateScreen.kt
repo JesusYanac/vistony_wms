@@ -2,7 +2,6 @@ package com.vistony.wms.screen
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Box
@@ -15,7 +14,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.vistony.wms.component.*
-import com.vistony.wms.model.Inventory
 import com.vistony.wms.model.InventoryPayload
 import com.vistony.wms.viewmodel.InventoryViewModel
 import kotlinx.coroutines.launch

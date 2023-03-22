@@ -5,7 +5,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
-import com.google.gson.JsonSyntaxException
 import com.vistony.wms.model.*
 import com.vistony.wms.util.APIService
 import io.realm.Realm
@@ -17,15 +16,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import okhttp3.MediaType
 import okhttp3.RequestBody
-import org.json.JSONException
 import org.json.JSONObject
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
-import java.io.IOException
-import java.net.ConnectException
-import java.net.SocketTimeoutException
-import java.net.UnknownHostException
 
 class PrintViewModel(): ViewModel() {
 
@@ -61,6 +55,10 @@ class PrintViewModel(): ViewModel() {
 
     fun setPrint(print:Print){
         _print.value=print
+    }
+
+    fun resetStatusPrint(){
+        _statusPrint.value=""
     }
 
     fun getArticle(value:String){
@@ -99,7 +97,7 @@ class PrintViewModel(): ViewModel() {
                     if(response.isSuccessful){
                         _printList.value=ListPrint(prints = response.body()?.prints!!,status="ok")
                     }else{
-                        _printList.value=ListPrint(prints=emptyList(),status="InternalServerError")
+                        _printList.value=ListPrint(prints=emptyList(),status="InternalServerError "+response.code())
                     }
                 }
                 override fun onFailure(call: Call<ListPrint>, error: Throwable) {
@@ -125,7 +123,7 @@ class PrintViewModel(): ViewModel() {
         )
 
         viewModelScope.launch(Dispatchers.Default){
-            APIService.getInstance().sendPrint("http://192.168.254.20:89/vs1.0/printer",jsonBody).enqueue(object :Callback<Void> {
+            /*APIService.getInstance().sendPrint("http://192.168.254.20:89/vs1.0/printer",jsonBody).enqueue(object :Callback<Void> {
                 override fun onResponse(call: Call<Void>, response: Response<Void>) {
                     if(response.isSuccessful){
                         _statusPrint.value="ok"
@@ -136,7 +134,51 @@ class PrintViewModel(): ViewModel() {
                 override fun onFailure(call: Call<Void>, error: Throwable) {
                     _statusPrint.value=error.message.toString()
                 }
+            })*/
+        }
+    }
+
+    fun sendPrintSSCC(print:PrintSSCC){
+        _statusPrint.value = "cargando"
+
+        val jsonBody: RequestBody = RequestBody.create(
+            MediaType.parse("application/json; charset=utf-8"),
+            JSONObject(
+                Gson().toJson(
+                    print
+                )
+            ).toString()
+        )
+
+        Log.e("Jepicame","Json is "+Gson().toJson(print).toString())
+
+        viewModelScope.launch(Dispatchers.Default){
+            APIService.getInstance().sendPrint("http://192.168.254.20:93/vs1.0/Sscc/Print",jsonBody).enqueue(object :Callback<SsccResponse> {
+                override fun onResponse(call: Call<SsccResponse>, response: Response<SsccResponse>) {
+
+                    Log.e("JEPICAME","ERROR =>"+response.code())
+                    Log.e("JEPICAME","ERROR =>"+response.message())
+
+                    if(response.isSuccessful){
+                        _statusPrint.value="ok"
+                    }else{
+
+                        val errorBody = response.errorBody()?.string()
+                        val gson = Gson()
+                        val errorResponse = gson.fromJson(errorBody, SsccResponse::class.java)
+
+                        if(errorResponse==null){
+                            _statusPrint.value = " El servidor respondio ${response.code()} - ${response.message()}"
+                        }else{
+                            _statusPrint.value = " " + errorResponse.error
+                        }
+                    }
+                }
+                override fun onFailure(call: Call<SsccResponse>, error: Throwable) {
+                    _statusPrint.value=error.message.toString()
+                }
             })
         }
+
     }
 }

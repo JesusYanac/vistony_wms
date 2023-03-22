@@ -2,14 +2,14 @@ package com.vistony.wms.util
 
 import com.vistony.wms.R
 
-sealed class Routes(val route: String,val title:String,val icon:Int,val value:Int) {
+sealed class Routes(val route: String,val title:String,val icon:Int,val value:Int){
     object InventoryCreate : Routes("Recuento","Toma de inventario", R.drawable.ic_baseline_insert_drive_file_24,0)
     object InventoryDetail : Routes("InventoryCounting/idInventory={idInventory}&whs={whs}&status={status}&defaultLocation={defaultLocation}&typeInventory={typeInventory}","Crear conteo", R.drawable.ic_baseline_insert_drive_file_24,0)
-    object Inventory : Routes("ListInventory","Toma de inventario", R.drawable.ic_baseline_keyboard_24,100)
+    object Inventory : Routes("ListInventory","Toma de inventario", R.drawable.ic_baseline_insert_drive_file_24,100)
 
     object MasterArticle : Routes("MasterArticle","Maestro de artículos", R.drawable.ic_baseline_cloud_download_24,0)
     object MasterWarehouse : Routes("MasterWarehouse","Maestro de almacenes", R.drawable.ic_baseline_cloud_download_24,0)
-    object TaskManager : Routes("TaskManager","Asignación de tareas ", R.drawable.ic_baseline_keyboard_24,0)
+    object TaskManager : Routes("TaskManager","Mis tareas", R.drawable.ic_baseline_file_copy_24,0)
 
     object Merchandise  : Routes("Merchandise/objType={objType}","Transferencia ", R.drawable.ic_baseline_swipe_left_24,67)
     object MerchandiseMovementCreate  : Routes("MerchandiseMovementCreate/objType={objType}","Crear transferencia", R.drawable.ic_baseline_keyboard_24,0)
@@ -24,7 +24,11 @@ sealed class Routes(val route: String,val title:String,val icon:Int,val value:In
     object Slotting : Routes("Slotting","Slotting", R.drawable.ic_baseline_cloud_download_24,671)
     object Recepcion : Routes("Recepcion","Recepción", R.drawable.ic_baseline_cloud_download_24,0)
     object Almacenamiento : Routes("Almacenamiento","Almacenamiento", R.drawable.ic_baseline_cloud_download_24,0)
-    object ImprimirEtiqueta : Routes("ImprimirEtiqueta","Imprimir etiqueta", R.drawable.ic_baseline_cloud_download_24,0)
+    object ImprimirEtiqueta : Routes("ImprimirEtiqueta","Imprimir rotulados", R.drawable.ic_baseline_print_24,0)
+    object ImprimirEtiquetaSSCC : Routes("ImprimirEtiquetaSSCC","Imprimir SSCC", R.drawable.ic_baseline_print_24,0)
+
+    object TrackingSSCC : Routes("TrackingSSCC","Tracking del Palet", R.drawable.ic_baseline_palet_on_24,0)
+    object ProdcnTrmReport : Routes("ProdcnTrmReport","Recibo de producción", R.drawable.ic_baseline_factory_24,0)
 }
 
 val RoutesOptionDashboard = listOf(
@@ -32,16 +36,13 @@ val RoutesOptionDashboard = listOf(
     Routes.DataMaster,
     //Routes.MasterArticle,
     //Routes.MasterWarehouse,
-    Routes.Merchandise,
+    //Routes.Merchandise,
     Routes.Recepcion,
     Routes.Almacenamiento,
     Routes.Slotting,
     //Routes.Recuento,
     Routes.Inventory,
+    Routes.TrackingSSCC,
     Routes.ImprimirEtiqueta,
-)
-
-val Paremetros = listOf(
-    "Descargar Artículos",
-    "Descargar Almacenes"
+    Routes.ProdcnTrmReport,
 )

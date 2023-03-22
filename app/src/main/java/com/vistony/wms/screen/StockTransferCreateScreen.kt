@@ -18,7 +18,7 @@ import androidx.navigation.NavHostController
 import com.vistony.wms.component.*
 import com.vistony.wms.model.StockTransferHeader
 import com.vistony.wms.model.TaskManagement
-import com.vistony.wms.model.TransactionDocument
+import com.vistony.wms.util.Routes
 import com.vistony.wms.viewmodel.StockTransferHeaderViewModel
 import kotlinx.coroutines.launch
 
@@ -82,12 +82,11 @@ fun MerchandiseCreateScreen(navController: NavHostController, context: Context,o
                 if(_merchandiseViewModel.value.id == "error"){
                     Toast.makeText(context, "Ocurrio un error al crear la transferencia de stock.", Toast.LENGTH_SHORT).show()
                 }else{
-
-                    /*
-                     *navArgument("locationId") { type = NavType.IntType },navArgument("locationText") { type = NavType.StringType }
-                     */
-
                     navController.navigate("MerchandiseMovementDetail/idMerchandise=${_merchandiseViewModel.value.id}&status=${_merchandiseViewModel.value.status}&whs=${_merchandiseViewModel.value.whs}&whsDestine=${_merchandiseViewModel.value.whsDestine}&objType=${objType.ObjType}")
+                    {
+                        popUpTo(Routes.MerchandiseMovementCreate.route) { inclusive = true }
+                    }
+
                     merchandiseViewModel.resetMerchandiseHeader()
                 }
             }else{

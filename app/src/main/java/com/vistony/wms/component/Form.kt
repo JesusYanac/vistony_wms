@@ -6,7 +6,6 @@ import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -26,12 +25,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
@@ -39,19 +36,13 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.vistony.wms.BuildConfig
 import com.vistony.wms.R
 import com.vistony.wms.model.*
-import com.vistony.wms.ui.theme.AzulVistony201
-import com.vistony.wms.ui.theme.AzulVistony202
-import com.vistony.wms.ui.theme.ColorDestine
-import com.vistony.wms.ui.theme.RedVistony202
-import com.vistony.wms.viewmodel.ItemsViewModel
+import com.vistony.wms.num.TypeCode
+import com.vistony.wms.ui.theme.*
 import com.vistony.wms.viewmodel.LoginViewModel
-import com.vistony.wms.viewmodel.StockTransferHeaderViewModel
 import com.vistony.wms.viewmodel.WarehouseViewModel
 import java.time.LocalDateTime
 import java.util.*
@@ -798,6 +789,110 @@ fun formCreateInventoryEntryOrExit(objType:Int,context: Context, onPress: (Stock
         }
 
     }
+}
+@Composable
+fun showTypeLocation(objType: Int,value:String, onSelect:(String)->Unit){
+
+    val listState = rememberLazyListState()
+    val list = listOf("PICKING", "PUT AWAY", "STAGING", "QUALITY")
+
+    LazyRow(modifier=Modifier.background(ColorOrigin), state = listState){
+        itemsIndexed(list) { index, line ->
+            Card(
+                elevation = 4.dp,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(10.dp)
+                    .selectable(
+                        selected = value == line,
+                        onClick = {
+                            onSelect(line)
+                        }
+                    )
+            ){
+                Box(modifier=Modifier.background(if(value == line){Color.LightGray}else{Color.Unspecified})){
+                    Text(line,modifier=Modifier.padding(5.dp))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun xddVs2( stockTransferBandSRpsValue:List<MergedStockTransfer>,suggestions: Suggestions,value:String,onLoader:(BinLocation)->Unit){
+
+    val listState = rememberLazyListState()
+    //val coroutineScope = rememberCoroutineScope()
+    //var listSuggestion by remember { mutableStateOf(Suggestions()) }
+
+    Log.e("JEPICAME","ENTRO OK "+suggestions.status)
+
+    when(suggestions.status){
+        ""->{
+            Text("Ubicaciones sugeridas")
+        }
+        "cargando"->{
+            Row(modifier= Modifier.padding(5.dp)) {
+
+                CircularProgressIndicator(color= AzulVistony202,modifier=Modifier.fillMaxSize(0.1f))
+                Text( "Buscando...",color=Color.Gray, fontSize = 12.sp,modifier=Modifier.padding(start=5.dp))
+            }
+        }
+        "OK"->{
+            LazyRow(modifier=Modifier.background(ColorDestine), state = listState){
+                itemsIndexed(suggestions.Data) { index, line ->
+                    Card(
+                        elevation = 4.dp,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(10.dp)
+                            .selectable(
+                                selected = value == line.BinCode,
+                                onClick = {
+                                    //onLoader(BinLocation(id=""+line.AbsEntry,text=line.BinCode))
+                                }
+                            )
+                    )
+                    {
+
+                        Box(modifier=Modifier.background(if(value == line.BinCode){Color.LightGray}else{Color.Unspecified})){
+                            Text(line.BinCode,modifier=Modifier.padding(5.dp))
+                        }
+                    }
+                }
+            }
+
+            if(value.split("-").size>=3){
+
+                val resultSearch=suggestions.Data.filter(){ it.BinCode==value }
+
+                if(resultSearch.isNotEmpty()){
+                    val threeFilter=stockTransferBandSRpsValue.filter {  it.LocationName== value }
+
+                    if(threeFilter.isNotEmpty()){
+                        Log.e("JEPICAMR","==>SE TIENE UN VALIOR "+threeFilter[0].LocationName)
+                        Text("La ubicación $value no puede ser origen y destino al mismo tiempo",color=Color.Red)
+                        onLoader(BinLocation())
+                    }else{
+                        Log.e("JEPICAMR","==>EL VALOR A resultar ES =>")
+                        onLoader(BinLocation(id=""+resultSearch[0].AbsEntry ,text=resultSearch[0].BinCode))
+                    }
+                }else{
+                    Text("La ubicación leída no corresponde a una ubicación sugerida",color=Color.Red)
+                    onLoader(BinLocation())
+                }
+            }
+        }
+        else->{
+            Row(modifier= Modifier.padding(5.dp)) {
+                Text(" Ocurrio un error, volver a intentar \n"+suggestions.status,color=Color.Red)
+            }
+            onLoader(BinLocation())
+        }
+    }
+
+    Text("")
+
 }
 
 @Composable

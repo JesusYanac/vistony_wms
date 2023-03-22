@@ -2,7 +2,6 @@ package com.vistony.wms.util
 
 import android.annotation.SuppressLint
 import android.util.Log
-import android.view.SoundEffectConstants
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions

@@ -22,6 +22,7 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
 import java.util.*
+import java.util.Date
 
 class ItemsViewModel(flag:String): ViewModel() {
 
@@ -30,6 +31,10 @@ class ItemsViewModel(flag:String): ViewModel() {
     private var configPublic =SyncConfiguration
             .Builder(realm.syncSession.user, "public")
             .build()
+
+   /* private var configPrivate= SyncConfiguration
+        .Builder(realm.syncSession.user,realm.syncSession.user.id.toString())
+        .build()*/
 
     private val _articulos = MutableStateFlow(ListItems())
     val articles: StateFlow<ListItems> get() = _articulos
@@ -55,11 +60,13 @@ class ItemsViewModel(flag:String): ViewModel() {
     }
 
     private fun getSSCC(code:String){
-        _articulo.value=ItemsResponse(items=emptyList(),status="cargando",type=TypeCode.SSCC)
+        //  Cargando esta en la funcion padre donde valida primero en Realm
+
+        Log.e("Jepicame idJehdaer","=>ENTRO A SSC 67 API")
 
         viewModelScope.launch(Dispatchers.Default){
             APIService.getInstance()
-            .getSsdd("https://msw.vistony.pe/vs1.0/sscc",code, "NaN")
+            .getSscc("http://192.168.254.20:93/vs1.0/sscc",code, "NaN")
             .enqueue(object:Callback<Sscc> {
                 override fun onResponse(call: Call<Sscc>, response: Response<Sscc>) {
                     if(response.isSuccessful){
@@ -73,17 +80,30 @@ class ItemsViewModel(flag:String): ViewModel() {
                                 status="ok",
                                 lote=it.uBatch,
                                 quantity=it.uQuantity.toDouble(),
-                                expireDate = it.uDate
+                                expireDate = it.exDate,
+                                inDate=it.uDate
                             )
                         }
 
-                        _articulo.value=ItemsResponse(items=items,type=TypeCode.SSCC, nameSscc=response.body()?.data!!.code,defaultLocation=response.body()?.data!!.uBtringinCode,status="ok")
+                        _articulo.value=ItemsResponse(
+                            items=items,
+                            type=TypeCode.SSCC,
+                            nameSscc=response.body()?.data!!.code,
+                            defaultLocation=response.body()?.data!!.uBtringinCode,
+                            status="ok",
+                            warehouse = response.body()?.data!!.uWhsCode
+                        )
 
                     }else{
-                        _articulo.value=ItemsResponse(items= emptyList(),status="El código SSCC $code, no se encuentra en SAP -${response.code()}",type=TypeCode.SSCC)
+                        if(response.code()==424){
+                            _articulo.value=ItemsResponse(items= emptyList(),status="El código SSCC $code, no se encontro en SAP",type=TypeCode.SSCC)
+                        }else{
+                            _articulo.value=ItemsResponse(items= emptyList(),status="Ocurrio un error, el servidor respondio código ${response.code()}",type=TypeCode.SSCC)
+                        }
                     }
                 }
                 override fun onFailure(call: Call<Sscc>, error: Throwable) {
+                    Log.e("JEPICAME","ERRRP =>"+error.message)
                     _articulo.value= ItemsResponse(items=emptyList(),status=" ${error.message}",type=TypeCode.SSCC)
                 }
             })
@@ -95,7 +115,7 @@ class ItemsViewModel(flag:String): ViewModel() {
 
         viewModelScope.launch(Dispatchers.Default){
             APIService.getInstance()
-                .getArticleFromBatch("https://app.vistony.pe/wms/vs1.0/Inventory/getItem",itemCode)
+                .getArticleFromBatchQrEspecial("http://192.168.254.20:93/vs1.0/Inventory/getItem",itemCode)
                 .enqueue(object:Callback<ProductFromBatch> {
                     override fun onResponse(call: Call<ProductFromBatch>, response: Response<ProductFromBatch>) {
                         if(response.isSuccessful){
@@ -132,8 +152,11 @@ class ItemsViewModel(flag:String): ViewModel() {
 
         _articulo.value=ItemsResponse(items= emptyList(),status="cargando",type=TypeCode.QR)
 
-        if(value.length==18 && isNumeric(value)){
-            getSSCC(value)
+        if(value.length==20 && isNumeric(value)){
+            realmVerificationSSCC(
+                idHeader=idHeader,
+                sscc=value
+            )
         }else{
             val count:Int = value.split("|").size
 
@@ -147,8 +170,10 @@ class ItemsViewModel(flag:String): ViewModel() {
                     itemCodeNew=value.split("|")[0]
                 }
                 2->{
+
                     itemCodeNew=value.split("|")[0]
                     lote=value.split("|")[1]
+
                 }else->{
                     itemCodeNew=value.split("|")[0]
                     lote=value.split("|")[1]
@@ -160,25 +185,81 @@ class ItemsViewModel(flag:String): ViewModel() {
                 }
             }
 
-            if(itemCodeNew.length==7){
+            if(itemCodeNew.length in listOf(7,13)){
                 realmGetItem(idHeader,itemCodeNew,lote,quantity)
             }else{
+                //QR ESPECIAL - bloqueo de presentaciones
                 itemCodeNew=removeLastChar(itemCodeNew)
                 if(typeInventario.contains("Picking") || typeInventario.contains("Despacho")){
-                    Log.e("JEPICAME","typeInventario=>"+typeInventario)
-                    getInformationQR(itemCodeNew,lote)
+                   getInformationQR(itemCodeNew,lote)
                 }else{
                     realmGetItem(idHeader,itemCodeNew,lote,quantity)
                 }
-
             }
+        }
+    }
+
+    private fun realmVerificationSSCC(idHeader:String="",sscc:String=""){
+
+        _articulo.value=ItemsResponse(items=emptyList(),status="cargando",type=TypeCode.SSCC)
+        val _code:String = sscc.substring(2)
+
+        if(idHeader.isEmpty()){
+            getSSCC(_code)
+        }else{
+            Realm.getInstanceAsync(realm.configuration, object : Realm.Callback() {
+                override fun onSuccess(r: Realm) {
+                    Log.e("Jepicame idJehdaer","=>"+idHeader)
+                    Log.e("Jepicame idJehdaer sscc","=>"+_code)
+
+                    val documentBody = r.where(StockTransferBody::class.java)
+                        .equalTo("_StockTransferHeader", ObjectId(idHeader) )
+                        .findAll()
+
+                    documentBody?.let { data: RealmResults<StockTransferBody> ->
+
+                        val listBody: List<StockTransferBody> = data.subList(0, data.size)
+                        val listCount: MutableList<Int> = mutableListOf()
+
+
+                        listBody.forEach{ body->
+                            val subDetail = r.where(StockTransferSubBody::class.java)
+                                .equalTo("_StockTransferBody", body._id)
+                                .equalTo("Delete", "N")
+                                .equalTo("Sscc", _code)
+                                .findAll()
+
+                            Log.e("Jepicame idJehdaer ${body._id} size es","=>"+subDetail.size)
+
+                            if(subDetail.size>0){
+                                listCount.add(subDetail.size)
+                                return@forEach
+                            }
+                        }
+
+                        if(listCount.size>0){
+                            _articulo.value= ItemsResponse(
+                                items= emptyList(),
+                                type=TypeCode.SSCC,
+                                status="El palet con SSCC $_code, ya existe en esta ficha."
+                            )
+                        }else{
+                            getSSCC(_code)
+                        }
+                    }
+                }
+                override fun onError(exception: Throwable) {
+                    Log.e("JEPICAME","=>"+exception.message)
+                    _articulo.value= ItemsResponse(items=emptyList(),status=" Ocurrio un error al intentar verificar si ya existe el palet en el documento:\n${exception.message}",type=TypeCode.QR)
+                }
+            })
         }
     }
 
     private fun realmGetItem(idHeader:String="",itemCodeNew:String="",lote:String="",quantity:Double=0.0){
         Realm.getInstanceAsync(configPublic, object : Realm.Callback() {
             override fun onSuccess(r: Realm) {
-                if(idHeader!=""){
+                if(idHeader.isNotEmpty()){
                     val documentBody = r.where(StockTransferBody::class.java)
                         .equalTo("_StockTransferHeader", ObjectId(idHeader))
                         .equalTo("ItemCode",itemCodeNew)
@@ -208,9 +289,12 @@ class ItemsViewModel(flag:String): ViewModel() {
                             status="El artículo $itemCodeNew, no existe en el documento actual."
                         )
                     }
-                }else{
+                }
+                else{
                     val article = r.where(Items::class.java)
                         .equalTo("ItemCode",itemCodeNew)
+                        .or()
+                        .equalTo("Sku",itemCodeNew)
                         .findFirst()
 
                     if (article != null) {
@@ -229,32 +313,6 @@ class ItemsViewModel(flag:String): ViewModel() {
             }
         })
     }
-
-    /*
-    fun addNote(noteTitle: String, noteDescription: String) {
-
-        realm.executeTransactionAsync { r: Realm ->
-
-            Log.e("JEPICAME","==>>>enrrr")
-
-            val note = r.createObject(Note::class.java, ObjectId().toHexString())
-            note.title = noteTitle
-            note.descripcion = noteDescription
-            note.realm_id = "627bcacb088b6bca472c86c8"
-
-
-            r.insertOrUpdate(note)
-        }
-
-        //getAllNotes()
-    }
-*/
-
-    /*
-    * RealmResults<City> cities = realm.where(City.class).findAll();
-      City city = cities.where().equalTo(CityFields.NAME, strCity).findFirst();
-    *
-    */
 
      fun getMasterDataArticle(){
 

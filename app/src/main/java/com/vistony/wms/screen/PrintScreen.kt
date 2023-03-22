@@ -2,6 +2,7 @@ package com.vistony.wms.screen
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -22,6 +23,7 @@ import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -29,18 +31,21 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import com.vistony.wms.component.InputBox
-import com.vistony.wms.component.TopBar
-import com.vistony.wms.component.lockScreen
-import com.vistony.wms.model.Print
-import com.vistony.wms.model.PrintMachines
+import com.google.gson.annotations.SerializedName
+import com.vistony.wms.R
+import com.vistony.wms.component.*
+import com.vistony.wms.model.*
+import com.vistony.wms.num.TypeCode
 import com.vistony.wms.ui.theme.AzulVistony202
 import com.vistony.wms.ui.theme.ColorDestine
+import com.vistony.wms.viewmodel.ItemsViewModel
 import com.vistony.wms.viewmodel.PrintViewModel
+import com.vistony.wms.viewmodel.WarehouseViewModel
+import com.vistony.wms.viewmodel.ZebraViewModel
 
 @SuppressLint("UnusedMaterialScaffoldPaddingParameter")
 @Composable
-fun PrintScreen(navController: NavHostController, context: Context){
+fun PrintQrScreen(navController: NavHostController, context: Context){
 
     val printViewModel: PrintViewModel = viewModel(
         factory = PrintViewModel.PrintViewModelFactory()
@@ -50,7 +55,7 @@ fun PrintScreen(navController: NavHostController, context: Context){
 
     Scaffold(
         topBar = {
-            TopBar(title="Imprimir etiquetas")
+            TopBar(title="Imprimir rotulado QR")
         }
     ){
         when(statusPrint.value){
@@ -75,6 +80,320 @@ fun PrintScreen(navController: NavHostController, context: Context){
                 onCancel = {
                     navController.navigateUp()
                 }
+            )
+        }
+    }
+}
+
+@SuppressLint("UnusedMaterialScaffoldPaddingParameter")
+@Composable
+fun PrintSSccScreen(navController: NavHostController, context: Context,zebraViewModel:ZebraViewModel){
+
+    val flagModal = remember { mutableStateOf(FlagDialog()) }
+
+    val printViewModel: PrintViewModel = viewModel(
+        factory = PrintViewModel.PrintViewModelFactory()
+    )
+
+    val itemsViewModel: ItemsViewModel = viewModel(
+        factory = ItemsViewModel.ArticleViewModelFactory("scan")
+    )
+
+    val warehouseViewModel: WarehouseViewModel = viewModel(
+        factory = WarehouseViewModel.WarehouseViewModelFactory("","",0)
+    )
+
+    val zebraValue = zebraViewModel.data.collectAsState()
+    val articleValue = itemsViewModel.article.collectAsState()
+    val locationValue = warehouseViewModel.location.collectAsState()
+
+    if(zebraValue.value.Payload.isNotEmpty()){
+        when(zebraValue.value.Type){
+            "LABEL-TYPE-QRCODE"->{
+                itemsViewModel.getArticle(value=zebraValue.value.Payload)
+            }
+            "LABEL-TYPE-CODE39"->{
+                warehouseViewModel.verificationLocation(binCode = zebraValue.value.Payload)
+            }
+            else->{
+                Toast.makeText(context, "El rotulado escaneado no corresponde a un código QR", Toast.LENGTH_LONG).show()
+            }
+        }
+        zebraViewModel.setData(zebraPayload())
+    }
+
+    Scaffold(
+        topBar = {
+            TopBar(title="Imprimir rotulado y crear SSCC")
+        }
+    ){
+
+        statusPrinter(printViewModel,itemsViewModel,warehouseViewModel, onResponse = {
+            flagModal.value=it
+        })
+
+        if(flagModal.value.status){
+            lockMessageScreen(
+                text=flagModal.value.flag,
+                close={
+                    flagModal.value= FlagDialog(false,"")
+                }
+            )
+        }
+
+        Log.e("JEPICAE","ME EJEUOT")
+
+        when(articleValue.value.status){
+            ""->{
+                Column(
+                    modifier=Modifier.padding(top=20.dp, bottom = 10.dp).fillMaxWidth().fillMaxHeight(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_baseline_qr_code_scanner_24),
+                        contentDescription = "Favorite Icon",
+                        modifier = Modifier.size(150.dp)
+                    )
+
+                    Text(
+                        text = "ESCANEA UN QR",
+                        color = Color.Gray,
+                        modifier = Modifier.padding(top= 25.dp)
+                    )
+                }
+            }
+            "cargando"->{
+                CustomProgressDialog("Buscando articulo...")
+            }
+            "locked"->{
+
+                itemsViewModel.resetArticleStatus()
+            }
+            "ok"->{
+                Column(
+                    modifier = Modifier.padding(start = 20.dp, end = 20.dp,top=20.dp)
+                ){
+                    divPrintSSCC(
+                        articleValue=articleValue.value,
+                        locationValue=locationValue.value,
+                        printViewModel=printViewModel,
+                        onContinue = {
+
+                            printViewModel.sendPrintSSCC(
+                                PrintSSCC(
+                                    //ItemCode = it.itemCode,
+                                    ItemCode = articleValue.value.items[0].item.ItemCode,
+                                    Batch = it.itemBatch,
+                                    PrinterIP = it.printer.ip,
+                                    PortNum = it.printer.port.toInt(),
+                                    Warehouse = it.warehouse,
+                                    BinCode = it.binCode,
+                                    AbsEntry = it.absEntry,
+                                    Transfer = it.flagTransfer
+                                )
+                            )
+                        },
+                        onCancel = {
+                            navController.navigateUp()
+                        }
+                    )
+                }
+
+                //itemsViewModel.resetArticleStatus()
+            }
+            "vacio"->{
+                Toast.makeText(context, "El código escaneado no se encuentra en el maestro de articulos", Toast.LENGTH_SHORT).show()
+                itemsViewModel.resetArticleStatus()
+            }
+            else->{
+                Toast.makeText(context, "Ocurrio un error:\n ${articleValue.value.status}", Toast.LENGTH_SHORT).show()
+                itemsViewModel.resetArticleStatus()
+            }
+        }
+    }
+}
+
+@Composable
+private fun statusPrinter(printViewModel: PrintViewModel,itemsViewModel:ItemsViewModel,warehouseViewModel:WarehouseViewModel,onResponse:(FlagDialog)->Unit){
+    val statusPrint = printViewModel.statusPrint.collectAsState()
+
+    when(statusPrint.value){
+        ""->{}
+        "cargando"->{
+            lockScreen("Imprimiendo...")
+        }
+        "ok"->{
+            itemsViewModel.resetArticleStatus()
+            printViewModel.resetStatusPrint()
+            printViewModel.resetItemStatus()
+            warehouseViewModel.resetLocationStatus()
+
+            onResponse(FlagDialog(true,"Rotulado impreso"))
+        }
+        else->{
+            printViewModel.resetStatusPrint()
+            onResponse(FlagDialog(true,statusPrint.value))
+        }
+    }
+}
+
+@Composable
+private fun divPrintSSCC(articleValue:ItemsResponse,locationValue:LocationResponse,printViewModel:PrintViewModel,onContinue:(Print)->Unit,onCancel:()->Unit){
+
+    val print = printViewModel.print.collectAsState()
+    val checked = remember { mutableStateOf(false) }
+
+    Row(
+        horizontalArrangement = Arrangement.Center,
+        modifier = Modifier.fillMaxWidth()
+    ){
+        Text(text = " ${articleValue.items[0].item.ItemName}", color = Color.Gray, textAlign = TextAlign.Center)
+    }
+    Row(
+        horizontalArrangement = Arrangement.SpaceBetween,
+        modifier = Modifier.fillMaxWidth()
+    ){
+        Text(text = "Código")
+        Text(text = " ${articleValue.items[0].item.ItemCode}", color = Color.Gray)
+    }
+
+    Row(
+        horizontalArrangement = Arrangement.SpaceBetween,
+        modifier = Modifier.fillMaxWidth()
+    ){
+        Text(text = "Lote")
+        Text(text = " ${articleValue.items[0].lote }", color = Color.Gray)
+    }
+
+    Divider()
+    Text("")
+
+    if(locationValue.status=="ok"){
+        Row(
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.fillMaxWidth()
+        ){
+            Text(text = "Almacén")
+            Text(text = locationValue.location.Warehouse, fontWeight= FontWeight.Bold)
+        }
+        Row(
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.fillMaxWidth()
+        ){
+            Text(text = "Ubicación")
+            Text(text = locationValue.location.BinCode, fontWeight= FontWeight.Bold)
+        }
+
+        printViewModel.setPrint(
+            print=Print(
+                printer= print.value.printer,
+                itemCode = print.value.itemCode,
+                itemName = print.value.itemName,
+                itemUom = print.value.itemUom,
+                itemDate =print.value.itemDate,
+                itemBatch = print.value.itemBatch,
+                quantityString =print.value.quantityString,
+                warehouse = locationValue.location.Warehouse,
+                binCode =  locationValue.location.BinCode,
+                absEntry =  locationValue.location.AbsEntry,
+                flagTransfer=print.value.flagTransfer
+            )
+        )
+    }
+
+    Text("")
+    Text("Enviar a: ${print.value.printer.name}",fontWeight= FontWeight.Bold)
+    Text("")
+
+    listPrinterSection(
+        viewModel = printViewModel,
+        value=print.value.printer,
+        onSelect = {
+            printViewModel.setPrint(
+                print=Print(
+                    printer=PrintMachines(ip = it.ip, port = it.port,name=it.name),
+                    itemCode = articleValue.items[0].item.ItemCode,
+                    itemName = articleValue.items[0].item.ItemName,
+                    itemUom = print.value.itemUom,
+                    itemDate =print.value.itemDate,
+                    itemBatch = articleValue.items[0].lote,
+                    quantityString =print.value.quantityString,
+                    warehouse = print.value.warehouse,
+                    binCode =  print.value.binCode,
+                    absEntry = print.value.absEntry,
+                    flagTransfer = print.value.flagTransfer
+                )
+            )
+        }
+    )
+
+    Text("")
+
+    LabelledCheckbox(
+        checked = checked.value,
+        onCheckedChange = {
+            checked.value = it
+
+            printViewModel.setPrint(
+                print=Print(
+                    printer = print.value.printer,
+                    itemCode = print.value.itemCode,
+                    itemName = print.value.itemName,
+                    itemUom = print.value.itemUom,
+                    itemDate = print.value.itemDate,
+                    itemBatch = print.value.itemBatch,
+                    quantityString = print.value.quantityString,
+                    warehouse = locationValue.location.Warehouse,
+                    binCode = locationValue.location.BinCode,
+                    absEntry = locationValue.location.AbsEntry,
+                    flagTransfer= if (it) { "Y" } else { "N" }
+                )
+            )
+        },
+        label = "Realizar transferencia"
+    )
+
+    Text("")
+
+    var haveError by remember { mutableStateOf("") }
+
+    if(haveError.isNotEmpty()){
+        Text(haveError,color=Color.Red)
+        Text("")
+    }
+
+    Row(
+        horizontalArrangement = Arrangement.SpaceBetween,
+        modifier = Modifier.fillMaxWidth()
+    ){
+        Button(
+            colors= ButtonDefaults.buttonColors(backgroundColor = Color.Gray),
+            onClick = {
+                if(print.value.warehouse.isNotEmpty() && print.value.absEntry!=0){
+                    if(print.value.printer.ip.isNotEmpty()){
+                        haveError=""
+                        onContinue(print.value)
+                    }else{
+                        haveError="*Es necesario seleccionar una impresora"
+                    }
+                }else{
+                    haveError="*Es necesario escanear la ubicación donde se posicionará el palet"
+                }
+
+            }){
+            Text(
+                text = "Imprimir y Crear",
+                color= Color.White
+            )
+        }
+        Button( onClick = {
+            haveError=""
+            onCancel()
+        }){
+            Text(
+                text = "Cancelar"
             )
         }
     }
@@ -275,9 +594,7 @@ private fun listPrinterSection(viewModel: PrintViewModel,value:PrintMachines,onS
             "cargando" -> {
                 item{
                     Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(10.dp),
+                        modifier = Modifier.padding(10.dp),
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally
                     ){
@@ -325,7 +642,7 @@ private fun listPrinterSection(viewModel: PrintViewModel,value:PrintMachines,onS
                 item{
                     Column(
                         modifier = Modifier
-                            .fillMaxSize()
+                            //.fillMaxSize()
                             .padding(10.dp),
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally

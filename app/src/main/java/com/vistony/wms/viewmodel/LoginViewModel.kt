@@ -1,16 +1,12 @@
 package com.vistony.wms.viewmodel
 
 import android.content.Context
-import android.os.Looper
 import android.util.Log
-import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import androidx.navigation.NavController
 import com.vistony.wms.model.Login
 import com.vistony.wms.model.LoginCustom
 import io.realm.Realm
-import io.realm.kotlin.syncSession
 import io.realm.mongodb.App
 import io.realm.mongodb.AppConfiguration
 import io.realm.mongodb.Credentials
@@ -19,7 +15,6 @@ import io.realm.mongodb.sync.SyncConfiguration
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import org.bson.Document
-import org.bson.types.ObjectId
 
 class LoginViewModel(context: Context): ViewModel() {
 
@@ -57,6 +52,14 @@ class LoginViewModel(context: Context): ViewModel() {
                 Log.e("JEPICAME","==>"+it.error.errorMessage)
             }
         }
+
+        /*val realm = Realm.getInstance(Realm.getDefaultConfiguration())
+
+        realm.executeTransaction { realm ->
+            realm.deleteAll()
+        }
+
+        realm.close()*/
     }
 
     init{

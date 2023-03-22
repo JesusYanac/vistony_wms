@@ -4,7 +4,6 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.vistony.wms.model.*
-import io.realm.Case
 import io.realm.Realm
 import io.realm.RealmResults
 import io.realm.Sort
@@ -13,7 +12,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import org.bson.Document
 import org.bson.types.ObjectId
-import java.text.DateFormat
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -211,26 +209,28 @@ class StockTransferHeaderViewModel(private val ObjType: TaskManagement,private v
     }
 
     fun updateHeaderStatus(objType:Int,idInventory:ObjectId,newStatus:String){
-
         _merchandise.value =  StockTransferHeaderResponse(stockTransferHeader =emptyList(), status = "cargando")
 
         realm.executeTransactionAsync ({ r:Realm->
 
-            val body=r.where(StockTransferHeader ::class.java)
+            val headerDocument=r.where(StockTransferHeader ::class.java)
                 .equalTo("_id",idInventory)
                 .findFirst()
 
-            if(body!=null){
-                body.Status =newStatus
-                body.UpdateAt= Date()
+            if(headerDocument!=null){
+                headerDocument.Status =newStatus
+                headerDocument.UpdateAt= Date()
 
                 if(newStatus=="FichaCerrada"){
-                    body.CloseAt= Date()
+                    headerDocument.Response=""
+                    headerDocument.CloseAt= Date()
                 }
 
-                r.insertOrUpdate(body)
+                r.insertOrUpdate(headerDocument)
 
-                _merchandise.value =  StockTransferHeaderResponse(stockTransferHeader = listOf(body), status = "ok")
+                _merchandise.value =  StockTransferHeaderResponse(stockTransferHeader = listOf(headerDocument), status = "ok")
+            }else{
+                Log.e("JEPICAME","=>si e snull xdd")
             }
         },{
             _merchandise.value =  StockTransferHeaderResponse(stockTransferHeader = emptyList(), status = "ok")

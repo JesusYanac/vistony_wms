@@ -11,7 +11,6 @@ import retrofit2.http.*
 import java.net.Proxy
 import java.util.concurrent.TimeUnit
 
-
 interface APIService {
     @POST("Warehouse/suggestionPut")
     fun suggestion(@Query("type")  type: String,@Query("warehouse") warehouse:String): Call<Suggestions>
@@ -20,21 +19,21 @@ interface APIService {
     fun listPrint(@Url url:String): Call<ListPrint>
 
     @POST
-    fun sendPrint(@Url url:String,@Body request:RequestBody): Call<Void>
+    fun sendPrint(@Url url:String,@Body request:RequestBody): Call<SsccResponse>
 
     @GET
-    fun getSsdd(@Url url:String,@Query("code") codeVal:String,@Header("Authorization") jwt: String): Call<Sscc>
+    fun getSscc(@Url url:String, @Query("code") codeVal:String, @Header("Authorization") jwt: String): Call<Sscc>
 
     @GET
-    fun getArticleFromBatch(@Url url:String,@Query("itemCode") itemCode:String): Call<ProductFromBatch>
+    fun getArticleFromBatchQrEspecial(@Url url:String, @Query("itemCode") itemCode:String): Call<ProductFromBatch>
 
     companion object {
         private var apiService: APIService? = null
 
         private var client: OkHttpClient = OkHttpClient.Builder()
             .connectTimeout(1, TimeUnit.MINUTES)
-            .readTimeout(20, TimeUnit.SECONDS)
-            .writeTimeout(20, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .writeTimeout(30, TimeUnit.SECONDS)
             .retryOnConnectionFailure(true)
             .proxy(Proxy.NO_PROXY)
             .build()

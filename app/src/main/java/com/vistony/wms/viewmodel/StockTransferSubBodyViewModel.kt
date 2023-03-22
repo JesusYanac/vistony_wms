@@ -52,6 +52,7 @@ class StockTransferSubBodyViewModel(): ViewModel() {
                     body.TotalQuantity=body.TotalQuantity-subBody.Quantity
                     body.UpdateAt= Date()
 
+                    //subBody.deleteFromRealm()
                     //r.insertOrUpdate(subBody)
                     //r.insertOrUpdate(body)
 
@@ -66,7 +67,6 @@ class StockTransferSubBodyViewModel(): ViewModel() {
             _stockTransferSubBody.value=StockTransferSubBodyRI(status = "ok")
             //realm.close()
         },{
-
             _stockTransferSubBody.value=StockTransferSubBodyRI(status = "error ",message=it.message.toString())
             //realm.close()
         })

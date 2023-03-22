@@ -1,7 +1,5 @@
 package com.vistony.wms.model
 
-import java.util.*
-
 open class ListDataMasterResponse(
     var values:List<DataMasterItem> = listOf(
         DataMasterItem(nombre = "quality"),

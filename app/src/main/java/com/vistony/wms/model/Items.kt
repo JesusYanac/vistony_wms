@@ -19,6 +19,7 @@ open class Items(
     var InventoryWeight: Double = 0.0,
     var ItemCode: String = "",
     var ItemName: String = "",
+    var Sku: String? = null,
     var ItemsGroupCode: String = "",
     var PurchaseUnitHeight: String = "",
     var PurchaseUnitWidth: String = "",
@@ -35,6 +36,7 @@ open class ItemResponse(
     var lote: String ="",
     var quantity: Double=1.0,
     var expireDate:String="",
+    var inDate:String="",
     var defaultBinLocation:String=""
 )
 
@@ -43,6 +45,7 @@ open class ItemsResponse(
     var type:TypeCode=TypeCode.QR,
     var status: String = "",
     var nameSscc:String="",
+    var warehouse:String="",
     var defaultLocation:String=""
 )
 

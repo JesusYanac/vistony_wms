@@ -4,9 +4,10 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.vistony.wms.model.*
+import com.vistony.wms.num.TypeCode
 import com.vistony.wms.screen.getUIStringTimeStampWithDate
+import com.vistony.wms.util.isNumeric
 import io.realm.Realm
-import io.realm.RealmList
 import io.realm.RealmResults
 import io.realm.Sort
 import io.realm.kotlin.syncSession
@@ -18,7 +19,6 @@ import java.util.*
 class StockTransferBodyViewModel(idMerchandise:String): ViewModel() {
 
     private var idMerchandise:String= idMerchandise
-
     private var realm: Realm = Realm.getInstance(Realm.getDefaultConfiguration())
 
     class StockTransferBodyViewModelModelFactory(private var idMerchandise:String): ViewModelProvider.Factory {
@@ -34,8 +34,8 @@ class StockTransferBodyViewModel(idMerchandise:String): ViewModel() {
     private val _documentBody = MutableStateFlow(StockTransferBodyAndSubBody())
     val documentBody: StateFlow<StockTransferBodyAndSubBody> get() = _documentBody
 
-    private val _stockTransferBodyAndSubBodyResponse = MutableStateFlow(StockTransferBodyAndSubBodyResponse())
-    val stockTransferBodyAndSubBodyResponse: StateFlow<StockTransferBodyAndSubBodyResponse> get() = _stockTransferBodyAndSubBodyResponse
+    private val _stockTransferBodyAndSubBodyResponse =  MutableStateFlow<StockTranfBySRspnsList>(StockTranfBySRspnsList())
+    val stockTransferBodyAndSubBodyResponse: StateFlow<StockTranfBySRspnsList> get() = _stockTransferBodyAndSubBodyResponse
 
     private val _destine = MutableStateFlow(String())
     val destine: StateFlow<String> get() = _destine
@@ -59,7 +59,7 @@ class StockTransferBodyViewModel(idMerchandise:String): ViewModel() {
     }
 
     fun resetBodyAndSubBodyState(){
-        _stockTransferBodyAndSubBodyResponse.value= StockTransferBodyAndSubBodyResponse()
+        _stockTransferBodyAndSubBodyResponse.value= StockTranfBySRspnsList()
     }
 
     fun getBodyList(){
@@ -116,128 +116,184 @@ class StockTransferBodyViewModel(idMerchandise:String): ViewModel() {
         })
     }
 
-    fun addDestine(stockTransferPayloadVal:StockTransferPayloadVal){
+    fun addDestine(stockTransferPayloadVal:List<StockTransferPayloadVal>){
+
         _destine.value="cargando"
 
         realm.executeTransactionAsync { r: Realm ->
 
-            val subBody =r.where(StockTransferSubBody::class.java)
-                .equalTo("_StockTransferBody", stockTransferPayloadVal.idBody)
-                .equalTo("Batch", stockTransferPayloadVal.batch)
-                .equalTo("Delete", "N")
-                .findAll()
+            stockTransferPayloadVal.forEach {  stockTransferPayloadVal ->
 
-            if(subBody!=null){
+                val subBody =r.where(StockTransferSubBody::class.java)
+                    .equalTo("_StockTransferBody", stockTransferPayloadVal.idBody)
+                    .equalTo("Batch", stockTransferPayloadVal.batch)
+                    .equalTo("Sscc", stockTransferPayloadVal.sscc)
+                    .equalTo("Delete", "N")
+                    .findAll()
 
-                subBody.forEach { sBody ->
+                if(subBody!=null){
 
-                    val secondFilter = stockTransferPayloadVal.origin.firstOrNull { it.locationName == sBody.LocationName }
+                    subBody.forEach { sBody ->
 
-                    if(secondFilter!=null){
-                        Log.e("JEPICAMR","IS NOT NUL 128")
-                        if(sBody.Destine.isEmpty()){
-                            Log.e("JEPICAMR","IS NOT NUL 130 "+sBody.Destine.size)
-                            sBody.Destine.add(StockTransferSubBody_Destine(
-                                LocationName = stockTransferPayloadVal.destine.text,
-                                LocationCode = ""+stockTransferPayloadVal.destine.id,
-                                Quantity = secondFilter.quantityUsed //stockTransferPayloadVal.quantity
-                            ))
-                        }else{
-                            val searchDestine=sBody.Destine.firstOrNull { it.LocationName ==stockTransferPayloadVal.destine.text }
+                        val secondFilter = stockTransferPayloadVal.origin.firstOrNull { it.locationName == sBody.LocationName }
 
-                            if(searchDestine!=null){
-                                Log.e("JEPICAMR","IS NOT NUL 140")
-                                searchDestine.Quantity= searchDestine.Quantity?.plus(secondFilter.quantityUsed) //stockTransferPayloadVal.quantity)
-                            }else{
-
-                                Log.e("JEPICAMR","IS NOT NUL 143")
+                        if(secondFilter!=null){
+                            Log.e("JEPICAMR","IS NOT NUL 128")
+                            if(sBody.Destine.isEmpty()){
+                                Log.e("JEPICAMR","IS NOT NUL 130 "+sBody.Destine.size)
                                 sBody.Destine.add(StockTransferSubBody_Destine(
                                     LocationName = stockTransferPayloadVal.destine.text,
                                     LocationCode = ""+stockTransferPayloadVal.destine.id,
-                                    Quantity = secondFilter.quantityUsed//stockTransferPayloadVal.quantity
+                                    Quantity = secondFilter.quantityUsed //stockTransferPayloadVal.quantity
                                 ))
+                            }else{
+                                val searchDestine=sBody.Destine.firstOrNull { it.LocationName ==stockTransferPayloadVal.destine.text }
+
+                                if(searchDestine!=null){
+                                    Log.e("JEPICAMR","IS NOT NUL 140")
+                                    searchDestine.Quantity= searchDestine.Quantity?.plus(secondFilter.quantityUsed) //stockTransferPayloadVal.quantity)
+                                }else{
+
+                                    Log.e("JEPICAMR","IS NOT NUL 143")
+                                    sBody.Destine.add(StockTransferSubBody_Destine(
+                                        LocationName = stockTransferPayloadVal.destine.text,
+                                        LocationCode = ""+stockTransferPayloadVal.destine.id,
+                                        Quantity = secondFilter.quantityUsed//stockTransferPayloadVal.quantity
+                                    ))
+                                }
                             }
-                        }
 
-                        if(sBody.Quantity==sBody.Destine.sum("Quantity")){
-                            sBody.Status="Completo"
-                        }
+                            if(sBody.Quantity==sBody.Destine.sum("Quantity")){
+                                sBody.Status="Completo"
+                            }
 
-                        _destine.value="ok"
+                            _destine.value="ok"
+                        }else{
+                            Log.e("JEPICAME","ESTE VALOR TIENE NULL "+sBody.LocationName)
+                        }
+                    }
+                }else{
+                    if(stockTransferPayloadVal.origin.isEmpty()){
+                        _destine.value="Es necesario selecionar una ubicación origen."
                     }else{
-                        Log.e("JEPICAME","ESTE VALOR TIENE NULL "+sBody.LocationName)
+                        _destine.value="El Lote ${stockTransferPayloadVal.batch}"
                     }
                 }
-            }else{
-                if(stockTransferPayloadVal.origin.isEmpty()){
-                    _destine.value="Es necesario selecionar una ubicación origen."
-                }else{
-                    _destine.value="El Lote ${stockTransferPayloadVal.batch}"
-                }
+
             }
+
+
+
 
         }
     }
 
-    fun getBodyAndSubBody(value:String){
+    fun getBodyAndSubBody(zebra:zebraPayload){
 
-        _stockTransferBodyAndSubBodyResponse.value= StockTransferBodyAndSubBodyResponse(StockTransferBody(),emptyList(),status="cargando", quantityDestine = 0.0)
+        _stockTransferBodyAndSubBodyResponse.value= StockTranfBySRspnsList(emptyList(),status="cargando")
 
-        val count:Int = value.split("|").size
+        val count:Int = zebra.Payload.split("|").size
 
         var lote:String = ""
         var itemCodeNew:String = ""
-        var quantity:Double = 1.0
 
         when(count){
-            0->{}
-            1->{
-                itemCodeNew=value.split("|")[0]
+            0,1->{
+                itemCodeNew=zebra.Payload.split("|")[0]
             }
             2->{
-                itemCodeNew=value.split("|")[0]
-                lote=value.split("|")[1]
+                itemCodeNew=zebra.Payload.split("|")[0]
+                lote=zebra.Payload.split("|")[1]
             }else->{
-                itemCodeNew=value.split("|")[0]
-                lote=value.split("|")[1]
-                quantity = try{
-                    value.split("|")[2].toDouble()
-                }catch(e:Exception){
-                    1.0
-                }
+                itemCodeNew=zebra.Payload.split("|")[0]
+                lote=zebra.Payload.split("|")[1]
             }
         }
 
         Realm.getInstanceAsync(realm.configuration, object : Realm.Callback() {
             override fun onSuccess(r: Realm) {
+                if(zebra.Payload.length==20 && isNumeric(zebra.Payload)){
 
-                val body = r.where(StockTransferBody::class.java)
-                    .equalTo("ItemCode", itemCodeNew)
-                    .equalTo("_StockTransferHeader", ObjectId(idMerchandise))
-                    .findFirst()
-
-                if(body!=null){
-
-                    val subBody = r.where(StockTransferSubBody::class.java)
-                        .equalTo("Delete", "N")
-                        .equalTo("Batch", lote)
-                        .equalTo("_StockTransferBody", body._id)
+                    val body = r.where(StockTransferBody::class.java)
+                        .equalTo("_StockTransferHeader", ObjectId(idMerchandise))
                         .findAll()
 
-                    if(subBody!=null && subBody.isNotEmpty()){
+                    if(body!=null && body.isNotEmpty()){
 
-                        val countTemp:List<StockTransferSubBody> = subBody.subList(0, subBody.size)
-                        _stockTransferBodyAndSubBodyResponse.value= StockTransferBodyAndSubBodyResponse(body,countTemp,quantityDestine=countTemp.sumOf{ it.Destine.sum("Quantity").toDouble() },status="ok")
+                        val tempListBody:List<StockTransferBody> = body.subList(0, body.size)
+                        val tempListResponse = listOf<StockTransferBodyAndSubBodyResponse>().toMutableList()
 
+                        tempListBody.forEach { stockTransferBody ->
+
+                            val subBody = r.where(StockTransferSubBody::class.java)
+                                .equalTo("Delete", "N")
+                                .equalTo("Sscc", zebra.Payload.substring(2))
+                                .equalTo("_StockTransferBody", stockTransferBody._id)
+                                .findAll()
+
+                            if(subBody!=null && subBody.isNotEmpty()){
+                                val countTemp:List<StockTransferSubBody> = subBody.subList(0, subBody.size)
+
+                                /*if(countTemp.sumOf{ it.Quantity } <= countTemp.sumOf{ it.Destine.sum("Quantity").toDouble() }){
+                                    tempListResponse.add(
+                                        StockTransferBodyAndSubBodyResponse(
+                                            stockTransferBody=stockTransferBody,
+                                            stockTransferSubBody=countTemp,
+                                            message="El producto ${stockTransferBody.ItemCode} con lote ${stockTransferBandSRpsValue.stockTransferSubBody[0].Batch}, no tiene stock pendiente de ubicar.",
+                                            quantityDestine=countTemp.sumOf{ it.Destine.sum("Quantity").toDouble() }
+                                        )
+                                    )
+                                }else{*/
+                                    tempListResponse.add( StockTransferBodyAndSubBodyResponse(stockTransferBody,countTemp,quantityDestine=countTemp.sumOf{ it.Destine.sum("Quantity").toDouble() }) )
+                                //}
+                            }
+
+
+                        }
+
+                        if(tempListResponse.isEmpty()){
+                            _stockTransferBodyAndSubBodyResponse.value= StockTranfBySRspnsList(tempListResponse,status="El SSCC del palet escaneado no pertenece a este documento")
+                        }else{
+                            _stockTransferBodyAndSubBodyResponse.value= StockTranfBySRspnsList(tempListResponse,status="ok",TypeCode.SSCC)
+                        }
                     }else{
-                        _stockTransferBodyAndSubBodyResponse.value= StockTransferBodyAndSubBodyResponse(StockTransferBody(),emptyList(),status="El lote del producto escaneado no pertenece a este documento",quantityDestine=0.0)
+                        _stockTransferBodyAndSubBodyResponse.value=StockTranfBySRspnsList(emptyList(),status="Inesperadamente este documento no tiene detalle")
                     }
-                }else{
-                    _stockTransferBodyAndSubBodyResponse.value= StockTransferBodyAndSubBodyResponse(StockTransferBody(),emptyList(),status="El producto escaneado no pertenece a este documento",quantityDestine=0.0)
+                }
+                else{
+                    val body = r.where(StockTransferBody::class.java)
+                        .equalTo("ItemCode", itemCodeNew)
+                        .equalTo("_StockTransferHeader", ObjectId(idMerchandise))
+                        .findFirst()
+
+                    if(body!=null){
+
+                        val subBody = r.where(StockTransferSubBody::class.java)
+                            .equalTo("Delete", "N")
+                            .equalTo("Batch", lote)
+                            .equalTo("Sscc", "")
+                            .equalTo("_StockTransferBody", body._id)
+                            .findAll()
+
+                        if(subBody!=null && subBody.isNotEmpty()){
+
+                            val countTemp:List<StockTransferSubBody> = subBody.subList(0, subBody.size)
+                            _stockTransferBodyAndSubBodyResponse.value= StockTranfBySRspnsList(
+                                response=listOf(StockTransferBodyAndSubBodyResponse(body,countTemp,quantityDestine=countTemp.sumOf{ it.Destine.sum("Quantity").toDouble() })),
+                                status="ok",
+                                type=TypeCode.QR
+                            )
+
+                        }else{
+                            _stockTransferBodyAndSubBodyResponse.value= StockTranfBySRspnsList(emptyList(),status="El lote del producto escaneado no pertenece a este documento o esta dentro de un palet")
+                        }
+                    }else{
+                        _stockTransferBodyAndSubBodyResponse.value= StockTranfBySRspnsList(emptyList(),status="El producto escaneado no pertenece a este documento")
+                    }
                 }
             }
             override fun onError(exception: Throwable){
-                _stockTransferBodyAndSubBodyResponse.value= StockTransferBodyAndSubBodyResponse(StockTransferBody(),emptyList(),status="${exception.message}",quantityDestine=0.0)
+                _stockTransferBodyAndSubBodyResponse.value= StockTranfBySRspnsList(emptyList(),status="${exception.message}")
             }
         })
 
@@ -292,7 +348,7 @@ class StockTransferBodyViewModel(idMerchandise:String): ViewModel() {
         })
     }
 
-    fun insertData(body: StockTransferBodyPayload,objType:Int){
+    fun insertData(body: List<StockTransferBodyPayload>,objType:Int){
 
         Log.e("JEPICAME","INSERTAR DATAAA")
 
@@ -300,8 +356,12 @@ class StockTransferBodyViewModel(idMerchandise:String): ViewModel() {
 
         realm.executeTransactionAsync { r: Realm ->
 
-            val Article = r.where(StockTransferBody::class.java)
 
+            body.map { body->
+
+                Log.e("JEPICAME","INSERTAR DATAAA")
+
+            val Article = r.where(StockTransferBody::class.java)
                 .equalTo("ItemCode",body.ItemCode)
                 .equalTo("_StockTransferHeader", ObjectId(idMerchandise))
                 .findFirst()
@@ -326,6 +386,7 @@ class StockTransferBodyViewModel(idMerchandise:String): ViewModel() {
 
                         .equalTo("Batch",body.Batch)
                         .equalTo("LocationName",body.LocationName)
+                        .equalTo("Sscc",body.Sscc)
                         .equalTo("Delete","N")
                         .equalTo("_StockTransferBody",recoveryArticle._id)
                         .findFirst()
@@ -340,6 +401,7 @@ class StockTransferBodyViewModel(idMerchandise:String): ViewModel() {
                         obit.LocationName=body.LocationName
                         obit.LocationCode=body.LocationCode
                         obit.Batch=body.Batch
+                        obit.Sscc=body.Sscc
                         obit._StockTransferBody= recoveryArticle._id
                         obit.Realm_Id=realm.syncSession.user.id
 
@@ -414,6 +476,7 @@ class StockTransferBodyViewModel(idMerchandise:String): ViewModel() {
                         .equalTo("Batch",body.Batch)
                         .equalTo("LocationName",body.LocationName)
                         .equalTo("Delete","N")
+                        .equalTo("Sscc",body.Sscc)
                         .equalTo("_StockTransferBody",Article._id)
                         .findFirst()
 
@@ -426,6 +489,7 @@ class StockTransferBodyViewModel(idMerchandise:String): ViewModel() {
                         sub.Quantity=body.Quantity
                         sub.LocationName=body.LocationName
                         sub.LocationCode=body.LocationCode
+                        sub.Sscc=body.Sscc
                         sub.Batch=body.Batch
                         sub._StockTransferBody= Article._id
                         sub.Realm_Id=realm.syncSession.user.id
@@ -446,6 +510,7 @@ class StockTransferBodyViewModel(idMerchandise:String): ViewModel() {
                     }
 
                // }
+            }
             }
 
             _merchandiseBody.value= StockTransferBodyResponse(emptyList(),"ok")

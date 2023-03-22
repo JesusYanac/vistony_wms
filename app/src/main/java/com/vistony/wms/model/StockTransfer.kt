@@ -1,9 +1,8 @@
 package com.vistony.wms.model
 
+import com.vistony.wms.num.TypeCode
 import io.realm.RealmList
 import io.realm.RealmObject
-import io.realm.RealmResults
-import io.realm.annotations.LinkingObjects
 import io.realm.annotations.PrimaryKey
 import io.realm.annotations.RealmClass
 import org.bson.types.ObjectId
@@ -90,6 +89,7 @@ open class StockTransferBodyPayload(
     var Batch: String = "",
     var LocationCode: String = "",
     var LocationName: String = "",
+    var Sscc: String = "",
     var Quality: QualityControl_Collection?=QualityControl_Collection(),
     var Quantity: Double = 0.0
 )
@@ -133,6 +133,7 @@ open class StockTransferSubBody(
     var Quantity: Double = 0.0,
     var Quality: String = "",
     var Realm_Id: String = "",
+    var Sscc: String? = null,
     var Status: String = "Pendiente",
     var UpdateAt: Date = Date(),
     var Destine: RealmList<StockTransferSubBody_Destine> = RealmList(),
@@ -140,6 +141,53 @@ open class StockTransferSubBody(
 ): RealmObject() {
     @PrimaryKey
     var _id: ObjectId = ObjectId()
+}
+
+open class MergedStockTransfer(
+    val ItemCode: String= "",
+    val ItemName: String= "",
+    var Batch: String = "",
+    var CreateAt: Date = Date(),
+    var LocationCode: String = "",
+    var LocationName: String = "",
+    var Delete: String = "N",
+    var Quantity: Double = 0.0,
+    var QuantityDestine: Double = 0.0,
+    var Quality: String = "",
+    var Realm_Id: String = "",
+    var Sscc: String? = null,
+    var Status: String = "Pendiente",
+    var UpdateAt: Date = Date(),
+    var Destine: RealmList<StockTransferSubBody_Destine> = RealmList(),
+    var _StockTransferBody: ObjectId = ObjectId(),
+    var _StockTransferSubBody: ObjectId = ObjectId()
+)
+
+//    // stockTransferBandSRpsValue.stockTransferSubBody.sumOf { it.Quantity } <= stockTransferBandSRpsValue.quantityDestine
+fun List<StockTransferBodyAndSubBodyResponse>.merge(): List<MergedStockTransfer> {
+    return this.flatMap { response ->
+        response.stockTransferSubBody.map { subBody ->
+            MergedStockTransfer(
+                ItemCode = response.stockTransferBody.ItemCode,
+                ItemName = response.stockTransferBody.ItemName,
+                Batch = subBody.Batch,
+                CreateAt = subBody.CreateAt,
+                LocationCode = subBody.LocationCode,
+                LocationName = subBody.LocationName,
+                Delete = subBody.Delete,
+                Quantity = subBody.Quantity,
+                QuantityDestine =  subBody.Destine.sum("Quantity").toDouble(),
+                Quality = subBody.Quality,
+                Realm_Id = subBody.Realm_Id,
+                Sscc = subBody.Sscc,
+                Status = subBody.Status,
+                UpdateAt = subBody.UpdateAt,
+                Destine = subBody.Destine,
+                _StockTransferBody = subBody._StockTransferBody,
+                _StockTransferSubBody = subBody._id
+            )
+        }
+    }
 }
 
 
@@ -155,7 +203,13 @@ open class StockTransferBodyAndSubBodyResponse(
     var stockTransferBody: StockTransferBody=StockTransferBody(),
     var stockTransferSubBody: List<StockTransferSubBody> =  emptyList(),
     var quantityDestine:Double=0.0,
-    var status: String = ""
+    var message: String = ""
+)
+
+open class StockTranfBySRspnsList(
+    var response: List<StockTransferBodyAndSubBodyResponse> = emptyList(),
+    var status: String = "",
+    var type: TypeCode=TypeCode.QR
 )
 
 open class BinLocation(
@@ -168,6 +222,7 @@ open class StockTransferPayloadVal(
     //var origin:BinLocation=BinLocation(),
     var origin:List<ManyToOne> = emptyList(),
     var idBody:ObjectId= ObjectId(),
+    var sscc:String= "",
     var destine:BinLocation=BinLocation(),
     var quantity:Double=0.0
 )
