@@ -34,8 +34,15 @@ open class Users(
     var EmployeeId: Int = 0,
     var FirstName: String = "",
     var LastName: String = "",
+    var FirebaseToken: String? = null,
     var Realm_Id: String = ""
-): RealmObject() {}
+): RealmObject() {
+    fun updateFirebaseToken(newToken: String) {
+        realm.executeTransaction {
+            FirebaseToken = newToken
+        }
+    }
+}
 
 open class LoginCustom(
     var app:App,
@@ -52,5 +59,8 @@ open class CountryLocation(
 open class Options(
     var value:String="",
     var text:String="",
-    var icono:Int=0
+    var icono:Int=0,
+    var enabled:Boolean=true,
+    var subMenu:Boolean=false,
+    var subMenuVisible:Boolean=false
 )

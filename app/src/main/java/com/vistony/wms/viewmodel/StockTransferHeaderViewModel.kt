@@ -31,6 +31,9 @@ class StockTransferHeaderViewModel(private val ObjType: TaskManagement,private v
     private val _form = MutableStateFlow(TaskMngmtDataForm())
     val form: StateFlow<TaskMngmtDataForm> get() = _form
 
+    private val _stockTransferHeaderResponse = MutableStateFlow(StockTransferHeaderResponse())
+    val stockTransferHeaderResponse: StateFlow<StockTransferHeaderResponse> get() = _stockTransferHeaderResponse
+
     class StockTransferHeaderViewModelFactory(private var ObjType:TaskManagement,private var Flag:String=""): ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -112,14 +115,11 @@ class StockTransferHeaderViewModel(private val ObjType: TaskManagement,private v
             override fun onError(exception: Throwable) {
                 //realm.close()
                 _merchandise.value =  StockTransferHeaderResponse(stockTransferHeader=emptyList(), status = " ${exception.message}")
-
             }
         })
-
-
     }
 
-    fun addMerchandiseHeader(stockTransferHeader: StockTransferHeader){
+    fun addMerchandiseHeader(stockTransferHeader: StockTransferHeader,forms:String){
 
         val customUserData : Document? = realm.syncSession.user.customData
         val employeeId=customUserData?.getInteger("EmployeeId")?:0
@@ -137,7 +137,7 @@ class StockTransferHeaderViewModel(private val ObjType: TaskManagement,private v
                 task.DocDate=date
                 task.DocEntry=0
                 task.DocNum=""
-                task.Documento= when(stockTransferHeader.ObjType){ 22-> {"Pedido de Compra"} 67->{"Transferencia de Stock"} 671 ->{"Slotting"} else->{""}}
+                task.Documento= when(stockTransferHeader.ObjType){ 22-> {"Pedido de Compra"} 67->{ if(forms.equals("reception")){"Recepción de producción"}else{"Transferencia de Stock"}} 6701 ->{"Slotting"}18-> {"Factura de Reserva"} else->{""}}
                 task.EndDate=date
                 task.ObjType=stockTransferHeader.ObjType
                 task.Realm_Id=realm.syncSession.user.id
@@ -209,6 +209,9 @@ class StockTransferHeaderViewModel(private val ObjType: TaskManagement,private v
     }
 
     fun updateHeaderStatus(objType:Int,idInventory:ObjectId,newStatus:String){
+        Log.e("REOS","StockTransferHeaderViewModel-updateHeaderStatus-objType: "+objType)
+        Log.e("REOS","StockTransferHeaderViewModel-updateHeaderStatus-idInventory: "+idInventory)
+        Log.e("REOS","StockTransferHeaderViewModel-updateHeaderStatus-newStatus: "+newStatus)
         _merchandise.value =  StockTransferHeaderResponse(stockTransferHeader =emptyList(), status = "cargando")
 
         realm.executeTransactionAsync ({ r:Realm->
@@ -254,6 +257,7 @@ class StockTransferHeaderViewModel(private val ObjType: TaskManagement,private v
                     if(task?.Status=="Asignado"){
                         task.Status ="En Curso"
                         task.StartDate =Date()
+                        task.ArrivalTimeSap=task.StartDate
                         bgRealm.insertOrUpdate(task!!)
                     }
 
@@ -325,5 +329,48 @@ class StockTransferHeaderViewModel(private val ObjType: TaskManagement,private v
         }
 
         getMerchandise(ObjType)
+    }
+
+    fun getMerchandiseCode(idMerchandise:String,objType: Int,){
+        _stockTransferHeaderResponse.value =  StockTransferHeaderResponse(stockTransferHeader =emptyList(), status = "cargando")
+        Realm.getInstanceAsync(realm.configuration, object : Realm.Callback() {
+            override fun onSuccess(r: Realm) {
+                Log.e("REOS","StockTransferHeaderViewModel-getMerchandiseCode-idMerchandise: "+idMerchandise)
+                Log.e("REOS","StockTransferHeaderViewModel-getMerchandiseCode-objType: "+objType)
+                Log.e("REOS","StockTransferHeaderViewModel-getMerchandiseCode-\"ObjectId('\"+idMerchandise+\"')\": "+"ObjectId('"+idMerchandise+"')")
+                Log.e("REOS","StockTransferHeaderViewModel-getMerchandiseCode-\"ObjectId('\"+idMerchandise+\"')\": "+ObjectId(idMerchandise))
+                val inventory:RealmResults<StockTransferHeader> =
+                r.where(StockTransferHeader::class.java)
+                    .equalTo("ObjType", objType )
+                    .equalTo("_id", ObjectId(idMerchandise))
+                    .sort("CreateAt", Sort.DESCENDING)
+                    .findAll()
+
+
+
+
+                inventory.let { data: RealmResults<StockTransferHeader> ->
+
+                    val inventoryTemp:List<StockTransferHeader> = data.subList(0, data.size)
+
+                    val customUserData : Document? = r.syncSession.user.customData
+                    val firstName= customUserData?.getString("FirstName")?:""
+                    val lastName = customUserData?.getString("LastName")?:""
+
+                    if(inventoryTemp.isNotEmpty()){
+                        _stockTransferHeaderResponse.value =  StockTransferHeaderResponse(stockTransferHeader=inventoryTemp, ownerName = "$firstName $lastName", status = "ok")
+                    }else{
+                        _stockTransferHeaderResponse.value =  StockTransferHeaderResponse(stockTransferHeader=emptyList(), status = "vacio")
+                    }
+
+                }
+
+                //realm.close()
+            }
+            override fun onError(exception: Throwable) {
+                //realm.close()
+                _stockTransferHeaderResponse.value =  StockTransferHeaderResponse(stockTransferHeader=emptyList(), status = " ${exception.message}")
+            }
+        })
     }
 }

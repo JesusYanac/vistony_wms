@@ -28,7 +28,7 @@ import java.nio.charset.StandardCharsets
 fun RecuentoScreen(navController: NavHostController,context: Context){
 
     val inventoryViewModel: InventoryViewModel = viewModel(
-        factory = InventoryViewModel.InventoryViewModelFactory()
+        factory = InventoryViewModel.InventoryViewModelFactory("")
     )
 
     val idInventoryHeader = inventoryViewModel.idInventoryHeader.collectAsState()

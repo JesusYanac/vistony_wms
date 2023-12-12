@@ -38,6 +38,9 @@ class PrintViewModel(): ViewModel() {
     private val _statusPrint = MutableStateFlow("")
     val statusPrint: StateFlow<String> get() = _statusPrint
 
+    private val _terminationReport = MutableStateFlow(TerminationReport())
+    val terminationReport: StateFlow<TerminationReport> get() = _terminationReport
+
     class PrintViewModelFactory(): ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -59,6 +62,9 @@ class PrintViewModel(): ViewModel() {
 
     fun resetStatusPrint(){
         _statusPrint.value=""
+    }
+    fun resetStatusTerminationReport(){
+        _terminationReport.value= TerminationReport(Data="", Status = "")
     }
 
     fun getArticle(value:String){
@@ -88,11 +94,11 @@ class PrintViewModel(): ViewModel() {
         }).toString()
     }
 
-    fun listPrinter(){
+    private fun listPrinter(){
         _printList.value = ListPrint(prints=emptyList(), "cargando")
 
         viewModelScope.launch(Dispatchers.Default){
-            APIService.getInstance().listPrint ("http://192.168.254.20:89/vs1.0/printer").enqueue( object :Callback<ListPrint> {
+            APIService.getInstance().listPrint ("http://192.168.254.20:66/vs1.0/printer").enqueue( object :Callback<ListPrint> {
                 override fun onResponse(call: Call<ListPrint>, response: Response<ListPrint>) {
                     if(response.isSuccessful){
                         _printList.value=ListPrint(prints = response.body()?.prints!!,status="ok")
@@ -138,7 +144,48 @@ class PrintViewModel(): ViewModel() {
         }
     }
 
+    fun sendPrintTerminationReport(print:PrintSSCC){
+        Log.e("REOS","PrintViewModel-sendPrintTerminationReport-print"+print)
+        _terminationReport.value = TerminationReport(Status="cargando",Data="")
+
+        val jsonBody: RequestBody = RequestBody.create(
+            MediaType.parse("application/json; charset=utf-8"),
+            JSONObject(
+                Gson().toJson(
+                    print
+                )
+            ).toString()
+        )
+
+        viewModelScope.launch(Dispatchers.Default){
+            APIService.getInstance().sendTerminationReportPrint(jsonBody).enqueue(object :Callback<TerminationReport> {
+                override fun onResponse(call: Call<TerminationReport>, response: Response<TerminationReport>) {
+                    Log.e("REOS","PrintViewModel-sendPrintTerminationReport-call"+call)
+                    Log.e("REOS","PrintViewModel-sendPrintTerminationReport-response"+response)
+                    if(response.isSuccessful){
+                        _terminationReport.value=TerminationReport(Status="ok",Data=response.body()?.Data!!)
+                    }else{
+
+                        val errorBody = response.errorBody()?.string()
+                        val gson = Gson()
+                        val errorResponse = gson.fromJson(errorBody, SsccResponse::class.java)
+
+                        if(errorResponse==null){
+                            _terminationReport.value=TerminationReport(Status=" El servidor respondio ${response.code()} - ${response.message()}",Data="")
+                        }else{
+                            _terminationReport.value=TerminationReport(Status=" " + errorResponse.error,Data="")
+                        }
+                    }
+                }
+                override fun onFailure(call: Call<TerminationReport>, error: Throwable) {
+                    _terminationReport.value=TerminationReport(Status=error.message.toString(),Data="")
+                }
+            })
+        }
+
+    }
     fun sendPrintSSCC(print:PrintSSCC){
+        Log.e("REOS","PrintViewModel-sendPrintSSCC-print"+print)
         _statusPrint.value = "cargando"
 
         val jsonBody: RequestBody = RequestBody.create(
@@ -153,12 +200,10 @@ class PrintViewModel(): ViewModel() {
         Log.e("Jepicame","Json is "+Gson().toJson(print).toString())
 
         viewModelScope.launch(Dispatchers.Default){
-            APIService.getInstance().sendPrint("http://192.168.254.20:93/vs1.0/Sscc/Print",jsonBody).enqueue(object :Callback<SsccResponse> {
+            APIService.getInstance().sendPrint(jsonBody).enqueue(object :Callback<SsccResponse> {
                 override fun onResponse(call: Call<SsccResponse>, response: Response<SsccResponse>) {
-
-                    Log.e("JEPICAME","ERROR =>"+response.code())
-                    Log.e("JEPICAME","ERROR =>"+response.message())
-
+                    Log.e("REOS","PrintViewModel-sendPrintSSCC-call"+call)
+                    Log.e("REOS","PrintViewModel-sendPrintSSCC-response"+response)
                     if(response.isSuccessful){
                         _statusPrint.value="ok"
                     }else{
@@ -176,9 +221,51 @@ class PrintViewModel(): ViewModel() {
                 }
                 override fun onFailure(call: Call<SsccResponse>, error: Throwable) {
                     _statusPrint.value=error.message.toString()
+                    Log.e("REOS","PrintViewModel-sendPrintSSCC-onFailure-error.message.toString()"+error.message.toString())
                 }
             })
         }
 
+    }
+
+
+    fun sendTerminationReport(sendTerminationReport: sendTerminationReport){
+        _terminationReport.value = TerminationReport(Status="cargando",Data="")
+
+        val jsonBody: RequestBody = RequestBody.create(
+            MediaType.parse("application/json; charset=utf-8"),
+            JSONObject(
+                Gson().toJson(
+                    sendTerminationReport
+                )
+            ).toString()
+        )
+
+        viewModelScope.launch(Dispatchers.Default){
+            APIService.getInstance().sendTerminationReportPrint(jsonBody).enqueue(object :
+                Callback<TerminationReport> {
+                override fun onResponse(call: Call<TerminationReport>, response: Response<TerminationReport>) {
+
+                    if(response.isSuccessful){
+                        _terminationReport.value= TerminationReport(Status="ok",Data=response.body()?.Data!!)
+                    }else{
+
+                        val errorBody = response.errorBody()?.string()
+                        val gson = Gson()
+                        val errorResponse = gson.fromJson(errorBody, SsccResponse::class.java)
+
+                        if(errorResponse==null){
+                            _terminationReport.value= TerminationReport(Status=" El servidor respondio ${response.code()} - ${response.message()}",Data="")
+                        }else{
+                            _terminationReport.value=
+                                TerminationReport(Status=" " + errorResponse.error,Data="")
+                        }
+                    }
+                }
+                override fun onFailure(call: Call<TerminationReport>, error: Throwable) {
+                    _terminationReport.value= TerminationReport(Status=error.message.toString(),Data="")
+                }
+            })
+        }
     }
 }

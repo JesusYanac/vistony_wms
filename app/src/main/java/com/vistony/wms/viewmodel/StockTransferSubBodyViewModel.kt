@@ -1,5 +1,6 @@
 package com.vistony.wms.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.vistony.wms.model.StockTransferBody
@@ -26,50 +27,6 @@ class StockTransferSubBodyViewModel(): ViewModel() {
 
     fun resetSubBodyState(){
         _stockTransferSubBody.value= StockTransferSubBodyRI()
-    }
-
-    fun delete(idInventory:ObjectId){
-
-        realm.executeTransactionAsync ({ r:Realm->
-
-            r.beginTransaction()
-
-            _stockTransferSubBody.value= StockTransferSubBodyRI(status = "cargando")
-
-            val subBody: StockTransferSubBody? =r.where(StockTransferSubBody ::class.java)
-                .equalTo("_id",idInventory)
-                .findFirst()
-
-            if(subBody!=null){
-                subBody.Delete ="Y"
-                subBody.UpdateAt= Date()
-
-                val body: StockTransferBody? =r.where(StockTransferBody ::class.java)
-                    .equalTo("_id",subBody._StockTransferBody)
-                    .findFirst()
-
-                if(body!=null && r.isInTransaction){
-                    body.TotalQuantity=body.TotalQuantity-subBody.Quantity
-                    body.UpdateAt= Date()
-
-                    //subBody.deleteFromRealm()
-                    //r.insertOrUpdate(subBody)
-                    //r.insertOrUpdate(body)
-
-                    r.commitTransaction()
-                }else{
-                    r.cancelTransaction()
-                }
-            }else{
-                r.cancelTransaction()
-            }
-        },{
-            _stockTransferSubBody.value=StockTransferSubBodyRI(status = "ok")
-            //realm.close()
-        },{
-            _stockTransferSubBody.value=StockTransferSubBodyRI(status = "error ",message=it.message.toString())
-            //realm.close()
-        })
     }
 
     fun getSubData(idSubBody: ObjectId){

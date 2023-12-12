@@ -12,28 +12,36 @@ import java.net.Proxy
 import java.util.concurrent.TimeUnit
 
 interface APIService {
+    @POST("Warehouse/suggestionPick")
+    fun suggestionPick(@Body request:RequestBody): Call<Suggestions>
+
     @POST("Warehouse/suggestionPut")
-    fun suggestion(@Query("type")  type: String,@Query("warehouse") warehouse:String): Call<Suggestions>
+    fun suggestion(@Body request:RequestBody): Call<Suggestions>
 
     @GET
     fun listPrint(@Url url:String): Call<ListPrint>
 
-    @POST
-    fun sendPrint(@Url url:String,@Body request:RequestBody): Call<SsccResponse>
+    @POST("Sscc/Print")
+    fun sendPrint(@Body request:RequestBody): Call<SsccResponse>
 
-    @GET
-    fun getSscc(@Url url:String, @Query("code") codeVal:String, @Header("Authorization") jwt: String): Call<Sscc>
+    @POST("Production/TerminacionReport")
+    fun sendTerminationReportPrint(@Body request:RequestBody): Call<TerminationReport>
 
-    @GET
-    fun getArticleFromBatchQrEspecial(@Url url:String, @Query("itemCode") itemCode:String): Call<ProductFromBatch>
+    @GET("sscc")
+    fun getSscc(@Query("code") codeVal:String, @Header("Authorization") jwt: String): Call<Sscc>
+
+    @GET("Inventory/getItem")
+    fun getArticleFromBatchQrEspecial(@Query("itemCode") itemCode:String): Call<ProductFromBatch>
+
+
 
     companion object {
         private var apiService: APIService? = null
 
         private var client: OkHttpClient = OkHttpClient.Builder()
             .connectTimeout(1, TimeUnit.MINUTES)
-            .readTimeout(30, TimeUnit.SECONDS)
-            .writeTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(50, TimeUnit.SECONDS)
+            .writeTimeout(50, TimeUnit.SECONDS)
             .retryOnConnectionFailure(true)
             .proxy(Proxy.NO_PROXY)
             .build()

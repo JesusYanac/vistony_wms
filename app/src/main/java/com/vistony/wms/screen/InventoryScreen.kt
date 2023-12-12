@@ -2,6 +2,7 @@ package com.vistony.wms.screen
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutLinearInEasing
@@ -34,6 +35,8 @@ import com.vistony.wms.num.OptionsDowns
 import com.vistony.wms.model.Inventory
 import com.vistony.wms.ui.theme.AzulVistony201
 import com.vistony.wms.ui.theme.RedVistony202
+import com.vistony.wms.util.ConvertdatefordateSAP
+import com.vistony.wms.util.ConvertdatefordateSAP2
 import com.vistony.wms.util.Routes
 import com.vistony.wms.viewmodel.InventoryViewModel
 import java.net.URLEncoder
@@ -46,7 +49,7 @@ import java.util.*
 fun InventoryScreen(navController: NavHostController, context: Context){
 
     val inventoryViewModel: InventoryViewModel = viewModel(
-        factory = InventoryViewModel.InventoryViewModelFactory()
+        factory = InventoryViewModel.InventoryViewModelFactory("")
     )
 
     val inventoryValue = inventoryViewModel.inventories.collectAsState()
@@ -67,10 +70,11 @@ fun InventoryScreen(navController: NavHostController, context: Context){
                         launchSingleTop = true
                     }
 
-                }
+                },
+                navController=navController,
+                form = "InventoryScreen",
+                users = null
             )
-
-            //TopBar(title="Historial de conteos")
         }
     ){
         LazyColumn(modifier = Modifier.fillMaxHeight()) {
@@ -104,9 +108,9 @@ fun InventoryScreen(navController: NavHostController, context: Context){
                     }
                     "ok"->{
 
-                       // val openDialog = remember { mutableStateOf(FlagDialog()) }
+                        val openDialog = remember { mutableStateOf(FlagDialog()) }
 
-                        /*if(openDialog.value.status){
+                        if(openDialog.value.status){
                             CustomDialogResendOrClose(
                                 title="Cerrar Conteo",
                                 openDialog={ response ->
@@ -122,26 +126,26 @@ fun InventoryScreen(navController: NavHostController, context: Context){
                                 },
                                 flag=openDialog.value.flag
                             )
-                        }*/
+                        }
 
                         ExpandableListItem(
                             inventory=inventory,
                             navController=navController,
-                            /*onPresChangeStatus={
+                            onPresChangeStatus={
                                 openDialog.value= FlagDialog(
                                     status = true,
                                     flag=it
                                 )
-                            }*/
+                            }
                         )
                     }
                     "vacio"->{
                         Toast.makeText(context, "No hay historico a mostrar", Toast.LENGTH_SHORT).show()
-                        inventoryViewModel.resetArticleStatus()
+                        inventoryViewModel.resetIdInventoryHeader()
                     }
                     else->{
                         Toast.makeText(context, "Ocurrio un error:\n ${inventoryValue.value.status}", Toast.LENGTH_SHORT).show()
-                        inventoryViewModel.resetArticleStatus()
+                        inventoryViewModel.resetIdInventoryHeader()
                     }
 
                 }
@@ -156,7 +160,7 @@ fun InventoryScreen(navController: NavHostController, context: Context){
 }
 
 @Composable
-private fun ExpandableListItem(inventory: Inventory,navController: NavHostController/*,onPresChangeStatus:(String) ->Unit*/) {
+private fun ExpandableListItem(inventory: Inventory,navController: NavHostController,onPresChangeStatus:(String) ->Unit) {
     var expanded by remember { mutableStateOf(false) }
 
     Card(
@@ -197,7 +201,8 @@ private fun ExpandableListItem(inventory: Inventory,navController: NavHostContro
                 TitleAndSubtitle(
                     title = inventory.name,
                     type = inventory.type,
-                    status = inventory.status
+                    status = inventory.status,
+                    dateAssigment = inventory.arrivalTimeSap.toString()
                 )
 
                 Icon(
@@ -264,7 +269,15 @@ private fun ExpandableListItem(inventory: Inventory,navController: NavHostContro
                             date=if(inventory.codeSAP==0){"# "}else{"${inventory.codeSAP} " }
                         ),
                         onClick={
-                            //onPresChangeStatus("Resend")
+
+                            Log.e("REOS","InventoryScreen-ExtraItem-inventory.codeSAP: "+inventory.codeSAP)
+                            Log.e("REOS","InventoryScreen-ExtraItem-inventory.type: "+inventory.type)
+                            Log.e("REOS","InventoryScreen-ExtraItem-inventory.status: "+inventory.status)
+                            Log.e("REOS","InventoryScreen-ExtraItem-inventory.response: "+inventory.response)
+                            Log.e("REOS","InventoryScreen-ExtraItem-inventory.coment: "+inventory.coment)
+                            Log.e("REOS","InventoryScreen-ExtraItem-inventory.owner: "+inventory.owner)
+
+                            onPresChangeStatus("Resend")
                         },
                         status=inventory.status
                     )
@@ -311,6 +324,7 @@ fun TitleAndSubtitle(
     title: String,
     type: String,
     status: String,
+    dateAssigment:String
 ) {
 
     Column(
@@ -321,11 +335,17 @@ fun TitleAndSubtitle(
         Text(text = title, fontWeight = FontWeight.Bold)
         Text(text = "$type ",color=Color.Gray)
         Text(text = "$status ",color=Color.Gray)
+        Text(text = //"$dateAssigment "
+               "Fecha "+ ConvertdatefordateSAP2(dateAssigment).toString()
+            ,color=Color.Gray)
     }
 }
 
 @Composable
 fun ExtraItem(item: Item,onClick:()->Unit={},status:String="") {
+
+    Log.e("REOS","InventoryScreen-ExtraItem-item.date: "+item.date)
+    Log.e("REOS","InventoryScreen-ExtraItem-item.status: "+status)
     Row(
         horizontalArrangement = Arrangement.SpaceBetween,
         modifier=Modifier.fillMaxWidth()

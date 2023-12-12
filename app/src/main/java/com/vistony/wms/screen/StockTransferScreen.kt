@@ -98,7 +98,10 @@ fun MerchandiseScreen(navController: NavHostController, context: Context,objType
                             )
                         )*/
                         navController.navigate("MerchandiseMovementCreate/objType=${objType.ObjType}")
-                    }
+                    },
+                    navController = navController,
+                    form = "StockTransferScreen",
+                    users = null
                 )
             }
         ){
@@ -238,7 +241,8 @@ private fun ExpandableListItem(merchandise: StockTransferHeader, navController: 
                 TitleAndSubtitle(
                     title = "Almacén Orig. ${merchandise.WarehouseOrigin}",
                     type = "Almacén Dst. ${merchandise.WarehouseDestine}",
-                    status = "Estado ${merchandise.Status}"
+                    status = "Estado ${merchandise.Status}",
+                    dateAssigment = "Fecha ${merchandise.ArrivalTimeSap}"
                 )
 
                 Icon(

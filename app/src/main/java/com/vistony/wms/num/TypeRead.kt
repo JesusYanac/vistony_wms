@@ -7,7 +7,8 @@ enum class TypeReadSKU {
     HANDHELD,
     CERRAR_ORIGEN,
     CERRAR_FICHA,
-    REENVIAR_FICHA
+    REENVIAR_FICHA,
+    CANCELAR_FICHA
 }
 
 enum class TypeCode {

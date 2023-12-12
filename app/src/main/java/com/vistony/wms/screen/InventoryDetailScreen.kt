@@ -51,8 +51,9 @@ import com.vistony.wms.ui.theme.AzulVistony201
 import com.vistony.wms.ui.theme.RedVistony202
 import com.vistony.wms.util.BarCodeAnalyser
 import com.vistony.wms.util.Routes
-import com.vistony.wms.viewmodel.ItemsViewModel
 import com.vistony.wms.viewmodel.CountViewModel
+import com.vistony.wms.viewmodel.ItemsViewModel
+import com.vistony.wms.viewmodel.InventoryViewModel
 import com.vistony.wms.viewmodel.WarehouseViewModel
 import com.vistony.wms.viewmodel.ZebraViewModel
 import org.bson.types.ObjectId
@@ -71,7 +72,7 @@ fun ScanScreen(navController: NavHostController,whs:String,idInventory:String,st
     var typeRead by remember { mutableStateOf(TypeReadSKU.HANDHELD) }
 
     val homeViewModel: CountViewModel = viewModel(
-        factory = CountViewModel.HomeViewModelFactory(idInventory)
+        factory = CountViewModel.CountViewModelFactory(idInventory)
     )
 
     val itemsViewModel: ItemsViewModel = viewModel(
@@ -91,44 +92,79 @@ fun ScanScreen(navController: NavHostController,whs:String,idInventory:String,st
     val openDialog = remember { mutableStateOf(FlagDialog()) }
     var flagModal = remember { mutableStateOf(FlagDialog()) }
 
+    Log.e(
+        "REOS",
+        "CustomDialog-CustomDialogVs2-zebraValue.value.Payload"+zebraValue.value.Payload
+    )
+    Log.e(
+        "REOS",
+        "CustomDialog-CustomDialogVs2-zebraValue.value.Type"+zebraValue.value.Type
+    )
     if(zebraValue.value.Payload.isNotEmpty()){
-
-        //si no contiene | puede ser un ubicacion
-        //si  no es  un numerico
-        //value.Payload.split("-").size==4 && value.Type!="LABEL-TYPE-QRCODE"
-        //if(!zebraValue.value.Payload.contains("|") && !isNumeric(zebraValue.value.Payload)){
-        if(zebraValue.value.Payload.split("-").size==4 && zebraValue.value.Type!="LABEL-TYPE-QRCODE"){
+        if(
+            zebraValue.value.Payload.split("-").size==4
+            && zebraValue.value.Type!="LABEL-TYPE-QRCODE"
+            //&& zebraValue.value.Payload[0] =='B'
+            //zebraValue.value.Payload.split("-").size>=2
+           // &&
+            //zebraValue.value.Payload[0]=='B'
+        ){
+            Log.e(
+                "REOS",
+                "CustomDialog-CustomDialogVs2-zebraValue.Entro-zebraValue.value.Payload[0]=='B'"
+            )
             if(defaultLocation=="+"){
-                warehouseViewModel.getLocations(zebraValue.value.Payload,whs)
+                Log.e(
+                    "REOS",
+                    "CustomDialog-CustomDialogVs2-zebraValue..Entro-zebraValue.value.Payload[0]=='B'-+"
+                )
+                Log.e(
+                    "REOS",
+                    "CustomDialog-CustomDialogVs2-zebraValue.value.Payload+"+zebraValue.value.Payload
+                )
+                Log.e(
+                    "REOS",
+                    "CustomDialog-CustomDialogVs2-zebraValue.value.whs+"+whs
+                )
+                warehouseViewModel.getLocations(zebraValue.value.Payload,whs, -1)
+
             }
         }else{
-            itemsViewModel.getArticle(value=zebraValue.value.Payload,typeInventario=typeInventory)
+
+            itemsViewModel.getArticle(value=zebraValue.value.Payload,typeInventario=typeInventory, idHeader = idInventory)
+
         }
         zebraViewModel.setData(zebraPayload())
     }
-
+    var titleMutable:MutableState<String> = remember {mutableStateOf("") }
+    titleMutable.value="Conteo de inventario"
     Scaffold(
         topBar = {
-            TopBarTitleCamera(
-                title="Conteo de inventario",
-                status= "Abierto",
-                objType=Routes.Inventory.value, //100
-                permission=cameraPermissionState,
-                onClick={
 
-                    when(it){
-                        TypeReadSKU.CERRAR_FICHA->{
-                            openDialog.value=FlagDialog(status = true,flag="Close")
+            if(status=="Abierto"){
+                TopBarTitleCamera(
+                    title=titleMutable,
+                    status= status,
+                    objType=Routes.Inventory.value, //100
+                    permission=cameraPermissionState,
+                    onClick={
+                        when(it){
+                            TypeReadSKU.CERRAR_FICHA->{
+                                openDialog.value=FlagDialog(status = true,flag="Close")
+                            }
+                            else->{
+                                typeRead=it
+                            }
                         }
-                        TypeReadSKU.REENVIAR_FICHA->{
-                            openDialog.value=FlagDialog(status = true,flag="Resend")
-                        }
-                        else->{
-                            typeRead=it
-                        }
-                    }
-                }
-            )
+                    },
+                    navController,
+                    "InventoryDetailScreen",
+                    ""
+                )
+            }else{
+                TopBar(title="Conteo de inventario")
+            }
+
         }
     ){
 
@@ -265,10 +301,6 @@ fun ScanScreen(navController: NavHostController,whs:String,idInventory:String,st
                         if(counting.Realm_Id=="Y"){
                             homeViewModel.writeData(CustomCounting())
                         }else{
-
-                            Log.e("JEPICAME","@@@=>"+counting.interfaz +"  {"+counting.lote + " }"+counting.location + "-"+counting.quantity)
-                            Log.e("JEPICAME","@@@=>"+counting.itemName +"  {"+counting.location + " }"+counting.quantity)
-
                             if(counting.quantity==0.0 && counting.location.isEmpty() && counting.itemName.isEmpty()){
                                 homeViewModel.writeData(CustomCounting())
                             }else{
@@ -295,6 +327,7 @@ fun ScanScreen(navController: NavHostController,whs:String,idInventory:String,st
                 }
             )
         }
+
 
         if(openDialog.value.status){
             CustomDialogResendOrClose(
@@ -332,7 +365,7 @@ fun ScanScreen(navController: NavHostController,whs:String,idInventory:String,st
 }
 
 @Composable
-private fun divContainer(defaultLocation:String,zebraViewModel:ZebraViewModel,binLocation:String, status:String, whs:String, context:Context, typeRead:TypeReadSKU, counting: CountingResponse=CountingResponse(), homeViewModel: CountViewModel, itemsViewModel: ItemsViewModel, warehouseViewModel:WarehouseViewModel){
+private fun divContainer(defaultLocation:String, zebraViewModel:ZebraViewModel, binLocation:String, status:String, whs:String, context:Context, typeRead:TypeReadSKU, counting: CountingResponse=CountingResponse(), homeViewModel: CountViewModel, itemsViewModel: ItemsViewModel, warehouseViewModel:WarehouseViewModel){
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier=Modifier.fillMaxSize()
@@ -390,6 +423,10 @@ private fun divContainer(defaultLocation:String,zebraViewModel:ZebraViewModel,bi
 
             when(typeRead){
                 TypeReadSKU.CAMERA->{
+                    Log.e(
+                        "REOS",
+                        "InventoryDetailScreen-divContainer-TypeReadSKU.CAMERA"
+                    )
                     CameraForm(
                         zebraViewModel=zebraViewModel,
                         context = context,
@@ -398,6 +435,10 @@ private fun divContainer(defaultLocation:String,zebraViewModel:ZebraViewModel,bi
                     )
                 }
                 TypeReadSKU.KEYBOARD-> {
+                    Log.e(
+                        "REOS",
+                        "InventoryDetailScreen-divContainer-TypeReadSKU.KEYBOARD"
+                    )
                     cameraProvider.unbindAll()
 
                     Divider()
@@ -417,6 +458,10 @@ private fun divContainer(defaultLocation:String,zebraViewModel:ZebraViewModel,bi
                     )
                 }
                 TypeReadSKU.HANDHELD->{
+                    Log.e(
+                        "REOS",
+                        "InventoryDetailScreen-divContainer-TypeReadSKU.HANDHELD"
+                    )
                     Text(
                         text="Num. Artículos ${counting.counting.size}",
                         color= RedVistony202,
@@ -456,7 +501,7 @@ private fun divContainer(defaultLocation:String,zebraViewModel:ZebraViewModel,bi
                     listBody=counting.counting,
                     onChangeQuantity = { lineUpdate->
                        // xd=""
-                        homeViewModel.updateQuantity(lineUpdate)
+                        //homeViewModel.updateQuantity(lineUpdate)
 
                     },
                     onDeleteArticle={ idLine ->
@@ -501,7 +546,7 @@ private fun formHandheld(
         trailingIcon = { Icon(imageVector = Icons.Default.Edit, contentDescription = null) },
         modifier = Modifier
             .fillMaxWidth()
-            .padding(20.dp),
+            .padding(start=20.dp,end=20.dp, bottom =20.dp,top=10.dp),
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
         keyboardActions = KeyboardActions(
             onSearch = {

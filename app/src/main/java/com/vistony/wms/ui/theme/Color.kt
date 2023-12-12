@@ -9,6 +9,7 @@ val Teal200 = Color(0xFF03DAC5)
 
 val RedVistony202 = Color(0xFF910000)
 val RedVistony201 = Color(0xFFFF0000)
+val RedVistony200 = Color(0xBFFF0000)
 val AzulVistony202 = Color(0xFF003159)
 val AzulVistony201 = Color(0xFF00579C)
 val AzulVistony200 = Color(0xFF3097E9)

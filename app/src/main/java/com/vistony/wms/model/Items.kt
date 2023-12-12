@@ -19,7 +19,8 @@ open class Items(
     var InventoryWeight: Double = 0.0,
     var ItemCode: String = "",
     var ItemName: String = "",
-    var Sku: String? = null,
+    var Sku: String? = "",
+    var QtyPallet: Double? = 0.0,
     var ItemsGroupCode: String = "",
     var PurchaseUnitHeight: String = "",
     var PurchaseUnitWidth: String = "",
@@ -46,7 +47,9 @@ open class ItemsResponse(
     var status: String = "",
     var nameSscc:String="",
     var warehouse:String="",
-    var defaultLocation:String=""
+    var defaultLocation:String="",
+    var statusSscc:String="",
+    //var tracking:List<Tranck> = emptyList()
 )
 
 open class ItemGroup(

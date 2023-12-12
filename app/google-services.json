@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "23927547707",
+    "project_id": "vistony-wms",
+    "storage_bucket": "vistony-wms.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:23927547707:android:ab8b20d24f2d469664b91e",
+        "android_client_info": {
+          "package_name": "com.vistony.wms"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "23927547707-us60f0b5voi49v4u3oddo2hk81guarg8.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAG3-uxKgthjyKJDmOrKeYyzjDbamhcaSI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "23927547707-us60f0b5voi49v4u3oddo2hk81guarg8.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

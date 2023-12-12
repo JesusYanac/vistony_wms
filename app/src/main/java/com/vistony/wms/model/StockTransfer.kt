@@ -14,7 +14,7 @@ open class StockTransferHeader(
     var CardCode: String = "",
     var CardName: String = "",
     var CloseAt: Date = Date(),
-    var CodeSAP: Int = 0,
+    var CodeSAP: Int=0,
     var Comment: String = "",
     var CorrelativoDocument: String = "",
     var CreateAt: Date = Date(),
@@ -35,7 +35,8 @@ open class StockTransferHeader(
     var UpdateAt: Date = Date(),
     var WarehouseDestine: String = "",
     var WarehouseOrigin: String = "",
-    var _TaskManagement: ObjectId = ObjectId()
+    var _TaskManagement: ObjectId = ObjectId(),
+    //var DocDate: Date = Date(),
 ): RealmObject(){
     @PrimaryKey
     var _id: ObjectId = ObjectId()
@@ -62,7 +63,8 @@ open class DocumentLongPress(
     var _id: ObjectId = ObjectId(),
     var batch:String="",
     var itemCode:String="",
-    var whsDestine:String=""
+    var whsDestine:String="",
+    var locationName: String=""
 )
 
 open class StockTransferBody(
@@ -72,6 +74,7 @@ open class StockTransferBody(
     var ItemName: String = "",
     var Realm_Id: String = "",
     var Status: String = "Abierto",
+    var Sku: String? = "",
     var Warehouse: String = "",
     var TotalQuantity: Double = 0.0,
     var Quantity: Double=0.0,
@@ -86,6 +89,7 @@ open class StockTransferBody(
 open class StockTransferBodyPayload(
     var ItemCode: String = "",
     var ItemName: String = "",
+    var Sku: String = "",
     var Batch: String = "",
     var LocationCode: String = "",
     var LocationName: String = "",
@@ -107,7 +111,8 @@ open class StockTransferBodyResponse(
     var wareHouseOrigin:String="",
     var wareHouseDestine:String="",
     var createAt:String="",
-    var ownerName: String = ""
+    var ownerName: String = "",
+    //var DocDate: String = "",
 )
 
 open class StockTransferSubBodyRI(

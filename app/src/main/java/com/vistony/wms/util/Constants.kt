@@ -1,0 +1,10 @@
+package com.vistony.wms.util
+
+const val RESERVE_INVOICE_CODE = 18
+const val PURCHASE_ORDER_CODE = 22
+const val STOCK_TRANSFER_CODE = 67
+const val PICKING_LIST_CODE = 1701
+const val SLOTTING_CODE = 6701
+const val SEPARATION_CODE = 6702
+const val REVERSE_LOGISTICS_CODE = 234000031
+const val TRASNFER_REQUEST_CODE = 1250000001

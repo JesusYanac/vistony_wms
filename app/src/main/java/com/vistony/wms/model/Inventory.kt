@@ -1,5 +1,10 @@
 package com.vistony.wms.model
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.input.TextFieldValue
 import com.vistony.wms.num.TypeCode
 import io.realm.RealmObject
 import io.realm.annotations.PrimaryKey

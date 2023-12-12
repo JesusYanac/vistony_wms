@@ -4,6 +4,7 @@ package com.vistony.wms.screen
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
@@ -13,13 +14,18 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -33,39 +39,46 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.vistony.wms.R
 import com.vistony.wms.component.*
-import com.vistony.wms.model.Options
+import com.vistony.wms.model.*
 import com.vistony.wms.num.OptionsDowns
-import com.vistony.wms.model.TaskManagement
-import com.vistony.wms.model.TaskMngmtAndHeaderDoc
-import com.vistony.wms.model.TaskMngmtDataForm
-import com.vistony.wms.ui.theme.AzulVistony201
-import com.vistony.wms.ui.theme.RedVistony202
+import com.vistony.wms.ui.theme.*
 import com.vistony.wms.util.Routes
 import com.vistony.wms.viewmodel.StockTransferHeaderViewModel
 import com.vistony.wms.viewmodel.TaskManagementViewModel
+import io.realm.Realm
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 
 @SuppressLint("UnusedMaterialScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterialApi::class, ExperimentalComposeUiApi::class,
     ExperimentalFoundationApi::class
 )
 @Composable
-fun TaskManagerScreen(navController: NavHostController, context: Context) {
-
+fun TaskManagerScreen(navController: NavHostController, context: Context,users: Users) {
+    val listWareHouse:MutableList<Options> = mutableListOf()
     val modal = rememberModalBottomSheetState(initialValue = ModalBottomSheetValue.Hidden, confirmStateChange = {false})
     val scope = rememberCoroutineScope()
 
-    var currentBottomSheet: BottomSheetScreen? by remember {
-        mutableStateOf(null)
-    }
 
-    val closeSheet: () -> Unit = {
-        scope.launch {
-            modal.hide()
+    LaunchedEffect(modal.currentValue) {
+        when (modal.currentValue) {
+            ModalBottomSheetValue.Hidden -> {
+                listWareHouse.clear()
+            }
+            ModalBottomSheetValue.Expanded -> {
+            }
+            else -> {}
         }
     }
+
+
+    var currentBottomSheet: BottomSheetScreen? by remember { mutableStateOf(null) }
+    val closeSheet: () -> Unit = { scope.launch { modal.hide() }}
 
     val openSheet: (BottomSheetScreen) -> Unit = {
         scope.launch {
@@ -92,19 +105,30 @@ fun TaskManagerScreen(navController: NavHostController, context: Context) {
 
                 TopBarTitleWithOptions(
                     options=listOptions,
-                    title= "Mis tareas" ,
+                    title=
+                    "Mis tareas"
+                    ,
                     onClick={
 
-
-                        val listWareHouse:MutableList<Options> = mutableListOf()
+                         /*listWareHouse.add(
+                            Options(
+                                value=Routes.MerchandiseMovementCreate.route.replace("{objType}",""+Routes.Recepcion.value),
+                                text= Routes.Recepcion.title,
+                                icono=Routes.Recepcion.icon,
+                                enabled = true,
+                                subMenu=true,
+                                subMenuVisible = false
+                            )
+                        )*/
 
                         listWareHouse.add(
                             Options(
-                                value= Routes.Recepcion.route,
-                                text= Routes.Recepcion.title,
-                                icono=Routes.Recepcion.icon
+                                value=Routes.MerchandiseMovementCreate.route.replace("{objType}",""+Routes.Merchandise.value),
+                                text= Routes.MerchandiseMovementCreate.title,
+                                icono=Routes.MerchandiseMovementCreate.icon
                             )
                         )
+
                         listWareHouse.add(
                             Options(
                                 value= Routes.MerchandiseMovementCreate.route.replace("{objType}",""+Routes.Slotting.value),
@@ -112,11 +136,22 @@ fun TaskManagerScreen(navController: NavHostController, context: Context) {
                                 icono=Routes.Slotting.icon
                             )
                         )
+
                         listWareHouse.add(
                             Options(
-                                value=Routes.MerchandiseMovementCreate.route.replace("{objType}",""+Routes.Merchandise.value),
-                                text= Routes.MerchandiseMovementCreate.title,
-                                icono=Routes.MerchandiseMovementCreate.icon
+                                value=Routes.Picking.route,
+                                text= Routes.Picking.title,
+                                icono=Routes.Picking.icon,
+                                enabled=false
+                            )
+                        )
+
+                        listWareHouse.add(
+                            Options(
+                                value=Routes.Packing.route,
+                                text= Routes.Packing.title,
+                                icono=Routes.Packing.icon,
+                                enabled=false
                             )
                         )
 
@@ -127,12 +162,16 @@ fun TaskManagerScreen(navController: NavHostController, context: Context) {
                                 selected = {
                                     navController.navigate(it.value.replace("{objType}",""+it.value))
                                     closeSheet()
+
                                 })
                         )
 
-
-                    }
+                    },
+                    navController = navController,
+                    form = "TaskManagementScreen",
+                    users = users
                 )
+
             }
         ){
             val taskManagementViewModel: TaskManagementViewModel = viewModel(
@@ -193,10 +232,11 @@ fun TaskManagerScreen(navController: NavHostController, context: Context) {
 @Composable
 private fun body(taskManagementViewModel: TaskManagementViewModel,context: Context,onClick:(TaskMngmtAndHeaderDoc)->Unit){
     val taskValue = taskManagementViewModel.task.collectAsState()
+    val agrupados = taskValue.value.data.groupBy {  Instant.ofEpochMilli(it.Task.DateAssignment.time).atZone(ZoneId.systemDefault()).toLocalDate() }
 
-    LazyColumn(modifier = Modifier.fillMaxHeight()) {
+    LazyColumn {
         item{
-            Column(modifier= Modifier.padding(10.dp)){
+            Column(modifier= Modifier.padding(top=5.dp,start=15.dp,end=15.dp)){
                 Row(
                     horizontalArrangement= Arrangement.SpaceBetween,
                     verticalAlignment= Alignment.CenterVertically,
@@ -211,34 +251,55 @@ private fun body(taskManagementViewModel: TaskManagementViewModel,context: Conte
                         Text(text="Actualizar",color= RedVistony202)
                     }
                 }
-
-                //Text(text = "${inventoryValue.value.ownerName } ",color= Color.Gray)
             }
         }
-        items(taskValue.value.data){ data ->
+        agrupados.forEach { (date, objects) ->
+            stickyHeader {
 
-            when(taskValue.value.status){
-                ""->{}
-                "cargando"->{
-                    CustomProgressDialog("Cargando tareas...")
-                }
-                "ok"->{
-                    formHeaderTask(
-                        task = data,
-                        onClick = {
-                            onClick(it)
+                Card(
+                    elevation = 4.dp,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(start = 15.dp, top = 15.dp, end = 15.dp)
+                ){
+                    Column(modifier=Modifier.background(AzulVistony1), horizontalAlignment = Alignment.CenterHorizontally){
+
+                        if(LocalDate.now().toString()==date.toString()){
+                            Text(text = "Hoy", textAlign = TextAlign.Center, color = Color.White,modifier=Modifier.padding(vertical = 5.dp))
+                        }else if(LocalDate.now().plusDays(-1).toString()==date.toString()){
+                            Text(text = "Ayer", textAlign = TextAlign.Center, color = Color.White,modifier=Modifier.padding(vertical = 5.dp))
                         }
-                    )
-                }
-                "vacio"->{
-                    Toast.makeText(context, "No hay tereas asignadas", Toast.LENGTH_LONG).show()
-                    taskManagementViewModel.resetTaskStatus()
-                }
-                else->{
-                    Toast.makeText(context, "Ocurrio un error:\n ${taskValue.value.status}", Toast.LENGTH_LONG).show()
-                    taskManagementViewModel.resetTaskStatus()
+                        else{
+                            Text(text = date.toString(), textAlign = TextAlign.Center, color = Color.White,modifier=Modifier.padding(vertical = 5.dp))
+                        }
+                    }
                 }
 
+            }
+            items(objects) { data ->
+
+                when(taskValue.value.status){
+                    ""->{}
+                    "cargando"->{
+                        CustomProgressDialog("Cargando tareas...")
+                    }
+                    "ok"->{
+                        formHeaderTask(
+                            task = data,
+                            onClick = {
+                                onClick(it)
+                            }
+                        )
+                    }
+                    "vacio"->{
+                        Toast.makeText(context, "No hay tareas asignadas", Toast.LENGTH_LONG).show()
+                        taskManagementViewModel.resetTaskStatus()
+                    }
+                    else->{
+                        Toast.makeText(context, "Ocurrio un error:\n ${taskValue.value.status}", Toast.LENGTH_LONG).show()
+                        taskManagementViewModel.resetTaskStatus()
+                    }
+                }
             }
         }
         item{
@@ -281,8 +342,29 @@ private fun formHeaderTask(task:TaskMngmtAndHeaderDoc,onClick:(TaskMngmtAndHeade
                             .size(30.dp)
                             .clickable {
                                 onClick(task)
+                                /*
+                                // Obtener una instancia de Realm
+                                val realm = Realm.getDefaultInstance()
+
+                                // Insertar un objeto en la base de datos
+                                realm.executeTransaction { transactionRealm ->
+                                    val newItem = transactionRealm.createObject(TaskManagement::class.java)
+                                    /*newItem. = "1"
+                                    newItem.title = "Completar la tarea"
+                                    newItem.completed = false*/
+                                }
+
+                                // Realizar una consulta para obtener todos los elementos
+                                val items = realm.where(TaskManagement::class.java).findAll()
+
+                                for (item in items) {
+                                    println(item.title)
+                                }
+
+                                // Cerrar la instancia de Realm cuando ya no sea necesaria
+                                realm.close()*/
                             },
-                        tint = if (task.Task.Status == "Terminado") {
+                        tint = if (task.Task.Status == "Terminado"||task.Task.Status == "Cancelado") {
                             Color.Gray
                         } else {
 
@@ -294,29 +376,57 @@ private fun formHeaderTask(task:TaskMngmtAndHeaderDoc,onClick:(TaskMngmtAndHeade
 
                         }
                     )
-                   // if (task.Status == "Pendiente") {
-                        Text("Ver", textAlign = TextAlign.Center)
-                   // }
+                    Text("Ver", textAlign = TextAlign.Center)
+
                 }
 
                 TitleAndSubtitle(
                     title = task.Task.Documento,
                     type = "N° SAP "+task.Task.DocNum,
-                    status = "Estado "+task.Task.Status
+                    status = "Tarea "+task.Task.Status,
+                    dateAssigment = task.Task.DateAssignment.toString()
                 )
 
-                Icon(
-                    imageVector = Icons.Default.ArrowDropDown,
-                    contentDescription = "ArrowIcon",
-                    tint = Color.DarkGray,
-                    modifier = Modifier
-                        .align(Alignment.CenterVertically)
-                        .graphicsLayer(
-                            rotationZ = animateFloatAsState(
-                                if (expanded) 180f else 0f
-                            ).value,
+                if(expanded){
+                    Icon(
+                        imageVector = Icons.Default.ArrowDropDown,
+                        contentDescription = "ArrowIcon",
+                        tint = Color.DarkGray,
+                        modifier = Modifier
+                            .align(Alignment.CenterVertically)
+                           /* .graphicsLayer(
+                                rotationZ = animateFloatAsState(
+                                    if (expanded) 180f else 0f
+                                ).value,
+                            )*/
+                    )
+                }else{
+                    if(task.Task.Type!="Libre"){
+                        Icon(
+                            imageVector = Icons.Filled.DateRange,
+                            contentDescription = "ArrowIcon",
+                            tint = Color.DarkGray,
+                            modifier = Modifier
+                                .align(Alignment.CenterVertically)
+                            /* .graphicsLayer(
+                                 rotationZ = animateFloatAsState(
+                                     if (expanded) 180f else 0f
+                                 ).value,
+                             )*/
                         )
-                )
+                    }else{
+                        Icon(
+                            imageVector = Icons.Default.ArrowDropDown,
+                            contentDescription = "ArrowIcon",
+                            tint = Color.DarkGray,
+                            modifier = Modifier
+                                .align(Alignment.CenterVertically)
+                                .graphicsLayer(
+                                 rotationZ = animateFloatAsState( 0f).value,
+                             )
+                        )
+                    }
+                }
             }
 
             formBodyTask(
@@ -328,7 +438,6 @@ private fun formHeaderTask(task:TaskMngmtAndHeaderDoc,onClick:(TaskMngmtAndHeade
 
 }
 
-@OptIn(ExperimentalAnimationApi::class)
 @Composable
 private fun formBodyTask(expanded:Boolean,data:TaskManagement){
     AnimatedVisibility(
@@ -344,7 +453,7 @@ private fun formBodyTask(expanded:Boolean,data:TaskManagement){
         Column(modifier = Modifier.padding(start = 15.dp, end = 15.dp, bottom = 15.dp)) {
 
             if(data.Type!="Libre"){
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(6.dp))
 
                 ExtraItem(
                     item = Item(
@@ -353,12 +462,24 @@ private fun formBodyTask(expanded:Boolean,data:TaskManagement){
                     )
                 )
 
-                Spacer(modifier = Modifier.height(10.dp))
+                Spacer(modifier = Modifier.height(6.dp))
+                Divider(modifier = Modifier.height(1.dp))
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                ExtraItem(
+                    item = Item(
+                        title="Fecha de Programación",
+                        date= data.ScheduledTime.getUIStringTimeStampWithDate()
+                    )
+                )
+
+                Spacer(modifier = Modifier.height(6.dp))
                 Divider(modifier = Modifier.height(1.dp))
             }
 
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
             ExtraItem(item = Item(
                 title="Fecha de Inicio",
@@ -366,19 +487,19 @@ private fun formBodyTask(expanded:Boolean,data:TaskManagement){
             )
             )
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(6.dp))
             Divider(modifier = Modifier.height(1.dp))
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
             ExtraItem(item = Item(
                 title="Fecha de Term.",
-                date=if(data.EndDate.getUIStringTimeStampWithDate() != data.StartDate.getUIStringTimeStampWithDate()){"${data.EndDate.getUIStringTimeStampWithDate()} "}else{" "}
+                date=if(data.EndDate.getUIStringTimeStampWithDate() != "02-ene.-0001 18:51" && data.EndDate.getUIStringTimeStampWithDate() != data.StartDate.getUIStringTimeStampWithDate()){"${data.EndDate.getUIStringTimeStampWithDate()} "}else{" "}
             )
             )
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(6.dp))
             Divider(modifier = Modifier.height(1.dp))
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
             ExtraItem(item = Item(
                 title="Tipo de Tarea",
@@ -386,9 +507,9 @@ private fun formBodyTask(expanded:Boolean,data:TaskManagement){
             )
             )
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(6.dp))
             Divider(modifier = Modifier.height(1.dp))
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
 
             Row(
@@ -399,6 +520,12 @@ private fun formBodyTask(expanded:Boolean,data:TaskManagement){
             }
 
             if(data.Response.isNotEmpty()){
+                /*ExtraItem(
+                    item = Item(
+                    title="Estado de Tarea",
+                    date="# ",),
+                    status="Cerrado"
+                )*/
                 Text("")
                 Row(
                     horizontalArrangement = Arrangement.SpaceBetween,

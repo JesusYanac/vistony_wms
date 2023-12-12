@@ -2,6 +2,7 @@ package com.vistony.wms.screen
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -23,15 +24,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.vistony.wms.R
 import com.vistony.wms.component.*
 import com.vistony.wms.model.LoginResponse
 import com.vistony.wms.model.Options
+import com.vistony.wms.model.StockTransferHeader
+import com.vistony.wms.model.TaskManagement
 import com.vistony.wms.ui.theme.AzulVistony201
 import com.vistony.wms.ui.theme.AzulVistony202
 import com.vistony.wms.util.Routes
 import com.vistony.wms.util.RoutesOptionDashboard
+import com.vistony.wms.viewmodel.LoginViewModel
+import com.vistony.wms.viewmodel.StockTransferHeaderViewModel
+import com.vistony.wms.viewmodel.TaskManagementViewModel
 import kotlinx.coroutines.launch
 import java.util.*
 
@@ -57,6 +64,10 @@ fun DashboardScreen(navController: NavHostController,user: LoginResponse,context
         }
     }
 
+    val loginViewModel: LoginViewModel = viewModel(
+        factory = LoginViewModel.LoginViewModelFactory(context)
+    )
+
 
     val openSheet: (BottomSheetScreen) -> Unit = {
         scope.launch {
@@ -79,7 +90,10 @@ fun DashboardScreen(navController: NavHostController,user: LoginResponse,context
             topBar = {
                 TopBarDashboard(
                     title="Hola ${user.FirstName}",
-                    navController = navController
+                    navController = navController,
+                    loginViewModel = loginViewModel,
+                    context=context
+
                 )
             }
         ){
@@ -98,6 +112,29 @@ fun DashboardScreen(navController: NavHostController,user: LoginResponse,context
 @ExperimentalFoundationApi
 @Composable
 fun DashboardSection(options: List<Routes>, user:LoginResponse, navController: NavHostController, context: Context, open: (BottomSheetScreen) -> Unit, close:() ->Unit) {
+    val merchandiseViewModel: StockTransferHeaderViewModel = viewModel(
+        factory = StockTransferHeaderViewModel.StockTransferHeaderViewModelFactory(TaskManagement(ObjType = 67))
+    )
+    val taskManagementViewModel: TaskManagementViewModel = viewModel(
+        factory = TaskManagementViewModel.TaskManagementViewModelFactory()
+    )
+
+    val _merchandiseViewModel = merchandiseViewModel.MerchandiseHeaderValue.collectAsState()
+    Log.e("REOS","Dashboard-DashboardSection-_merchandiseViewModel.value.id: "+_merchandiseViewModel.value.id)
+    if(_merchandiseViewModel.value.id.isNotEmpty()){
+        if(_merchandiseViewModel.value.id == "error"){
+            Toast.makeText(context, "Ocurrio un error al crear la transferencia de stock.", Toast.LENGTH_SHORT).show()
+        }else{
+            var taskManagement=TaskManagement(ObjType = 67)
+            navController.navigate("MerchandiseMovementDetail/idMerchandise=${_merchandiseViewModel.value.id}&status=${_merchandiseViewModel.value.status}&whs=${_merchandiseViewModel.value.whs}&whsDestine=${_merchandiseViewModel.value.whsDestine}&objType=${taskManagement.ObjType}")
+            /*{
+                popUpTo(Routes.MerchandiseMovementCreate.route) { inclusive = true }
+            }*/
+
+            merchandiseViewModel.resetMerchandiseHeader()
+            //navController?.navigate("TaskManager")
+        }
+    }
 
     Column(modifier = Modifier.fillMaxWidth()) {
 
@@ -124,9 +161,7 @@ fun DashboardSection(options: List<Routes>, user:LoginResponse, navController: N
                 CourseItem(
                     options=options[i],
                     onPress={ route ->
-                        if(
-                            route == Routes.Recepcion.route || route == Routes.Almacenamiento.route
-                        ){
+                        if(route == Routes.Almacenamiento.route){
                             Toast.makeText(context, "Es necesario configurar este modulo.", Toast.LENGTH_SHORT).show()
                         }
                         else{
@@ -163,7 +198,61 @@ fun DashboardSection(options: List<Routes>, user:LoginResponse, navController: N
                                                 close()
                                             })
                                     )
-                                }else{
+                                }
+                                else if(options[i].route ==  Routes.Recepcion.route) {
+
+                                    val typePrinters:MutableList<Options> = mutableListOf()
+
+                                    typePrinters.add(
+                                        Options(
+                                            //value= Routes.MerchandiseMovementCreate.route.replace("{objType}",""+Routes.Merchandise.value),
+                                            value= Routes.MerchandiseMovementCreate.route.replace("{objType}",""+Routes.Merchandise.value),
+                                            text= "Producción",
+                                            icono= R.drawable.ic_baseline_factory_24,
+
+                                        )
+                                    )
+
+                                    typePrinters.add(
+                                        Options(
+                                            value= Routes.ImprimirEtiquetaSSCC.route,
+                                            text= "Compras",
+                                            icono=R.drawable.ic_baseline_recepcion_24,
+                                            enabled = false
+                                        )
+                                    )
+
+                                    open(
+                                        BottomSheetScreen.SelectWitOptionsModal(
+                                            title = "Seleciona un tipo de recepción",
+                                            listOptions = typePrinters,
+                                            selected = {
+                                                if(it.text.equals("Producción"))
+                                                {
+
+                                                    merchandiseViewModel.addMerchandiseHeader(
+                                                        StockTransferHeader(
+                                                            Comment= "Recepción de Producción|AN001-EXP-RP-01",
+                                                            CreateAt= Date(),
+                                                            NumReference= "",
+                                                            PriceList= -1,
+                                                            ObjType=67,
+                                                            Motive="11",
+                                                            WarehouseDestine = "AN001",
+                                                            WarehouseOrigin = "AN001"
+                                                        ),
+                                                        "reception"
+                                                    )
+                                                    close()
+
+                                                }else {
+                                                    navController.navigate(it.value.replace("{objType}",""+it.value))
+                                                    close()
+                                                }
+                                            })
+                                    )
+                                }else
+                                {
                                     navController.navigate(route)
                                 }
 
@@ -187,14 +276,14 @@ fun CourseItem(
 
         modifier = Modifier
             .padding(7.5.dp).clickable {
-                if(options.title in listOf("Parametros","Toma de inventario","Mis tareas","Imprimir rotulados","Tracking del Palet","Recibo de producción")){
+                if(options.title in listOf("Recepción","Maestros","Toma de inventario","Mis tareas","Imprimir rotulados","Tracking del Palet","Recibo de producción")){
                     onPress(options.route)
                 }
             }
             .aspectRatio(1f)
             .clip(RoundedCornerShape(10.dp))
             .background(
-                if(options.title in listOf("Parametros","Toma de inventario","Mis tareas","Imprimir rotulados","Tracking del Palet","Recibo de producción")){
+                if(options.title in listOf("Recepción","Maestros","Toma de inventario","Mis tareas","Imprimir rotulados","Tracking del Palet","Recibo de producción")){
                     AzulVistony201
                 }else{
                     Color.Gray
@@ -231,7 +320,7 @@ fun CourseItem(
                     .align(Alignment.BottomEnd)
                     .clip(RoundedCornerShape(10.dp))
                     .background(
-                        if(options.title in listOf("Parametros","Toma de inventario","Mis tareas","Imprimir rotulados","Tracking del Palet","Recibo de producción")){
+                        if(options.title in listOf("Recepción","Maestros","Toma de inventario","Mis tareas","Imprimir rotulados","Tracking del Palet","Recibo de producción")){
                             AzulVistony202
                         }else{
                             Color.Gray

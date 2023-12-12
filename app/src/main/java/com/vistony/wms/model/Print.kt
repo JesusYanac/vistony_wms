@@ -39,7 +39,9 @@ data class PrintSSCC(
     @SerializedName("PortNum")
     var PortNum: Int = 0,
     @SerializedName("Transfer")
-    var Transfer: String = "N"
+    var Transfer: String = "N",
+    @SerializedName("Quantity")
+    var QuantityPallet: Double = 0.0
 )
 
 data class Print(
@@ -56,6 +58,8 @@ data class Print(
     var printer: PrintMachines = PrintMachines(),
     @SerializedName("numero")
     var quantity: Int = 1,
+    @SerializedName("Quantity")
+    var quantityPallet: Double = 0.00,
     var quantityString: String = "1",
     var status: String = "",
 
@@ -88,3 +92,6 @@ open class Printer(
     @PrimaryKey
     var _id: ObjectId = ObjectId()
 }
+
+
+

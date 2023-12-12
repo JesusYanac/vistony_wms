@@ -43,6 +43,7 @@ import com.vistony.wms.model.*
 import com.vistony.wms.num.TypeCode
 import com.vistony.wms.ui.theme.*
 import com.vistony.wms.viewmodel.LoginViewModel
+import com.vistony.wms.viewmodel.SuggestionViewModel
 import com.vistony.wms.viewmodel.WarehouseViewModel
 import java.time.LocalDateTime
 import java.util.*
@@ -175,7 +176,7 @@ fun formLogin(loginViewModel: LoginViewModel, context:Context, open: (BottomShee
                         Toast.makeText(context, "Ingrese una contraseña valida", Toast.LENGTH_SHORT).show()
                     }
                 }else{
-                    Toast.makeText(context, "Ingrese un codigo de colaborado", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Ingrese un codigo de colaborador", Toast.LENGTH_SHORT).show()
                 }
 
             },
@@ -208,6 +209,7 @@ fun formCreateInventoryHeader(context: Context,onPress: (InventoryPayload) -> Un
 
         var nombre by remember { mutableStateOf(TextFieldValue("")) }
         var type by remember { mutableStateOf(TextFieldValue("")) }
+        var typeActividad by remember { mutableStateOf(TextFieldValue("")) }
         var messageError by remember { mutableStateOf("") }
         var location by remember { mutableStateOf(WarehouseBinLocation()) }
 
@@ -223,19 +225,18 @@ fun formCreateInventoryHeader(context: Context,onPress: (InventoryPayload) -> Un
             ),
             value = nombre,
             trailingIcon = { Icon(imageVector = Icons.Default.Edit, contentDescription = null) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 10.dp),
+            modifier = Modifier.fillMaxWidth(),
             keyboardOptions = KeyboardOptions(
                 keyboardType = KeyboardType.Text,
                 capitalization = KeyboardCapitalization.Characters
             ),
-            label = { Text(text = "Nombre del conteo") },
+            label = { Text(text = "Nombre de la ficha") },
             placeholder = { Text(text = "") },
             onValueChange = {
                 nombre=it
             }
         )
+        //Text("")
 
         Box{
             OutlinedTextField(
@@ -247,11 +248,8 @@ fun formCreateInventoryHeader(context: Context,onPress: (InventoryPayload) -> Un
                     disabledLabelColor = Color.DarkGray
                 ),
                 value = TextFieldValue(location.warehouse.WarehouseCode),
-                trailingIcon = { Icon(imageVector = Icons.Default.Edit, contentDescription = null) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 10.dp, bottom = 10.dp),
-
+                trailingIcon = { Icon(imageVector = Icons.Default.ArrowDropDown, contentDescription = null) },
+                modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                 label = { Text(text = "Almacén") },
                 placeholder = { Text(text = "") },
@@ -276,8 +274,7 @@ fun formCreateInventoryHeader(context: Context,onPress: (InventoryPayload) -> Un
                     )
             )
         }
-
-
+        //Text("")
         Box{
             OutlinedTextField(
                 enabled=false,
@@ -288,10 +285,10 @@ fun formCreateInventoryHeader(context: Context,onPress: (InventoryPayload) -> Un
                     disabledLabelColor = Color.DarkGray
                 ),
                 value = type,
-                trailingIcon = { Icon(imageVector = Icons.Default.Edit, contentDescription = null) },
+                trailingIcon = { Icon(imageVector = Icons.Default.ArrowDropDown, contentDescription = null) },
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 10.dp, bottom = 10.dp),
+                    .fillMaxWidth(),
+                   // .padding(top = 10.dp, bottom = 10.dp),
 
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                 label = { Text(text = "Tipo de conteo") },
@@ -317,34 +314,52 @@ fun formCreateInventoryHeader(context: Context,onPress: (InventoryPayload) -> Un
             )
         }
 
-        Row(
-           modifier = Modifier.fillMaxWidth(),// padding(8.dp).clickable(){},
-            horizontalArrangement=Arrangement.Start,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            val isChecked = remember { mutableStateOf(true) }
+        /*
 
-            Checkbox(
-                // modifier=Modifier.padding(top=15.dp),
-                checked = isChecked.value,
-                onCheckedChange = {
-                    isChecked.value = it
-                },
+        Box{
+            OutlinedTextField(
                 enabled=false,
-                colors = CheckboxDefaults.colors(
-                    checkedColor = AzulVistony202,
-                    uncheckedColor = Color.DarkGray,
-                    checkmarkColor =  Color.White,
+                colors = TextFieldDefaults.outlinedTextFieldColors(
+                    focusedBorderColor = Color.DarkGray,
+                    unfocusedBorderColor = Color.DarkGray,
+                    disabledTextColor = Color.DarkGray,
+                    disabledLabelColor = Color.DarkGray
+                ),
+                value = typeActividad,
+                trailingIcon = { Icon(imageVector = Icons.Default.ArrowDropDown, contentDescription = null) },
+                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+                label = { Text(text = "Tipo de actividad") },
+                placeholder = { Text(text = "") },
+                onValueChange = {}
+            )
 
+            Spacer(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(Color.Transparent)
+                    .clickable(
+                        onClick = {
+                            open(
+                                BottomSheetScreen.SelectTypeModal(
+                                    selected = {
+                                        typeActividad = TextFieldValue(it.text)
+                                        close()
+                                    })
+                            )
+                        }
                     )
             )
-            Text(color=Color.Gray,text = "Conteo ciego", modifier = Modifier.padding(start = 10.dp))
+        }
+*/
+
+        if(messageError.isNotEmpty()){
+            Text(
+                text=messageError,
+                color= RedVistony202
+            )
         }
 
-       Text(
-            text=messageError,
-            color= RedVistony202
-       )
 
 
         Spacer(modifier= Modifier.padding(10.dp))
@@ -445,7 +460,7 @@ fun formCreateInventoryEntryOrExit(objType:Int,context: Context, onPress: (Stock
         val fecha by remember { mutableStateOf(LocalDateTime.now()) }
         var referencia by remember { mutableStateOf("") }
         var comentario by remember { mutableStateOf("") }
-        var motivoTraslado by remember { mutableStateOf(Options()) }
+        var motivoTraslado by remember { mutableStateOf( Options(value="11",text="SALIDA POR TRANSFERENCIA ENTRE ALMACENES",icono= R.drawable.ic_baseline_box_24)) }
         var almacenOrigin by remember { mutableStateOf(Options()) }
         var almacenDestine by remember { mutableStateOf(Options()) }
 
@@ -536,7 +551,7 @@ fun formCreateInventoryEntryOrExit(objType:Int,context: Context, onPress: (Stock
                                     selected = {
                                         almacenOrigin=it
 
-                                        if(objType==671){
+                                        if(objType==6701){
                                             almacenDestine=it
                                         }
 
@@ -623,7 +638,7 @@ fun formCreateInventoryEntryOrExit(objType:Int,context: Context, onPress: (Stock
                             open(
                                 BottomSheetScreen.SelectWitOptionsModal(
                                     title = "Seleciona un motivo de traslado",
-                                    listOptions = listOf(
+                                    listOptions = mutableListOf(
                                         Options(value="11",text="SALIDA POR TRANSFERENCIA ENTRE ALMACENES",icono= R.drawable.ic_baseline_box_24)
                                     ),
                                     selected = {
@@ -790,7 +805,7 @@ fun formCreateInventoryEntryOrExit(objType:Int,context: Context, onPress: (Stock
 
     }
 }
-@Composable
+/*@Composable
 fun showTypeLocation(objType: Int,value:String, onSelect:(String)->Unit){
 
     val listState = rememberLazyListState()
@@ -816,168 +831,89 @@ fun showTypeLocation(objType: Int,value:String, onSelect:(String)->Unit){
             }
         }
     }
-}
+}*/
 
 @Composable
-fun xddVs2( stockTransferBandSRpsValue:List<MergedStockTransfer>,suggestions: Suggestions,value:String,onLoader:(BinLocation)->Unit){
+fun xddVs2(stockTransferBandSRpsValue:List<MergedStockTransfer>, suggestions: SuggestionViewModel, value:String, onLoader:(BinLocation)->Unit, onTryAgain:()->Unit){
 
+    val suggestionValue = suggestions.suggtn.collectAsState()
     val listState = rememberLazyListState()
-    //val coroutineScope = rememberCoroutineScope()
-    //var listSuggestion by remember { mutableStateOf(Suggestions()) }
+    Log.e("REOS","Form-xddVs2-suggestionValue.value.status: "+suggestionValue.value.status)
+    Log.e("REOS","Form-xddVs2-suggestionValue.value.Data: "+suggestionValue.value.Data)
 
-    Log.e("JEPICAME","ENTRO OK "+suggestions.status)
-
-    when(suggestions.status){
+    when(suggestionValue.value.status){
         ""->{
             Text("Ubicaciones sugeridas")
         }
         "cargando"->{
             Row(modifier= Modifier.padding(5.dp)) {
-
                 CircularProgressIndicator(color= AzulVistony202,modifier=Modifier.fillMaxSize(0.1f))
                 Text( "Buscando...",color=Color.Gray, fontSize = 12.sp,modifier=Modifier.padding(start=5.dp))
             }
         }
         "OK"->{
-            LazyRow(modifier=Modifier.background(ColorDestine), state = listState){
-                itemsIndexed(suggestions.Data) { index, line ->
-                    Card(
-                        elevation = 4.dp,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(10.dp)
-                            .selectable(
-                                selected = value == line.BinCode,
-                                onClick = {
-                                    //onLoader(BinLocation(id=""+line.AbsEntry,text=line.BinCode))
-                                }
-                            )
-                    )
-                    {
-
-                        Box(modifier=Modifier.background(if(value == line.BinCode){Color.LightGray}else{Color.Unspecified})){
-                            Text(line.BinCode,modifier=Modifier.padding(5.dp))
+            if(suggestionValue.value.Data.isEmpty()){
+                TextButton(
+                    onClick = {
+                        onTryAgain()
+                    }
+                ){
+                    Text("No hay ubicaciones sugeridas para este producto en esta operación.",color=Color.Red)
+                }
+            }
+            else{
+                LazyRow(modifier=Modifier.background(ColorDestine), state = listState){
+                    itemsIndexed(suggestionValue.value.Data) { index, line ->
+                        Card(
+                            elevation = 4.dp,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(10.dp)
+                                .selectable(selected = value == line.BinCode,
+                                    onClick = {
+                                        //No se debe seleccionar la ubicación debe pistolearse para asegurarse de que esta fisicamente en la ubicación
+                                        //onLoader(BinLocation(id=""+line.AbsEntry,text=line.BinCode))
+                                    }
+                                )
+                        ){
+                            Box(modifier=Modifier.background(if(value == line.BinCode){Color.LightGray}else{Color.Unspecified})){
+                                Text(line.BinCode,modifier=Modifier.padding(5.dp))
+                            }
                         }
                     }
                 }
             }
-
+            Log.e("REOS","Form-xddVs2-value: "+value.toString())
             if(value.split("-").size>=3){
-
-                val resultSearch=suggestions.Data.filter(){ it.BinCode==value }
+                val resultSearch=suggestionValue.value.Data.filter(){ it.BinCode==value }
 
                 if(resultSearch.isNotEmpty()){
                     val threeFilter=stockTransferBandSRpsValue.filter {  it.LocationName== value }
 
                     if(threeFilter.isNotEmpty()){
-                        Log.e("JEPICAMR","==>SE TIENE UN VALIOR "+threeFilter[0].LocationName)
                         Text("La ubicación $value no puede ser origen y destino al mismo tiempo",color=Color.Red)
-                        onLoader(BinLocation())
+                       // onLoader(BinLocation())
                     }else{
-                        Log.e("JEPICAMR","==>EL VALOR A resultar ES =>")
                         onLoader(BinLocation(id=""+resultSearch[0].AbsEntry ,text=resultSearch[0].BinCode))
                     }
                 }else{
                     Text("La ubicación leída no corresponde a una ubicación sugerida",color=Color.Red)
-                    onLoader(BinLocation())
+                    //onLoader(BinLocation())
                 }
             }
         }
         else->{
-            Row(modifier= Modifier.padding(5.dp)) {
-                Text(" Ocurrio un error, volver a intentar \n"+suggestions.status,color=Color.Red)
+            TextButton(
+                onClick = {
+                    onTryAgain()
+                }
+            ){
+                Text(" Ocurrio un error, volver a intentar \n"+suggestionValue.value.status,color=Color.Red)
             }
-            onLoader(BinLocation())
         }
     }
 
     Text("")
-
-}
-
-@Composable
-fun xdd( stockTransferBandSRpsValue:StockTransferBodyAndSubBodyResponse,suggestions: Suggestions,value:String,onLoader:(BinLocation)->Unit){
-
-    val listState = rememberLazyListState()
-    val coroutineScope = rememberCoroutineScope()
-    //var listSuggestion by remember { mutableStateOf(Suggestions()) }
-
-    Log.e("JEPICAME","ENTRO OK "+suggestions.status)
-
-    when(suggestions.status){
-        ""->{
-            Text("Ubicaciones sugeridas")
-        }
-        "cargando"->{
-            Row(modifier= Modifier.padding(5.dp)) {
-
-                CircularProgressIndicator(color= AzulVistony202,modifier=Modifier.fillMaxSize(0.1f))
-                Text( "Buscando...",color=Color.Gray, fontSize = 12.sp,modifier=Modifier.padding(start=5.dp))
-            }
-        }
-        "OK"->{
-            LazyRow(modifier=Modifier.background(ColorDestine), state = listState){
-                itemsIndexed(suggestions.Data) { index, line ->
-                    Card(
-                        elevation = 4.dp,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(10.dp)
-                            .selectable(
-                                selected = value == line.BinCode,
-                                onClick = {
-                                    //onLoader(BinLocation(id=""+line.AbsEntry,text=line.BinCode))
-                                }
-                            )
-                    )
-                    {
-
-                        Box(modifier=Modifier.background(if(value == line.BinCode){Color.LightGray}else{Color.Unspecified})){
-                            Text(line.BinCode,modifier=Modifier.padding(5.dp))
-                        }
-                    }
-                }
-            }
-
-            if(value.split("-").size>=3){
-
-                val resultSearch=suggestions.Data.filter(){ it.BinCode==value }
-
-                if(resultSearch.isNotEmpty()){
-                    Log.e("JEPICAMR","==>EL VALOR A BUSCAR ES =>"+value)
-
-                    val threeFilter=stockTransferBandSRpsValue.stockTransferSubBody.filter {  it.LocationName== value }
-
-                    if(threeFilter.isNotEmpty()){
-                        Log.e("JEPICAMR","==>SE TIENE UN VALIOR "+threeFilter[0].LocationName)
-                        Text("La ubicación $value no puede ser origen y destino al mismo tiempo",color=Color.Red)
-                        onLoader(BinLocation())
-                    }else{
-                        Log.e("JEPICAMR","==>EL VALOR A resultar ES =>")
-                        onLoader(BinLocation(id=""+resultSearch[0].AbsEntry ,text=resultSearch[0].BinCode))
-                    }
-                }else{
-                    Text("La ubicación leída no corresponde a una ubicación sugerida",color=Color.Red)
-                    onLoader(BinLocation())
-                }
-            }
-
-            //locationResponseValue=locationValue.value.location
-            //suggestionViewModel.resetSuggestionState()
-        }
-        else->{
-            Row(modifier= Modifier.padding(5.dp)) {
-                Text(" Ocurrio un error, volver a intentar \n"+suggestions.status,color=Color.Red)
-            }
-
-            onLoader(BinLocation())
-            //locationResponseValue=locationValue.value.location
-            //suggestionViewModel.resetSuggestionState()
-        }
-    }
-
-    Text("")
-
 }
 
 @OptIn(ExperimentalComposeUiApi::class)
@@ -985,7 +921,9 @@ fun xdd( stockTransferBandSRpsValue:StockTransferBodyAndSubBodyResponse,suggesti
 fun formBsHeaderTask(
     taskMngmtDataForm:TaskMngmtDataForm,
     taskManagement: TaskMngmtAndHeaderDoc,
-    onClose:()->Unit,onChange:(TaskMngmtDataForm)->Unit,onPress:(TaskMngmtDataForm)->Unit){
+    onClose:()->Unit,onChange:(TaskMngmtDataForm)->Unit,onPress:(TaskMngmtDataForm)->Unit,
+
+){
 
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -1018,12 +956,13 @@ fun formBsHeaderTask(
         comentario=""
     }*/
 
+
     OutlinedTextField(
         enabled= true,
         singleLine=true,
         value = taskMngmtDataForm.serie,
         onValueChange = {
-            if (it.length <= 3){
+            if (it.length <= 5){
                 onChange(
                     TaskMngmtDataForm(
                         comentario = taskMngmtDataForm.comentario,
@@ -1033,8 +972,8 @@ fun formBsHeaderTask(
                 )
             }
         },
-        label = { Text(text = "Número de serie") },
-        placeholder = { Text(text = "Ingresar la serie") },
+        label = { Text(text = "Número de serie de la guia") },
+        placeholder = { Text(text = "Ingresar la serie de la guia") },
         trailingIcon = { Icon(imageVector = Icons.Default.Edit, contentDescription = null, tint = AzulVistony202) },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text,imeAction = ImeAction.Next ),
         keyboardActions = KeyboardActions(
@@ -1050,7 +989,7 @@ fun formBsHeaderTask(
         singleLine=true,
         value =   taskMngmtDataForm.correlativo,
         onValueChange = {
-            if (it.length <= 10){
+            if (it.length <= 11){
                 onChange(
                     TaskMngmtDataForm(
                         comentario = taskMngmtDataForm.comentario,
@@ -1060,8 +999,8 @@ fun formBsHeaderTask(
                 )
             }
         },
-        label = { Text(text = "Número de correlativo") },
-        placeholder = { Text(text = "Ingresar el correlativo") },
+        label = { Text(text = "Número de correlativo de la guia") },
+        placeholder = { Text(text = "Ingresar el correlativo de la guia") },
         trailingIcon = { Icon(imageVector = Icons.Default.Edit, contentDescription = null, tint = AzulVistony202) },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword,imeAction = ImeAction.Next ),
         keyboardActions = KeyboardActions(

@@ -30,11 +30,11 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import com.google.common.util.concurrent.ListenableFuture
 import com.vistony.wms.R
-import com.vistony.wms.num.TypeCode
-import com.vistony.wms.num.TypeReadSKU
 import com.vistony.wms.model.Counting
 import com.vistony.wms.model.CustomCounting
 import com.vistony.wms.model.UpdateLine
+import com.vistony.wms.num.TypeCode
+import com.vistony.wms.num.TypeReadSKU
 import com.vistony.wms.screen.CameraForm
 import com.vistony.wms.ui.theme.AzulVistony202
 import com.vistony.wms.viewmodel.WarehouseViewModel
@@ -141,7 +141,7 @@ fun CustomDialogQuestion(openDialog:(Boolean)->Unit){
         confirmButton = {
             Button(
                 onClick = { openDialog(false) }
-            ) {
+            ){
                 Text("Cancelar")
             }
         },
@@ -219,6 +219,10 @@ fun CustomDialogVs2(
                     val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
 
                     if(typeRead==TypeReadSKU.CAMERA && defaultLocation=="+"){
+                        Log.e(
+                            "REOS",
+                            "CustomDialog-CustomDialogVs2-TypeReadSKU.CAMERA"
+                        )
                         CameraForm(
                             context = context,
                             zebraViewModel=zebraViewModel,
@@ -229,12 +233,39 @@ fun CustomDialogVs2(
                         cameraProvider.unbindAll()
                     }
                 if(customCounting.typeCode==TypeCode.QR){
-
+                    Log.e(
+                        "REOS",
+                        "CustomDialog-CustomDialogVs2-TypeCode.QR"
+                    )
                     OutlinedTextField(
                         enabled= customCounting.typeCode== TypeCode.QR,
                         singleLine=true,
                         value = textNumber,
-                        onValueChange = { textNumber = it },
+                        onValueChange = {
+                            if(!it.contains("B") ) {textNumber = it}
+                            /*if(it.isNullOrEmpty()){
+
+                            }*/
+
+                            /*if(it.isNullOrEmpty())
+                            {
+                                Log.e(
+                                    "REOS",
+                                    "CustomDialog-CustomDialogVs2-TypeCode.QR.if.it.isNullOrEmpty()"+it
+                                )
+                            }else {
+                                Log.e(
+                                    "REOS",
+                                    "CustomDialog-CustomDialogVs2-TypeCode.QR.else.it.isNullOrEmpty()"+it
+                                )
+                                Log.e(
+                                    "REOS",
+                                    "CustomDialog-CustomDialogVs2-TypeCode.QR.else.it.isNullOrEmpty().it[0]"+it[0]
+                                )
+
+                            }*/
+
+                                        },
                         placeholder = {
                             Text(text = "Ingresa una cantidad")
                         },
@@ -244,6 +275,10 @@ fun CustomDialogVs2(
                         keyboardActions = KeyboardActions(
                             onGo = {keyboardController?.hide()}
                         )
+                    )
+                    Log.e(
+                        "REOS",
+                        "CustomDialog-CustomDialogVs2-TypeCode.textNumber"+textNumber
                     )
 
                     OutlinedTextField(
@@ -328,12 +363,12 @@ fun CustomDialogVs2(
 
                         val teasd:List<Counting> = customCounting.counting.map {
 
-                            Log.e("jepicame","==>xddd>>"+customCounting.counting.size +" <"+it.quantity +"> "+textNumber.toDouble())
+                            Log.e("jepicame","==LOTE>"+textLote+"xddd>>"+customCounting.counting.size +" <"+it.quantity +"> "+textNumber.toDouble())
 
                             Counting(
                                 quantity= if(customCounting.typeCode==TypeCode.QR){ textNumber.toDouble() }else{ it.quantity},
                                 location = locationTemp.text,
-                                lote=it.lote,
+                                lote= it.lote.ifEmpty { textLote },
                                 itemCode=it.itemCode,
                                 itemName = it.itemName,
                                 sscc=it.sscc,

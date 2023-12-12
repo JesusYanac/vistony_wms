@@ -3,53 +3,49 @@ package com.vistony.wms
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.Bundle
-import android.os.Looper
 import android.util.Log
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.*
-import androidx.navigation.*
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.*
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.vistony.wms.model.*
 import com.vistony.wms.screen.*
-import com.vistony.wms.util.DWInterface
-import com.vistony.wms.util.DWReceiver
-import com.vistony.wms.util.Routes
-import com.vistony.wms.util.StoreData
+import com.vistony.wms.util.*
 import com.vistony.wms.viewmodel.ZebraViewModel
 import io.realm.Realm
-import io.realm.kotlin.syncSession
 import kotlinx.coroutines.launch
 import java.util.*
 
 class MainActivity : ComponentActivity(),Observer{
 
+    //Declara Variables iniciaales
     private var navController = NavHostController(this)
     private val dwInterface = DWInterface()
     private val receiver = DWReceiver()
     private var version65OrOver = false
-    private var initialized = false
+   // private var initialized = false
 
     private var zebraViewModel: ZebraViewModel=ZebraViewModel()
+    private var users:Users =Users()
 
     companion object {
-        const val PROFILE_NAME = "JEPICAMEDEMO"
+        const val PROFILE_NAME = "JEPICAME"
         const val PROFILE_INTENT_ACTION = "com.vistony.wms.model.SCAN"
         const val PROFILE_INTENT_START_ACTIVITY = "0"
     }
 
-    override fun onResume() {
+    /*override fun onResume() {
         super.onResume()
 
         if (!initialized) {
             dwInterface.sendCommandString(this, DWInterface.DATAWEDGE_SEND_GET_VERSION, "")
             initialized = true
         }
-    }
+    }*/
 
     override fun onDestroy() {
         super.onDestroy()
@@ -73,19 +69,43 @@ class MainActivity : ComponentActivity(),Observer{
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        Log.e(
+            "REOS",
+            "MainActivity-nNewIntent-ini "
+        )
 
-        if (intent.hasExtra(DWInterface.DATAWEDGE_SCAN_EXTRA_DATA_STRING)) {
-            if(navController.currentDestination?.route in listOf(Routes.InventoryDetail.route,Routes.MerchandiseMovementDetail.route,Routes.ImprimirEtiquetaSSCC.route,Routes.TrackingSSCC.route )){
+        try {
 
-                Log.e("JEPICAME","TYPE SCAN=>"+intent.getStringExtra(DWInterface.DATAWEDGE_SCAN_EXTRA_LABEL_TYPE).toString())
-
-                zebraViewModel.setData(zebraPayload(
-                    Payload=intent.getStringExtra(DWInterface.DATAWEDGE_SCAN_EXTRA_DATA_STRING).toString(),
-                    Type=intent.getStringExtra(DWInterface.DATAWEDGE_SCAN_EXTRA_LABEL_TYPE).toString()
+            if (intent.hasExtra(DWInterface.DATAWEDGE_SCAN_EXTRA_DATA_STRING)) {
+                if (navController.currentDestination?.route in listOf(
+                        Routes.InventoryDetail.route,
+                        Routes.MerchandiseMovementDetail.route,
+                        Routes.ImprimirEtiquetaSSCC.route,
+                        Routes.TrackingSSCC.route,
+                        Routes.ProdcnTrmReport.route
                     )
-                )
+                ) {
+
+                    Log.e(
+                        "REOS",
+                        "MainActivity-nNewIntent-intent.getStringExtra(DWInterface.DATAWEDGE_SCAN_EXTRA_LABEL_TYPE: "+ intent.getStringExtra(DWInterface.DATAWEDGE_SCAN_EXTRA_LABEL_TYPE)
+                            .toString()
+                    )
+
+                    zebraViewModel.setData(
+                        zebraPayload(
+                            Payload = intent.getStringExtra(DWInterface.DATAWEDGE_SCAN_EXTRA_DATA_STRING)
+                                .toString(),
+                            Type = intent.getStringExtra(DWInterface.DATAWEDGE_SCAN_EXTRA_LABEL_TYPE)
+                                .toString()
+                        )
+                    )
+                }
             }
+        }catch (e:Exception){
+            Log.e("REOS","MainActivity-nNewIntent-error:"+e.toString())
         }
+
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -102,15 +122,30 @@ class MainActivity : ComponentActivity(),Observer{
 
         createDataWedgeProfile()
 
-        val thread=Thread {
+        /*val thread=Thread {
             try{
-                Realm.getInstance(Realm.getDefaultConfiguration()).syncSession.downloadAllServerChanges()
+                val realm = Realm.getInstance(Realm.getDefaultConfiguration())
+                val syncSession= realm.syncSession
+
+                // Busca todos los objetos de la clase que se está sincronizando
+                val taskMngmt = realm.where(TaskManagement::class.java).findAll()
+
+                // Agrega un RealmChangeListener a cada objeto
+                taskMngmt.addChangeListener { changedObjects ->
+                    for (changedObject in changedObjects) {
+                        // Aquí puedes manejar los cambios en cada objeto
+                        Log.e("RealmSync", "El objeto ${changedObject._id} ha sido modificado en el servidor")
+                        Log.e("RealmSync", "El objeto ${changedObject._id} ${changedObject.CardCode}")
+                    }
+                }
+
+                syncSession.downloadAllServerChanges()
             }catch(e:Exception){
                 Looper.prepare()
                 Toast.makeText(applicationContext, "Ocurrio un error al sincronizar la información:\n ${e.message}", Toast.LENGTH_SHORT).show()
                 Looper.loop()
             }
-        }
+        }*/
 
         setContent {
 
@@ -133,23 +168,23 @@ class MainActivity : ComponentActivity(),Observer{
                     )
                 ) {
 
-                    val flag=it.arguments?.getString("status")?:"NaN"
+                    /*val flag=it.arguments?.getString("status")?:"NaN"
 
                     if(flag=="logout"){
                         if(thread.isAlive){
                             thread.interrupt()
                         }
-                    }
+                    }*/
 
                     LoginScreen(
                         navController = navController,
                         context=applicationContext,
-                        flagSesion=flag,
+                        //flagSesion=flag,
                         afterLogin={ userSesion ->
-
-                            if(thread.isInterrupted){
+                            users=userSesion
+                           /* if(thread.isInterrupted){
                                 thread.start()
-                            }
+                            }*/
 
                             navController.navigate("Dashboard/userName=${userSesion.FirstName}&userWhs=AN001&userId=${userSesion.EmployeeId}&location=${userSesion.Branch}")
 
@@ -177,6 +212,10 @@ class MainActivity : ComponentActivity(),Observer{
                         EmployeeId = it.arguments?.getInt("userId")?:0,
                         Location = it.arguments?.getString("location")?:" Nan"
                     )
+                    Log.e(
+                        "REOS",
+                        "MainActivity-route-location" + it.arguments?.getString("location")
+                    )
 
                     scope.launch {
                         dataStore.setFirstName(user.FirstName)
@@ -201,7 +240,14 @@ class MainActivity : ComponentActivity(),Observer{
                     )
                 ){
                     Log.e("JEPICAME","VIENE DEL ZEBRA scan")
-
+                    Log.e(
+                        "REOS",
+                        "MainActivity-ScanScreen-defaultLocation" + it.arguments?.getString("defaultLocation")
+                    )
+                    Log.e(
+                        "REOS",
+                        "MainActivity-ScanScreen-defaultLocation" + it.arguments?.getString("defaultLocation")?:""
+                    )
                     ScanScreen(
                         navController = navController,
                         whs=it.arguments?.getString("whs")?:"",
@@ -214,6 +260,8 @@ class MainActivity : ComponentActivity(),Observer{
                 }
 
                 composable(Routes.Inventory.route) {
+
+                    /*AlarmScreen(applicationContext)*/
                     InventoryScreen(
                         navController = navController,
                         context = applicationContext
@@ -222,7 +270,6 @@ class MainActivity : ComponentActivity(),Observer{
 
                 composable(Routes.MasterArticle.route) {
                     ArticleScreen(
-                        navController = navController,
                         context = applicationContext
                     )
                 }
@@ -261,6 +308,10 @@ class MainActivity : ComponentActivity(),Observer{
                         navArgument("objType") { type = NavType.IntType }
                     )
                 ) {
+                    Log.e("REOS","MainActivity-onCreate-composable-Routes.MerchandiseMovementCreate.route")
+                    Log.e("REOS","MainActivity-onCreate-composable-Routes.MerchandiseMovementCreate.type"+NavType.IntType)
+                    Log.e("REOS","MainActivity-onCreate-composable-Routes.MerchandiseMovementCreate.it")
+                    Log.e("REOS","MainActivity-onCreate-composable-Routes.MerchandiseMovementCreate.it.arguments.toString(): "+it.arguments.toString())
                     MerchandiseCreateScreen(
                         navController = navController,
                         context = applicationContext,
@@ -278,7 +329,6 @@ class MainActivity : ComponentActivity(),Observer{
                         navArgument("objType") { type = NavType.IntType }
                     )
                 ){
-
                     MerchandiseDetailScreen(
                         navController = navController,
                         context = applicationContext,
@@ -286,8 +336,9 @@ class MainActivity : ComponentActivity(),Observer{
                         status=it.arguments?.getString("status")?:"Cerrado",
                         whsOrigin=it.arguments?.getString("whs")?:"",
                         zebraViewModel=zebraViewModel,
-                        whsDestine = it.arguments?.getString("whsDestine")?:"",
-                        objType=it.arguments?.getInt("objType")?:0
+                        wareHouseDestine = it.arguments?.getString("whsDestine")?:"",
+                        objType=it.arguments?.getInt("objType")?:0,
+                        //DateAssignment=it.arguments?.getString("DateAssignment")?:"",
                     )
                 }
 
@@ -324,7 +375,8 @@ class MainActivity : ComponentActivity(),Observer{
                 composable(Routes.TaskManager.route) {
                     TaskManagerScreen(
                         navController= navController,
-                        context= applicationContext
+                        context= applicationContext,
+                        users =users
                     )
                 }
 
@@ -339,7 +391,7 @@ class MainActivity : ComponentActivity(),Observer{
                     SlottingScreen(
                         navController = navController,
                         context = applicationContext,
-                        objType=TaskManagement(ObjType=671)
+                        objType=TaskManagement(ObjType=6701)
                     )
                 }
 
@@ -354,7 +406,8 @@ class MainActivity : ComponentActivity(),Observer{
                 composable(Routes.ProdcnTrmReport.route) {
                     ProductionReceiptScreen(
                         navController = navController,
-                        context = applicationContext
+                        context = applicationContext,
+                        zebraViewModel=zebraViewModel
                     )
                 }
 
@@ -362,6 +415,7 @@ class MainActivity : ComponentActivity(),Observer{
 
         }
     }
+
 
     private fun createDataWedgeProfile() {
 

@@ -37,7 +37,7 @@ fun StockTransferDestineScreen(navController: NavHostController, context: Contex
 
     Scaffold(
         topBar = {
-           TopBar(if(objType==67){"Transferencia de Stock - Destino"}else if(objType==1701){"Hoja de Alistado - Destino"}else{"Slotting - Destino"})
+           TopBar(if(objType==67){"Almacenamiento de Stock - Destino"}else if(objType==1701){"Picking List - Destino"}else{"Slotting - Destino"})
         }
     ){
         resumen(stockTransferSubBodyViewModel,producto=producto,objType=objType)

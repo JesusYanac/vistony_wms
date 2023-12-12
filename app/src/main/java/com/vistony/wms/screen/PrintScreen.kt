@@ -15,11 +15,14 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -113,7 +116,7 @@ fun PrintSSccScreen(navController: NavHostController, context: Context,zebraView
                 itemsViewModel.getArticle(value=zebraValue.value.Payload)
             }
             "LABEL-TYPE-CODE39"->{
-                warehouseViewModel.verificationLocation(binCode = zebraValue.value.Payload)
+                warehouseViewModel.verificationLocation(binCode = zebraValue.value.Payload, AbsEntry = "")
             }
             else->{
                 Toast.makeText(context, "El rotulado escaneado no corresponde a un código QR", Toast.LENGTH_LONG).show()
@@ -185,13 +188,16 @@ fun PrintSSccScreen(navController: NavHostController, context: Context,zebraView
                                 PrintSSCC(
                                     //ItemCode = it.itemCode,
                                     ItemCode = articleValue.value.items[0].item.ItemCode,
-                                    Batch = it.itemBatch,
+                                   // Batch = it.itemBatch,
+                                    Batch = articleValue.value.items[0].lote,
                                     PrinterIP = it.printer.ip,
                                     PortNum = it.printer.port.toInt(),
                                     Warehouse = it.warehouse,
                                     BinCode = it.binCode,
                                     AbsEntry = it.absEntry,
-                                    Transfer = it.flagTransfer
+                                    //Transfer = it.flagTransfer,
+                                    Transfer = "N",
+                                    QuantityPallet=it.quantityPallet
                                 )
                             )
                         },
@@ -239,8 +245,46 @@ private fun statusPrinter(printViewModel: PrintViewModel,itemsViewModel:ItemsVie
     }
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
-private fun divPrintSSCC(articleValue:ItemsResponse,locationValue:LocationResponse,printViewModel:PrintViewModel,onContinue:(Print)->Unit,onCancel:()->Unit){
+private fun DecimalNumberInput(quantity:Double?,onChange:(String)->Unit) {
+    val decimalNumber = remember { mutableStateOf("") }
+
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    OutlinedTextField(
+        enabled= true,
+        singleLine=true,
+        value = decimalNumber.value,
+        onValueChange = {
+            if (it.isEmpty() || it.matches(Regex("^[0-9]*\\.?[0-9]*$"))) {
+                decimalNumber.value=it
+                onChange(it)
+            }
+        },
+        label = { Text(text = "Cantidad por pallet") },
+        placeholder = { Text(text = if(quantity == null){"Ingresa la cantidad por pallet"}else{"La cantidad en SAP es $quantity"}) },
+        trailingIcon = { Icon(imageVector = Icons.Default.Edit, contentDescription = null, tint = AzulVistony202) },
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number,imeAction = ImeAction.Go ),
+        keyboardActions = KeyboardActions(
+            onGo = {
+                keyboardController?.hide()
+                focusManager.clearFocus()
+            }
+        )
+    )
+}
+
+@Composable
+private fun divPrintSSCC(
+    articleValue:ItemsResponse,
+    locationValue:LocationResponse,
+    printViewModel:PrintViewModel
+    ,onContinue:(Print)->Unit,
+    onCancel:()->Unit
+
+){
 
     val print = printViewModel.print.collectAsState()
     val checked = remember { mutableStateOf(false) }
@@ -267,25 +311,56 @@ private fun divPrintSSCC(articleValue:ItemsResponse,locationValue:LocationRespon
         Text(text = " ${articleValue.items[0].lote }", color = Color.Gray)
     }
 
+    Row(
+        horizontalArrangement = Arrangement.SpaceBetween,
+        modifier = Modifier.fillMaxWidth()
+    ){
+        DecimalNumberInput(
+            quantity=articleValue.items[0].item.QtyPallet,
+            onChange={
+                printViewModel.setPrint(
+                    print=Print(
+                        printer= print.value.printer,
+                        itemCode = print.value.itemCode,
+                        itemName = print.value.itemName,
+                        itemUom = print.value.itemUom,
+                        itemDate =print.value.itemDate,
+                        itemBatch = print.value.itemBatch,
+                        quantityString = print.value.quantityString,
+                        warehouse = print.value.warehouse,
+                        quantityPallet=if(it.isNotEmpty()){it.toDouble()}else{0.0},
+                        binCode =  print.value.binCode,
+                        absEntry =  print.value.absEntry,
+                        flagTransfer=print.value.flagTransfer
+                    )
+                )
+            }
+        )
+    }
+
     Divider()
     Text("")
 
-    if(locationValue.status=="ok"){
-        Row(
-            horizontalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier.fillMaxWidth()
-        ){
-            Text(text = "Almacén")
+    Row(
+        horizontalArrangement = Arrangement.SpaceBetween,
+        modifier = Modifier.fillMaxWidth()
+    ){
+        Text(text = "Almacén")
+        if(locationValue.status=="ok"){
             Text(text = locationValue.location.Warehouse, fontWeight= FontWeight.Bold)
         }
-        Row(
-            horizontalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier.fillMaxWidth()
-        ){
-            Text(text = "Ubicación")
+    }
+    Row(
+        horizontalArrangement = Arrangement.SpaceBetween,
+        modifier = Modifier.fillMaxWidth()
+    ){
+        Text(text = "Ubicación")
+        if(locationValue.status=="ok"){
             Text(text = locationValue.location.BinCode, fontWeight= FontWeight.Bold)
         }
+    }
 
+    if(locationValue.status=="ok"){
         printViewModel.setPrint(
             print=Print(
                 printer= print.value.printer,
@@ -295,6 +370,7 @@ private fun divPrintSSCC(articleValue:ItemsResponse,locationValue:LocationRespon
                 itemDate =print.value.itemDate,
                 itemBatch = print.value.itemBatch,
                 quantityString =print.value.quantityString,
+                quantityPallet=print.value.quantityPallet,
                 warehouse = locationValue.location.Warehouse,
                 binCode =  locationValue.location.BinCode,
                 absEntry =  locationValue.location.AbsEntry,
@@ -320,6 +396,7 @@ private fun divPrintSSCC(articleValue:ItemsResponse,locationValue:LocationRespon
                     itemDate =print.value.itemDate,
                     itemBatch = articleValue.items[0].lote,
                     quantityString =print.value.quantityString,
+                    quantityPallet=print.value.quantityPallet,
                     warehouse = print.value.warehouse,
                     binCode =  print.value.binCode,
                     absEntry = print.value.absEntry,
@@ -329,7 +406,7 @@ private fun divPrintSSCC(articleValue:ItemsResponse,locationValue:LocationRespon
         }
     )
 
-    Text("")
+   /* Text("")
 
     LabelledCheckbox(
         checked = checked.value,
@@ -353,7 +430,7 @@ private fun divPrintSSCC(articleValue:ItemsResponse,locationValue:LocationRespon
             )
         },
         label = "Realizar transferencia"
-    )
+    )*/
 
     Text("")
 
@@ -373,8 +450,12 @@ private fun divPrintSSCC(articleValue:ItemsResponse,locationValue:LocationRespon
             onClick = {
                 if(print.value.warehouse.isNotEmpty() && print.value.absEntry!=0){
                     if(print.value.printer.ip.isNotEmpty()){
-                        haveError=""
-                        onContinue(print.value)
+                        if(print.value.quantityPallet>0.00){
+                            haveError=""
+                            onContinue(print.value)
+                        }else{
+                            haveError="*Es necesario ingresar la cantidad por pallet"
+                        }
                     }else{
                         haveError="*Es necesario seleccionar una impresora"
                     }
@@ -397,6 +478,26 @@ private fun divPrintSSCC(articleValue:ItemsResponse,locationValue:LocationRespon
             )
         }
     }
+
+    /*
+    if(locationValue.status=="ok"){
+        printViewModel.sendTerminationReport(
+            print=Print(
+                printer= print.value.printer,
+                itemCode = print.value.itemCode,
+                itemName = print.value.itemName,
+                itemUom = print.value.itemUom,
+                itemDate =print.value.itemDate,
+                itemBatch = print.value.itemBatch,
+                quantityString =print.value.quantityString,
+                quantityPallet=print.value.quantityPallet,
+                warehouse = locationValue.location.Warehouse,
+                binCode =  locationValue.location.BinCode,
+                absEntry =  locationValue.location.AbsEntry,
+                flagTransfer=print.value.flagTransfer
+            )
+        )
+    }*/
 }
 
 @OptIn(ExperimentalComposeUiApi::class)

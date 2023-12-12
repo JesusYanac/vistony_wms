@@ -4,6 +4,7 @@ package com.vistony.wms.screen
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Box
@@ -26,13 +27,21 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterialApi::class, ExperimentalComposeUiApi::class)
 @Composable
 fun MerchandiseCreateScreen(navController: NavHostController, context: Context,objType: TaskManagement){
+    Log.e("REOS","StockTransferCreateScreen-MerchandiseCreateScreen-objType.objType: "+objType.ObjType)
+    Log.e("REOS","StockTransferCreateScreen-MerchandiseCreateScreen-objType.Type: "+objType.Type)
+    Log.e("REOS","StockTransferCreateScreen-MerchandiseCreateScreen-objType.CardCode: "+objType.CardCode)
+    Log.e("REOS","StockTransferCreateScreen-MerchandiseCreateScreen-objType.Documento: "+objType.Documento)
+    Log.e("REOS","StockTransferCreateScreen-MerchandiseCreateScreen-objType.Status: "+objType.Status)
+
 
     val titleTask=when(objType.ObjType){
         0->{""}
-        67->{"Crear transferencia de stock"}
-        671->{"Crear slotting"}
+        67->{"Registrar transferencia de stock"}
+        6701->{"Registrar slotting"}
         else->{""}
     }
+
+
 
     val merchandiseViewModel: StockTransferHeaderViewModel = viewModel(
         factory = StockTransferHeaderViewModel.StockTransferHeaderViewModelFactory(objType)
@@ -82,6 +91,7 @@ fun MerchandiseCreateScreen(navController: NavHostController, context: Context,o
                 if(_merchandiseViewModel.value.id == "error"){
                     Toast.makeText(context, "Ocurrio un error al crear la transferencia de stock.", Toast.LENGTH_SHORT).show()
                 }else{
+                    Log.e("REOS","StockTransferCreateScreen-MerchandiseCreateScreen-EntroIf-paracrear-manual: "+"MerchandiseMovementDetail/idMerchandise=${_merchandiseViewModel.value.id}&status=${_merchandiseViewModel.value.status}&whs=${_merchandiseViewModel.value.whs}&whsDestine=${_merchandiseViewModel.value.whsDestine}&objType=${objType.ObjType}")
                     navController.navigate("MerchandiseMovementDetail/idMerchandise=${_merchandiseViewModel.value.id}&status=${_merchandiseViewModel.value.status}&whs=${_merchandiseViewModel.value.whs}&whsDestine=${_merchandiseViewModel.value.whsDestine}&objType=${objType.ObjType}")
                     {
                         popUpTo(Routes.MerchandiseMovementCreate.route) { inclusive = true }
@@ -93,7 +103,7 @@ fun MerchandiseCreateScreen(navController: NavHostController, context: Context,o
                 DivContainerFun(
                     context=context,
                     onPressed = {
-                        merchandiseViewModel.addMerchandiseHeader(it)
+                        merchandiseViewModel.addMerchandiseHeader(it,"")
                     },
                     objType=objType,
                     openSheet,closeSheet)
@@ -109,8 +119,8 @@ private fun DivContainerFun(context: Context, onPressed: (StockTransferHeader) -
 
     if(showDialog){
         CustomDialogCreateConteo(
-            titulo="Crear transferencia",
-            mensaje="¿Está seguro de crear esta ficha de transferencia?",
+            titulo="Crear ficha",
+            mensaje="¿Está seguro de crear esta ficha?",
             openDialog={ response ->
             if(response){
                 onPressed(merchandiseHeaderTemp)

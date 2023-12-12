@@ -4,43 +4,25 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
-import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import com.google.gson.annotations.SerializedName
 import com.vistony.wms.R
 import com.vistony.wms.component.*
 import com.vistony.wms.model.*
-import com.vistony.wms.num.TypeCode
-import com.vistony.wms.ui.theme.AzulVistony202
-import com.vistony.wms.ui.theme.ColorDestine
+import com.vistony.wms.ui.theme.*
 import com.vistony.wms.viewmodel.ItemsViewModel
-import com.vistony.wms.viewmodel.PrintViewModel
-import com.vistony.wms.viewmodel.WarehouseViewModel
 import com.vistony.wms.viewmodel.ZebraViewModel
 
 
@@ -52,11 +34,15 @@ fun TrackingPaletScreen(navController: NavHostController, context: Context,zebra
         factory = ItemsViewModel.ArticleViewModelFactory("scan")
     )
 
+    val colors = remember { mutableStateOf(listOf(AzulVistony202,AzulVistony201)) }
+
     val zebraValue = zebraViewModel.data.collectAsState()
     val articleValue = itemsViewModel.article.collectAsState()
-
+    Log.e("REOS","TrackingPaletScreen-TrackingPaletScreen-zebraValue.value.Payload: "+zebraValue.value.Payload)
+    Log.e("REOS","TrackingPaletScreen-TrackingPaletScreen-zebraValue.value.Type : "+zebraValue.value.Type )
     if(zebraValue.value.Payload.isNotEmpty()){
         if(zebraValue.value.Type in listOf("LABEL-TYPE-EAN128")) {
+            Log.e("REOS","TrackingPaletScreen-TrackingPaletScreen-zebraValue.value.Payload: "+zebraValue.value.Payload)
             itemsViewModel.getArticle(value=zebraValue.value.Payload)
         }else{
             Toast.makeText(context, "El rotulado escaneado no corresponde a un código SSCC", Toast.LENGTH_LONG).show()
@@ -67,11 +53,16 @@ fun TrackingPaletScreen(navController: NavHostController, context: Context,zebra
 
     Scaffold(
         topBar = {
-            TopBar(title="Tracking del Palet")
+            TopBar(
+                title="Tracking del Palet",
+                firstColor = colors.value[0],
+                secondColor = colors.value[1],
+            )
         }
     ){
 
-        Log.e("JEPICAE","ME EJEUOT "+articleValue.value.status)
+
+        colors.value = listOf(AzulVistony202,AzulVistony201)
 
         when(articleValue.value.status){
             ""->{
@@ -105,6 +96,13 @@ fun TrackingPaletScreen(navController: NavHostController, context: Context,zebra
                 Column(
                     modifier = Modifier.padding(start = 20.dp, end = 20.dp,top=20.dp)
                 ){
+
+                    if(articleValue.value.statusSscc=="Cerrado"){
+                        colors.value = listOf(RedVistony202,RedVistony201)
+                    }else{
+
+                    }
+
                     divPrintSSCC(
                         articleValue=articleValue.value,
                         onContinue = {
@@ -207,13 +205,13 @@ private fun divPrintSSCC(articleValue:ItemsResponse,onContinue:(Print)->Unit,onC
         modifier = Modifier.fillMaxWidth()
     ) {
         Text(text = "Almacén actual")
-        Text(text = " X", color = Color.Gray)
+        Text(text = " ${articleValue.warehouse}", color = Color.Gray)
     }
 
     Row(
         horizontalArrangement = Arrangement.SpaceBetween,
         modifier = Modifier.fillMaxWidth()
-    ) {
+    ){
         Text(text = "Ubicación actual")
         Text(text = " ${articleValue.defaultLocation}", color = Color.Gray)
     }
@@ -222,7 +220,77 @@ private fun divPrintSSCC(articleValue:ItemsResponse,onContinue:(Print)->Unit,onC
         modifier = Modifier.fillMaxWidth()
     ) {
         Text(text = "Estado")
-        Text(text = " X", color = Color.Gray)
+        Text(text = " ${articleValue.statusSscc}", color = Color.Gray)
     }
 
+    Text("Tracking")
+    Divider()
+    Text("")
+
+    /*LazyColumn(modifier = Modifier
+        .fillMaxWidth()
+       // .fillMaxHeight(0.6f)
+    ){
+        items(items = articleValue.tracking , itemContent = { track ->
+
+            Card(
+                border = if(track.RowNum==1){
+                    BorderStroke(2.dp,Color.Gray)
+                }else{
+                    BorderStroke(0.dp,Color.Transparent)
+                },
+                backgroundColor = Color.White,
+                elevation = 10.dp,
+                modifier = Modifier.fillMaxWidth()
+                    .padding(vertical=5.dp)
+            ){
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row {
+                        Text(
+                            text = "Almacén: ",
+                            style = MaterialTheme.typography.subtitle1,
+                            color = MaterialTheme.colors.onBackground
+                        )
+                        Text(
+                            text = ""+track.WhsCode,
+                            style = MaterialTheme.typography.subtitle1,
+                            color = MaterialTheme.colors.primary
+                        )
+                    }
+                    Row {
+                        Text(
+                            text = "Ubicación: ",
+                            style = MaterialTheme.typography.subtitle1,
+                            color = MaterialTheme.colors.onBackground
+                        )
+                        Text(
+                            text = ""+track.Location,
+                            style = MaterialTheme.typography.subtitle1,
+                            color = MaterialTheme.colors.primary
+                        )
+                    }
+                    Row {
+                        Text(
+                            text = "Estado: ",
+                            style = MaterialTheme.typography.subtitle1,
+                            color = MaterialTheme.colors.onBackground
+                        )
+                        Text(
+                            text = ""+track.Status,
+                            style = MaterialTheme.typography.subtitle1,
+                            color = MaterialTheme.colors.primary
+                        )
+                    }
+                    Row {
+                        Text(
+                            text = ""+track.Time,
+                            style = MaterialTheme.typography.subtitle1,
+                            color = MaterialTheme.colors.primary
+                        )
+                    }
+                }
+            }
+        })
+    }
+    */
 }

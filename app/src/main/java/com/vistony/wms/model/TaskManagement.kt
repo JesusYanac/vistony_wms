@@ -21,8 +21,9 @@ open class TaskManagement(
     var Realm_Id: String = "",
     var Response: String = "",
     var StartDate: Date = Date(),
-    var Status: String = ""
-
+    var Status: String = "",
+    var ScheduledTime: Date = Date(),
+    var EstimatedTime: Int = 0
 ): RealmObject() {
     @PrimaryKey
     var _id: ObjectId = ObjectId()

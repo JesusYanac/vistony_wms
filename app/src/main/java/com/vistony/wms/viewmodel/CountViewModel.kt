@@ -1,5 +1,6 @@
 package com.vistony.wms.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.vistony.wms.model.Counting
@@ -13,7 +14,7 @@ import io.realm.kotlin.syncSession
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import org.bson.types.ObjectId
-import java.util.*
+import java.util.Date
 
 class CountViewModel(idInventory:String): ViewModel() {
 
@@ -30,7 +31,7 @@ class CountViewModel(idInventory:String): ViewModel() {
     //private val _sendOrClose = MutableStateFlow("")
     //val sendOrClose: StateFlow<String> get() = _sendOrClose
 
-    class HomeViewModelFactory(private var idInventory:String): ViewModelProvider.Factory {
+    class CountViewModelFactory(private var idInventory:String): ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             return CountViewModel(idInventory) as T
@@ -87,6 +88,7 @@ class CountViewModel(idInventory:String): ViewModel() {
         },{
             _count.value=CountingResponse(counting=  emptyList(),status = "",nameInventory = "",statusEvent=it.message.toString())
         })
+        Log.e("REOS","CountViewModel-updateStatusClose-_count.value"+_count.value.statusEvent)
     }
 
     fun resendToSap(){
@@ -94,6 +96,7 @@ class CountViewModel(idInventory:String): ViewModel() {
         _count.value=CountingResponse(counting=  emptyList(),status = "",nameInventory = "",statusEvent="cargando")
 
         realm.executeTransactionAsync ({ r:Realm->
+            Log.e("REOS","CountViewModel-resendToSap-r"+r.toString())
             var value:Int=0
             val body: Inventory? =r.where(Inventory::class.java)
                 .equalTo("_id", ObjectId(idInventory))
@@ -109,8 +112,8 @@ class CountViewModel(idInventory:String): ViewModel() {
                 if(count != null){
                     body.response =""
                     body.arrivalTimeSap= body.createAt
-                    body.arrivalTimeAtlas =Date()
-
+                   // body.arrivalTimeAtlas =Date()
+                    body.arrivalTimeAtlas =body.createAt
                     r.insertOrUpdate(body)
                 }else{
                     _count.value=CountingResponse(counting=  emptyList(),status = "",nameInventory = "",statusEvent="La ficha de inventario no tiene conteos registrados.")
@@ -123,6 +126,7 @@ class CountViewModel(idInventory:String): ViewModel() {
         },{
             _count.value=CountingResponse(counting=  emptyList(),status = "",nameInventory = "",statusEvent=it.message.toString())
         })
+        Log.e("REOS","CountViewModel-resendToSap-_count.value"+_count.value)
     }
 
     fun getData(){
@@ -130,7 +134,7 @@ class CountViewModel(idInventory:String): ViewModel() {
 
         Realm.getInstanceAsync(realm.configuration, object : Realm.Callback() {
             override fun onSuccess(r: Realm) {
-
+                Log.e("REOS","CountViewModel-getData-r"+r.toString())
                 val inventory = r.where(Inventory::class.java)
                     .equalTo("_id",ObjectId(idInventory))
                     .findFirst()
@@ -150,52 +154,55 @@ class CountViewModel(idInventory:String): ViewModel() {
                 }
             }
             override fun onError(exception: Throwable) {
+                Log.e("REOS","CountViewModel-getData-exception"+exception.toString())
                 _count.value=CountingResponse(emptyList()," ${exception.message}")
             }
         })
+        Log.e("REOS","CountViewModel-getData()-_count.value"+_count.value)
     }
 
     fun insertData(body:Counting){
-
+        Log.e("REOS","CountViewModel-insertData-body"+body.toString())
         _count.value=CountingResponse(emptyList(),"cargando")
 
         realm.executeTransactionAsync { r: Realm ->
-
+            Log.e("REOS","CountViewModel-insertData-r"+r.toString())
             //body.forEach { body ->
-                val count = r.where(Counting::class.java)
-                    .equalTo("itemCode",body.itemCode)
-                    .equalTo("location",body.location)
-                    .equalTo("lote",body.lote)
-                    .equalTo("inventoryId",ObjectId(idInventory))
-                    .findFirst()
+            val count = r.where(Counting::class.java)
+                .equalTo("itemCode",body.itemCode)
+                .equalTo("location",body.location)
+                .equalTo("lote",body.lote)
+                .equalTo("inventoryId",ObjectId(idInventory))
+                .findFirst()
 
-                if(count == null){
-                    val obj = r.createObject(Counting::class.java, ObjectId().toHexString())
+            if(count == null){
+                val obj = r.createObject(Counting::class.java, ObjectId().toHexString())
 
-                    obj.itemCode=body.itemCode
-                    obj.itemName=body.itemName
-                    obj.quantity=body.quantity
+                obj.itemCode=body.itemCode
+                obj.itemName=body.itemName
+                obj.quantity=body.quantity
 
-                    obj.location=body.location
-                    obj.sscc=body.sscc
-                    obj.interfaz=body.interfaz
-                    obj.lote=body.lote
-                    obj.inventoryId=ObjectId(idInventory)
-                    obj.Realm_Id=realm.syncSession.user.id
+                obj.location=body.location
+                obj.sscc=body.sscc
+                obj.interfaz=body.interfaz
+                obj.lote=body.lote
+                obj.inventoryId=ObjectId(idInventory)
+                obj.Realm_Id=realm.syncSession.user.id
 
-                    r.insert(obj)
+                r.insert(obj)
 
-                }else{
+            }else{
 
-                    count.quantity=count.quantity+body.quantity
+                count.quantity=count.quantity+body.quantity
 
-                    r.insertOrUpdate(count)
-                }
+                r.insertOrUpdate(count)
+            }
             //}
 
 
             _count.value=CountingResponse(emptyList(),"ok")
         }
+        Log.e("REOS","CountViewModel-insertData-_count.value"+_count.value)
     }
 
     //se suma en el rack
@@ -222,10 +229,10 @@ class CountViewModel(idInventory:String): ViewModel() {
     }
 
     fun deleteData(idItem: ObjectId){
+        Log.e("REOS","CountViewModel-deleteData-idItem"+idItem.toString())
+        _count.value= CountingResponse(emptyList(),"cargando")
 
-        _count.value=CountingResponse(emptyList(),"cargando")
-
-        realm.executeTransactionAsync { r:Realm->
+        realm.executeTransactionAsync { r: Realm ->
 
             val body: Counting? =r.where(Counting::class.java)
                 .equalTo("_id", idItem)

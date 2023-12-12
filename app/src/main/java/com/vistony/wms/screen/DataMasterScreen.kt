@@ -45,14 +45,14 @@ fun DataMasterScreen(navController: NavHostController, context: Context) {
 
     Scaffold(
         topBar = {
-            TopBar("Parametros")
+            TopBar("Maestros")
         }
     ){
         Column(
             modifier = Modifier.fillMaxWidth().padding(10.dp)
         ){
             rowParameter(
-                title="Descargar Almacenes",
+                title="Ver Almacenes",
                 subTitle=warehouseValue.value.status,
                 size=warehouseValue.value.warehouse.size,
                 fecha=warehouseValue.value.fechaDescarga,
@@ -62,22 +62,12 @@ fun DataMasterScreen(navController: NavHostController, context: Context) {
             )
 
             rowParameter(
-                title="Descargar Artículos",
+                title="Ver Artículos",
                 subTitle=articleValue.value.status,
                 size=articleValue.value.listArticle.size,
                 fecha=articleValue.value.fechaDescarga,
                 onPressed = {
                     navController.navigate("MasterArticle")
-                }
-            )
-
-            rowParameter(
-                title="Descargar T. de Tareas",
-                subTitle=articleValue.value.status,
-                size=articleValue.value.listArticle.size,
-                fecha=articleValue.value.fechaDescarga,
-                onPressed = {
-                    //navController.navigate("MasterArticle")
                 }
             )
         }

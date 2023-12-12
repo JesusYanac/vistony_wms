@@ -80,10 +80,26 @@ data class Data(
     val uBtringinCode: String="",
     @SerializedName("WhsCode")
     val uWhsCode: String="",
+    @SerializedName("Status")
+    val status: String="",
     @SerializedName("DetailSSCC")
-    val vISWMSSCC1Collection: List<VISWMSSCC1> = emptyList()
+    val vISWMSSCC1Collection: List<VISWMSSCC1> = emptyList(),
+    @SerializedName("DetailTracking")
+    val TrackingCollection: List<Tranck> = emptyList()
 )
 
+data class Tranck(
+    @SerializedName("RowNum")
+    val RowNum: Int=0,
+    @SerializedName("WhsCode")
+    val WhsCode: String="",
+    @SerializedName("Status")
+    val Status: String="",
+    @SerializedName("Location")
+    val Location: String="",
+    @SerializedName("Time")
+    val Time: String="",
+)
 
 data class VISWMSSCC1(
     @SerializedName("BatchCode")

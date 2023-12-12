@@ -3,6 +3,7 @@ plugins {
     id 'org.jetbrains.kotlin.android'
     id 'kotlin-kapt'
     id 'realm-android'
+    id 'com.google.gms.google-services'
 }
 
 android {
@@ -13,12 +14,34 @@ android {
         minSdk 26
         targetSdk 31
         versionCode 1
-        versionName "1.0"
+        versionName "1.1.20"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary true
         }
-        buildConfigField('String' , 'API_URL', '"http://192.168.254.20:93/vs1.0/"')
+
+       // buildConfigField('String' , 'API_URL', '"http://192.168.254.20:95/vs1.0/"')   // PRODUCCION
+        //buildConfigField('String' , 'API_URL', '"http://192.168.254.20:93/vs1.0/"')   // PRODUCCION 2
+        //buildConfigField('String' , 'API_URL', '"http://192.168.254.20:100/vs1.0/"')    //ADO.NET
+        //buildConfigField('String' , 'API_URL', '"https://wms.vistony.pe/vs1.0/"')        //SUMINISTROS
+        //buildConfigField('String' , 'API_URL', '"https://msw.vistony.pe/vs1.0/"')        //SUMINISTROS/PRODUCCION - PERU 1.1.4 --> Actual 12/08/2023
+        //buildConfigField('String' , 'API_URL', '"http://190.12.79.132:8081/"')        //SUMINISTROS - ECUADOR
+        //buildConfigField('String' , 'API_URL', '"http://190.12.79.132:8082/post/"')        //PRODUCCION - BOLIVIA
+
+        //buildConfigField('String' , 'API_URL', '"http://190.12.79.132:8082/pe/vs1.0/"')        //TEST PRODUCCION 17/07/2023
+
+
+
+        //buildConfigField('String' , 'API_URL', '"http://190.12.79.132:8082/pe_test/vs1.0/"')        //TEST PERU 24/07/2023 PUBLICO
+        //buildConfigField('String' , 'API_URL', '"http://192.168.254.20:8082/pe_test/vs1.0/"')        //TEST PERU 24/07/2023 PRIVADO
+        //buildConfigField('String' , 'API_URL', '""')        //TEST PERU 24/07/2023 PRUEBA PICKING
+        //buildConfigField('String' , 'API_URL', '"http://190.12.79.132:8082/py/"')        //INVENTARIO - PARAGUAY
+        //buildConfigField('String' , 'API_URL', '"http://190.12.79.132:8082/cl/"')        //INVENTARIO - CHILE 04/09/2023
+        //buildConfigField('String' , 'API_URL', '"http://190.12.79.132:8082/bo/"')        //INVENTARIO - BOLIVIA
+
+//buildConfigField('String' , 'API_URL', '"https://wms.vistony.pe/vs1.0/"')        //SUMINISTROS/PRODUCCION - PERU 1.1.7
+//buildConfigField('String' , 'API_URL', '"http://190.12.79.132:8082/pe/vs1.0/"')        //SUMINISTROS/PRODUCCION - PERU 1.1.7
+buildConfigField('String' , 'API_URL', '"http://192.168.254.20:8082/pe/vs1.0/"')        //SUMINISTROS/PRODUCCION - PERU 1.1.7
     }
 
     buildTypes {
@@ -64,9 +87,13 @@ android {
 
 dependencies {
 
+    implementation 'com.google.firebase:firebase-messaging:23.0.0'
+    implementation 'com.google.android.gms:play-services-gcm:17.0.0'
+
     implementation 'androidx.core:core-ktx:1.9.0'
     implementation "androidx.compose.ui:ui:1.4.0-alpha02"
     implementation "androidx.compose.material:material:1.3.1"
+    //implementation "androidx.compose.runtime:runtime:1.4.1"
     implementation "androidx.compose.ui:ui-tooling-preview:1.3.1"
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.5.1'
     implementation 'androidx.activity:activity-compose:1.6.1'
@@ -105,17 +132,23 @@ dependencies {
     //realmn mongoDB
     //implementation("io.realm.kotlin:library-base:1.0.0")
 
-
-
     implementation("com.google.guava:guava:31.0.1-android")
     // To use CallbackToFutureAdapter
     implementation("androidx.concurrent:concurrent-futures:1.1.0")
     // Kotlin
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-guava:1.6.4")
 
+    implementation 'com.google.firebase:firebase-messaging-ktx:23.0.3'
+
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.1.4'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.5.0'
     androidTestImplementation "androidx.compose.ui:ui-test-junit4:1.3.1"
     debugImplementation "androidx.compose.ui:ui-tooling:1.3.1"
+
+
+    //Stetho
+    debugImplementation 'com.facebook.stetho:stetho:1.5.1'
+    debugImplementation 'com.facebook.stetho:stetho-okhttp3:1.5.1'
+
 }

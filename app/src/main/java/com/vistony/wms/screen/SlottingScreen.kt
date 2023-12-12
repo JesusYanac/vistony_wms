@@ -91,7 +91,10 @@ fun SlottingScreen(navController: NavHostController, context: Context,objType: T
                     title= Routes.Slotting.title ,
                     onClick={
                         navController.navigate("MerchandiseMovementCreate/objType=${objType.ObjType}")
-                    }
+                    },
+                    navController = navController,
+                    form = "SlottingScreen",
+                    users = null
                 )
             }
         ){
@@ -234,7 +237,8 @@ private fun ExpandableListItem(merchandise: StockTransferHeader, navController: 
                 TitleAndSubtitle(
                     title = "Almacén Orig. ${merchandise.WarehouseOrigin}",
                     type = "Almacén Dst. ${merchandise.WarehouseDestine}",
-                    status = "Estado ${merchandise.Status}"
+                    status = "Estado ${merchandise.Status}",
+                    dateAssigment = "Fecha: ${merchandise.ArrivalTimeSap}",
                 )
 
                 Icon(
