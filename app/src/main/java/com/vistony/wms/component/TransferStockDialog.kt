@@ -48,7 +48,7 @@ fun TransferStockDialog(
             },
 
             title = {
-                Text(scannedArticleCode.value)
+                Text(scannedArticleCode.value.split("|")[1], textAlign = TextAlign.Center)
             },
 
             text = {

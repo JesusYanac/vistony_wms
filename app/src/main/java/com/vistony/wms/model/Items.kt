@@ -63,27 +63,3 @@ open class ItemGroup(
     var _id: ObjectId? = null
 }
 
-
-
-open class TransfersLayout(
-    var realm_id: String="",
-    var codeSAP: Int = 0,
-    var owner: Int = 0,
-    var createAt: Date = Date(),
-    var closeAt: Date = Date(),
-    var arrivalTimeSap: Date = Date(),
-    var detail: RealmList<TransfersLayoutDetail> = RealmList()
-):RealmObject(){
-    @PrimaryKey
-    var _id:ObjectId = ObjectId()
-}
-@RealmClass(embedded = true)
-open class TransfersLayoutDetail(
-    var itemCode: String="",
-    var itemName: String="",
-    var quantity: Double=0.0,
-    var batch: String="",
-    var sscc: String="",
-    var binOrigin: String="",
-    var binDestine: String=""
-):RealmObject(){}

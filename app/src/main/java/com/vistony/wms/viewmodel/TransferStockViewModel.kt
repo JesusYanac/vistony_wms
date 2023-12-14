@@ -6,8 +6,10 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.vistony.wms.model.TransfersLayout
+import com.vistony.wms.model.TransfersLayoutDetail
 import com.vistony.wms.model.Warehouses
 import io.realm.Realm
+import io.realm.RealmList
 import io.realm.RealmResults
 import io.realm.kotlin.syncSession
 import io.realm.mongodb.sync.SyncConfiguration
@@ -16,14 +18,7 @@ import org.bson.Document
 
 class TransferStockViewModel: ViewModel() {
 
-    //private var realm: Realm = Realm.getInstance(Realm.getDefaultConfiguration())
-    //private val customUserData: Document? = realm.syncSession.user.customData
 
-    /*private var configBranch = SyncConfiguration
-        .Builder(realm.syncSession.user, customUserData?.getString("Branch") ?: "")
-        .build()*/
-
-    // LiveData para la lista de transferencias
     private val _transfersLayoutList = MutableLiveData<List<TransfersLayout>>()
     val transfersLayoutList: LiveData<List<TransfersLayout>> get() = _transfersLayoutList
 
@@ -39,14 +34,6 @@ class TransferStockViewModel: ViewModel() {
         Log.e("jesusdebug", "init")
         loadTransfersLayoutList()
     }
-    // Función para recuperar la lista de transferencias desde Realm
-    /*fun loadTransfersLayoutList2() {
-        Log.e("jesusdebug", "loadTransfersLayoutList")
-        realm.executeTransactionAsync { realm ->
-            val results: RealmResults<TransfersLayout> = realm.where(TransfersLayout::class.java).findAll()
-            _transfersLayoutList.postValue(realm.copyFromRealm(results))
-        }
-    }*/
 
     fun loadTransfersLayoutList() {
         Log.e("jesusdebug", "loadTransfersLayoutList")
@@ -73,29 +60,36 @@ class TransferStockViewModel: ViewModel() {
         }
     }    // Función para insertar una nueva transferencia en Realm
     fun insertTransfersLayout(codePalet: String, codeAlmacen1: String, codeAlmacen2: String, cantidad: String) {
+        // Create a new TransfersLayout object
         val transfersLayout = TransfersLayout()
         transfersLayout.codeSAP = 0
-        if(codePalet.contains("|")){
-            transfersLayout.detail.first()!!.itemCode = codePalet.split("|")[0]
-            transfersLayout.detail.first()!!.itemName = codePalet.split("|")[1]
-            transfersLayout.detail.first()!!.batch = codePalet.split("|")[2]
-            //Entrada manual cuando se escanea Qr
-            transfersLayout.detail.first()!!.quantity = cantidad.toDouble()
-        }else{
-            transfersLayout.detail.first()!!.sscc = codePalet
 
-            //consultar el sscc y ontener itemCode, itemName, batch, quantity
-            transfersLayout.detail.first()!!.itemCode = ""
-            transfersLayout.detail.first()!!.itemName = ""
-            transfersLayout.detail.first()!!.batch = ""
-            transfersLayout.detail.first()!!.quantity = 0.0
+        // Create a new TransfersLayoutDetail object
+        val transfersLayoutDetail = TransfersLayoutDetail()
+
+        if (codePalet.contains("|")) {
+            transfersLayoutDetail.itemCode = codePalet.split("|")[0]
+            transfersLayoutDetail.itemName = codePalet.split("|")[1]
+            transfersLayoutDetail.batch = codePalet.split("|")[2]
+            // Entrada manual cuando se escanea Qr
+            transfersLayoutDetail.quantity = cantidad.toDouble()
+        } else {
+            transfersLayoutDetail.sscc = codePalet
+
+            // Consultar el sscc y obtener itemCode, itemName, batch, quantity
+            transfersLayoutDetail.itemCode = ""
+            transfersLayoutDetail.itemName = ""
+            transfersLayoutDetail.batch = ""
+            transfersLayoutDetail.quantity = 0.0
         }
 
-        transfersLayout.detail.first()!!.binOrigin = codeAlmacen1
-        transfersLayout.detail.first()!!.binDestine = codeAlmacen2
-        /*realm.executeTransactionAsync { realm ->
-            realm.insertOrUpdate(transfersLayout)
-        }*/
+        transfersLayoutDetail.binOrigin = codeAlmacen1
+        transfersLayoutDetail.binDestine = codeAlmacen2
+
+        // Add the detail object to the transfersLayout
+        transfersLayout.detail.add(transfersLayoutDetail)
+
+        // Perform the Realm transaction
         Realm.getDefaultConfiguration()?.let {
             Realm.getInstanceAsync(it, object : Realm.Callback() {
                 override fun onSuccess(realm: Realm) {
@@ -105,11 +99,18 @@ class TransferStockViewModel: ViewModel() {
                             Log.e("jesusdebug", "realm is closed insert")
                             return
                         }
-                        realm.insertOrUpdate(transfersLayout)
+                        realm.executeTransactionAsync { transactionRealm ->
+                            transactionRealm.insertOrUpdate(transfersLayout)
+                        }; Realm.Transaction.OnSuccess {
+                            Log.e("jesusdebug", "Transaction succeeded")
+                        }; Realm.Transaction.OnError { error ->
+                            Log.e("jesusdebug", "Transaction failed: $error")
+                        }
+
                         Log.e("jesusdebug", "exito? insert")
 
                     } catch (e: Exception) {
-                        Log.e("jesusdebug", "catch insert")
+                        Log.e("jesusdebug", "catch insert :$e")
                     }
                 }
 
@@ -119,11 +120,4 @@ class TransferStockViewModel: ViewModel() {
             })
         }
     }
-
-
-
-    /*override fun onCleared() {
-        super.onCleared()
-        realm.close()
-    }*/
 }
