@@ -1341,7 +1341,7 @@ private fun ExpandableListItem(
 }
 
 @Composable
-private fun RowScope.TableCell(
+fun RowScope.TableCell(
     text: String,
     weight: Float,
     title:Boolean=false,

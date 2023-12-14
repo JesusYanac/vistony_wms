@@ -32,6 +32,7 @@ sealed class Routes(val route: String,val title:String,val icon:Int,val value:In
 
     object TrackingSSCC : Routes("TrackingSSCC","Tracking del Palet", R.drawable.ic_baseline_palet_on_24,0)
     object ProdcnTrmReport : Routes("ProdcnTrmReport","Recibo de producción", R.drawable.ic_baseline_factory_24,0)
+    object TransferStock : Routes("TransferStock","Transferencia de Stock", R.drawable.ic_baseline_palet_on_24,0)
 }
 
 val RoutesOptionDashboard = listOf(
@@ -47,5 +48,6 @@ val RoutesOptionDashboard = listOf(
     Routes.Inventory,
     Routes.TrackingSSCC,
     Routes.ImprimirEtiqueta,
-    Routes.ProdcnTrmReport
+    Routes.ProdcnTrmReport,
+    Routes.TransferStock
 )

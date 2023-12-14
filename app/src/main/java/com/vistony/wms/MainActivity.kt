@@ -82,7 +82,8 @@ class MainActivity : ComponentActivity(),Observer{
                         Routes.MerchandiseMovementDetail.route,
                         Routes.ImprimirEtiquetaSSCC.route,
                         Routes.TrackingSSCC.route,
-                        Routes.ProdcnTrmReport.route
+                        Routes.ProdcnTrmReport.route,
+                        Routes.TransferStock.route
                     )
                 ) {
 
@@ -405,6 +406,14 @@ class MainActivity : ComponentActivity(),Observer{
 
                 composable(Routes.ProdcnTrmReport.route) {
                     ProductionReceiptScreen(
+                        navController = navController,
+                        context = applicationContext,
+                        zebraViewModel=zebraViewModel
+                    )
+                }
+
+                composable(Routes.TransferStock.route) {
+                    TransferStockScreen(
                         navController = navController,
                         context = applicationContext,
                         zebraViewModel=zebraViewModel

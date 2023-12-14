@@ -194,10 +194,10 @@ class ItemsViewModel(flag:String): ViewModel() {
         for (j in 0 until elements.size) {
             when (j) {
                 0 -> {
-                    itemCode= elements.get(j)
+                    itemCode= elements[j]
                 }
                 1 -> {
-                    batch = elements.get(j)
+                    batch = elements[j]
                 }
             }
         }
