@@ -17,6 +17,8 @@ import androidx.compose.material.AlertDialog
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -39,14 +41,13 @@ fun TransferStockDialog(
     scannedWarehouseCode2: MutableState<String>,
     cantidad: MutableState<String>,
     onDialogDismiss: () -> Unit,
-    onConfirm: (Boolean) -> Unit
+    onConfirm: (Boolean) -> Unit,
 ) {
     if (isDialogVisible) {
         AlertDialog(
             onDismissRequest = {
                 onDialogDismiss()
             },
-
             title = {
                 Text(scannedArticleCode.value.split("|")[1], textAlign = TextAlign.Center)
             },
@@ -58,7 +59,7 @@ fun TransferStockDialog(
                         item {
                             Editext(
                                 status = true,
-                                text = scannedArticleCode,
+                                text = remember { mutableStateOf(scannedArticleCode.value.split("|")[0]) },
                                 placeholder = "Ingrese Codigo",
                                 label = "Codigo",
                                 painter = painterResource(id = R.drawable.ic_baseline_file_copy_24),
@@ -76,6 +77,22 @@ fun TransferStockDialog(
                                 text = cantidad,
                                 placeholder = "Ingrese Cantidad",
                                 label = "Cantidad",
+                                painter = painterResource(id = R.drawable.ic_baseline_numbers_24),
+                                keyboardType = KeyboardType.Number,
+                                limitCharacters = 254
+                            )
+                        }
+
+                        item {
+                            Spacer(modifier = Modifier.height(10.dp))
+                        }
+
+                        item {
+                            Editext(
+                                status = true,
+                                text = remember { mutableStateOf(scannedArticleCode.value.split("|")[2]) },
+                                placeholder = "Ingrese Lote",
+                                label = "Lote",
                                 painter = painterResource(id = R.drawable.ic_baseline_numbers_24),
                                 keyboardType = KeyboardType.Number,
                                 limitCharacters = 254

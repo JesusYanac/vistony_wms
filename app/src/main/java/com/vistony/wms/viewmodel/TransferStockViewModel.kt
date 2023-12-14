@@ -7,13 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.vistony.wms.model.TransfersLayout
 import com.vistony.wms.model.TransfersLayoutDetail
-import com.vistony.wms.model.Warehouses
 import io.realm.Realm
-import io.realm.RealmList
-import io.realm.RealmResults
-import io.realm.kotlin.syncSession
-import io.realm.mongodb.sync.SyncConfiguration
-import org.bson.Document
 
 
 class TransferStockViewModel: ViewModel() {
@@ -59,7 +53,12 @@ class TransferStockViewModel: ViewModel() {
             })
         }
     }    // Función para insertar una nueva transferencia en Realm
-    fun insertTransfersLayout(codePalet: String, codeAlmacen1: String, codeAlmacen2: String, cantidad: String) {
+    fun insertTransfersLayout(
+        codePalet: String,
+        codeAlmacen1: String,
+        codeAlmacen2: String,
+        cantidad: String,
+    ) {
         // Create a new TransfersLayout object
         val transfersLayout = TransfersLayout()
         transfersLayout.codeSAP = 0

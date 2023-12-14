@@ -18,6 +18,7 @@ import androidx.compose.ui.draw.*
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.text.font.*
 import androidx.compose.ui.unit.*
+import androidx.core.text.isDigitsOnly
 import androidx.lifecycle.viewmodel.compose.*
 import androidx.navigation.*
 import com.vistony.wms.component.*
@@ -38,6 +39,8 @@ fun TransferStockScreen(navController: NavHostController, context: Context, zebr
     val scannedWarehouseCode2: MutableState<String> = remember { mutableStateOf("") }
 
     val cantidad: MutableState<String> = remember { mutableStateOf("0") }
+    val lote: MutableState<String> = remember { mutableStateOf("0") }
+
     val transferStockViewModel: TransferStockViewModel = viewModel(
         factory = TransferStockViewModel.TransferStockViewModelFactory()
     )
@@ -60,20 +63,30 @@ fun TransferStockScreen(navController: NavHostController, context: Context, zebr
         }
     }
     fun handleCode39Scan() {
-        if (zebraValue.value.Payload.contains("|")) {
-            scannedArticleCode.value = zebraValue.value.Payload
-        } else {
+        if (zebraValue.value.Payload.contains("-")) {
             scannedWarehouseCode.value = zebraValue.value.Payload
             handleWarehouseCodeScan()
+        } else {
+            scannedArticleCode.value = zebraValue.value.Payload
+        }
+    }
+    fun handleCodeEAN128Scan() {
+        if (zebraValue.value.Payload.contains("-")) {
+            scannedWarehouseCode.value = zebraValue.value.Payload
+            handleWarehouseCodeScan()
+        } else {
+            scannedArticleCode.value = zebraValue.value.Payload
         }
     }
     fun showQRCodeMismatchError() {
         Toast.makeText(context, "El rotulado escaneado no corresponde a un código QR", Toast.LENGTH_LONG).show()
     }
     fun handleScannedData() {
+        Log.e("jesusdebug1", zebraValue.value.Type)
         when (zebraValue.value.Type) {
             "LABEL-TYPE-QRCODE" -> handleQRCodeScan()
             "LABEL-TYPE-CODE39" -> handleCode39Scan()
+            "LABEL-TYPE-EAN128" -> handleCodeEAN128Scan()
             else -> showQRCodeMismatchError()
         }
 
@@ -86,7 +99,7 @@ fun TransferStockScreen(navController: NavHostController, context: Context, zebr
             scannedArticleCode.value,
             scannedWarehouseCode1.value,
             scannedWarehouseCode2.value,
-            cantidad.value
+            cantidad.value,
         )
     }
     if (zebraValue.value.Payload.isNotEmpty()) {
@@ -158,7 +171,7 @@ fun TransferenciaPalet(item: TransfersLayout) {
 
 
     val detail = item.detail.first()!!
-    val codeArticulo = detail.sscc
+    val codeArticulo = if(detail.itemCode.contains("|")) detail.itemCode.split("|")[0] else detail.sscc
     val valueArticulo = detail.itemName
     val cantidad = detail.quantity
     val origen = detail.binOrigin

@@ -94,7 +94,7 @@ class LoginViewModel(context: Context): ViewModel() {
 
             val configPrivate= SyncConfiguration
                 .Builder(realmSync.currentUser(), realmSync.currentUser()?.id.toString())
-                .schemaVersion(3)
+                .schemaVersion(5)
                 .build()
 
             Realm.setDefaultConfiguration(configPrivate)
