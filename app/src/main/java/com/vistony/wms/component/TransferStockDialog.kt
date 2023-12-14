@@ -58,7 +58,7 @@ fun TransferStockDialog(
                     LazyColumn {
                         item {
                             Editext(
-                                status = true,
+                                status = false,
                                 text = remember { mutableStateOf(scannedArticleCode.value.split("|")[0]) },
                                 placeholder = "Ingrese Codigo",
                                 label = "Codigo",
@@ -89,7 +89,7 @@ fun TransferStockDialog(
 
                         item {
                             Editext(
-                                status = true,
+                                status = false,
                                 text = remember { mutableStateOf(scannedArticleCode.value.split("|")[2]) },
                                 placeholder = "Ingrese Lote",
                                 label = "Lote",
@@ -105,7 +105,7 @@ fun TransferStockDialog(
 
                         item {
                             Editext(
-                                status = true,
+                                status = false,
                                 text = scannedWarehouseCode1,
                                 placeholder = "Ingrese almacén origen",
                                 label = "Almacen Origen",
@@ -120,7 +120,7 @@ fun TransferStockDialog(
 
                         item {
                             Editext(
-                                status = true,
+                                status = false,
                                 text = scannedWarehouseCode2,
                                 placeholder = "Ingrese almacén destino",
                                 label = "Almacen Destino",

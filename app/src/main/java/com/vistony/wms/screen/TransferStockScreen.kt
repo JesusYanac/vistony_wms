@@ -18,7 +18,6 @@ import androidx.compose.ui.draw.*
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.text.font.*
 import androidx.compose.ui.unit.*
-import androidx.core.text.isDigitsOnly
 import androidx.lifecycle.viewmodel.compose.*
 import androidx.navigation.*
 import com.vistony.wms.component.*
@@ -44,6 +43,7 @@ fun TransferStockScreen(navController: NavHostController, context: Context, zebr
     val transferStockViewModel: TransferStockViewModel = viewModel(
         factory = TransferStockViewModel.TransferStockViewModelFactory()
     )
+
 
 
     fun handleQRCodeScan() {
@@ -125,13 +125,20 @@ fun TransferStockScreen(navController: NavHostController, context: Context, zebr
     Scaffold(
         topBar = { TopBarWithBackPress(title = "Transferencia de Stock", onButtonClicked = (navController::popBackStack)) }
     ) {
-        TransferenciaPaletList(transferStockViewModel.transfersLayoutList.value)
+        TransferenciaPaletList(
+            key = transferStockViewModel.transfersLayoutList.value.hashCode(),
+            transfersLayoutList = transferStockViewModel.transfersLayoutList.value
+        )
+
     }
 }
 
 
 @Composable
-fun TransferenciaPaletList(transfersLayoutList: List<TransfersLayout>?) {
+fun TransferenciaPaletList(transfersLayoutList: List<TransfersLayout>?, key: Int) {
+    // Invierte la lista si no es nula
+   // val reversedList = transfersLayoutList?.asReversed()
+
     LazyColumn(
         modifier = Modifier
             .padding(top = 20.dp)

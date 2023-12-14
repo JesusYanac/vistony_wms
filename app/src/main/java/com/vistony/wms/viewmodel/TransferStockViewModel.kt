@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModelProvider
 import com.vistony.wms.model.TransfersLayout
 import com.vistony.wms.model.TransfersLayoutDetail
 import io.realm.Realm
+import io.realm.Sort
 
 
 class TransferStockViewModel: ViewModel() {
@@ -39,7 +40,9 @@ class TransferStockViewModel: ViewModel() {
                         if (realm.isClosed) {
                             return
                         }
-                        val transfersLayoutList = realm.where(TransfersLayout::class.java).findAll()
+                        val transfersLayoutList = realm.where(TransfersLayout::class.java)
+                            .sort("createAt", Sort.DESCENDING) // Reemplaza 'timestampField' con el campo de tiempo que estás usando
+                            .limit(50).findAll()
                         Log.e("jesusdebug", "TransferStockViewModel-loadTransfersLayoutList-transfersLayoutList $transfersLayoutList")
                         _transfersLayoutList.postValue(transfersLayoutList)
                     } catch (e: Exception) {
