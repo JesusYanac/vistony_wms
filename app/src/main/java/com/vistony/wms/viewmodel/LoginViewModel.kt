@@ -20,19 +20,36 @@ import kotlinx.coroutines.flow.StateFlow
 import okhttp3.OkHttpClient
 import org.bson.Document
 
+
 class LoginViewModel(context: Context): ViewModel() {
 
    // private var context:Context = context
+    private val realmSync by lazy {
+        val appConfiguration = when {
+            // Perú
+            /* Producción */ false -> AppConfiguration.Builder("appwms-bckdu").build()
 
-    private val realmSync by lazy { //conexion a mongodb
-        //App(AppConfiguration.Builder("appwms-bckdu").build())//Peru
-        //App(AppConfiguration.Builder("appwms_ec-eqiog").build())//Ecuador
-        //App(AppConfiguration.Builder("appwms_bo-uolsk").build())//Bolivia
-        //App(AppConfiguration.Builder("appwms_pe-jcvkm").build())//Test 17/07/2023
-        App(AppConfiguration.Builder("appwms-bckdu").build())//Peru Produccion 14/08/2023
-        //App(AppConfiguration.Builder("appwms_py-ruehz").build())//Inventario Paraguay 14/08/2023
-        //App(AppConfiguration.Builder("appwms_cl-kqwdq").build())//Inventario Chile 04/09/2023
+            // Ecuador
+            /* Producción */ false -> AppConfiguration.Builder("appwms_ec-eqiog").build()
+
+            // Bolivia
+            /* Producción */ false -> AppConfiguration.Builder("appwms_bo-uolsk").build()
+
+            // Paraguay
+            /* Producción */ false -> AppConfiguration.Builder("appwms_py-ruehz").build()
+
+            // Chile
+            /* Producción */ true -> AppConfiguration.Builder("appwms_cl-kqwdq").build()
+
+            // Agrega más países según sea necesario
+
+            // Por defecto
+            else -> TODO() // Define una configuración por defecto o manejo de error
+        }
+
+        App(appConfiguration)
     }
+
 
     private val _login = MutableStateFlow(LoginCustom(realmSync,0, message = ""))
     val login: StateFlow<LoginCustom> get() = _login
@@ -56,7 +73,7 @@ class LoginViewModel(context: Context): ViewModel() {
             if(it.isSuccess){
 
                 Log.e("JEPICAME","==> CERROS ESION EXITOSAMENTE >"+_login.value.status)
-                onResultConsumed(4)
+                onResultConsumed(6)
                 //val intent = Intent(context, MainActivity::class.java)
                 //context.startActivity(intent)
                 System.exit(0)
