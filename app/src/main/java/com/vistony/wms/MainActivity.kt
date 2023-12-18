@@ -15,6 +15,7 @@ import androidx.navigation.compose.rememberNavController
 import com.vistony.wms.model.*
 import com.vistony.wms.screen.*
 import com.vistony.wms.util.*
+import com.vistony.wms.viewmodel.TransferStockViewModel
 import com.vistony.wms.viewmodel.ZebraViewModel
 import io.realm.Realm
 import kotlinx.coroutines.launch
@@ -27,7 +28,7 @@ class MainActivity : ComponentActivity(),Observer{
     private val dwInterface = DWInterface()
     private val receiver = DWReceiver()
     private var version65OrOver = false
-   // private var initialized = false
+    // private var initialized = false
 
     private var zebraViewModel: ZebraViewModel=ZebraViewModel()
     private var users:Users =Users()
@@ -69,44 +70,30 @@ class MainActivity : ComponentActivity(),Observer{
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        Log.e(
-            "REOS",
-            "MainActivity-nNewIntent-ini "
-        )
-
         try {
-
             if (intent.hasExtra(DWInterface.DATAWEDGE_SCAN_EXTRA_DATA_STRING)) {
-                if (navController.currentDestination?.route in listOf(
-                        Routes.InventoryDetail.route,
-                        Routes.MerchandiseMovementDetail.route,
-                        Routes.ImprimirEtiquetaSSCC.route,
-                        Routes.TrackingSSCC.route,
-                        Routes.ProdcnTrmReport.route,
-                        Routes.TransferStock.route
-                    )
-                ) {
+                val currentRoute = navController.currentDestination?.route
+                val allowedRoutes = listOf(
+                    Routes.InventoryDetail.route,
+                    Routes.MerchandiseMovementDetail.route,
+                    Routes.ImprimirEtiquetaSSCC.route,
+                    Routes.TrackingSSCC.route,
+                    Routes.ProdcnTrmReport.route,
+                    Routes.TransferStock.route
+                )
 
-                    Log.e(
-                        "REOS",
-                        "MainActivity-nNewIntent-intent.getStringExtra(DWInterface.DATAWEDGE_SCAN_EXTRA_LABEL_TYPE: "+ intent.getStringExtra(DWInterface.DATAWEDGE_SCAN_EXTRA_LABEL_TYPE)
-                            .toString()
-                    )
-
+                if (currentRoute in allowedRoutes) {
                     zebraViewModel.setData(
                         zebraPayload(
-                            Payload = intent.getStringExtra(DWInterface.DATAWEDGE_SCAN_EXTRA_DATA_STRING)
-                                .toString(),
-                            Type = intent.getStringExtra(DWInterface.DATAWEDGE_SCAN_EXTRA_LABEL_TYPE)
-                                .toString()
+                            Payload = intent.getStringExtra(DWInterface.DATAWEDGE_SCAN_EXTRA_DATA_STRING).orEmpty(),
+                            Type = intent.getStringExtra(DWInterface.DATAWEDGE_SCAN_EXTRA_LABEL_TYPE).orEmpty()
                         )
                     )
                 }
             }
-        }catch (e:Exception){
-            Log.e("REOS","MainActivity-nNewIntent-error:"+e.toString())
+        } catch (e: Exception) {
+            Log.e("REOS", "MainActivity-nNewIntent-error: $e")
         }
-
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -183,9 +170,9 @@ class MainActivity : ComponentActivity(),Observer{
                         //flagSesion=flag,
                         afterLogin={ userSesion ->
                             users=userSesion
-                           /* if(thread.isInterrupted){
-                                thread.start()
-                            }*/
+                            /* if(thread.isInterrupted){
+                                 thread.start()
+                             }*/
 
                             navController.navigate("Dashboard/userName=${userSesion.FirstName}&userWhs=AN001&userId=${userSesion.EmployeeId}&location=${userSesion.Branch}")
 

@@ -9,6 +9,7 @@ import java.util.Date
 
 open class TransfersLayout(
     var realm_id: String="",
+    var response: String="",
     var codeSAP: Int = 0,
     var owner: Int = 0,
     var createAt: Date = Date(),

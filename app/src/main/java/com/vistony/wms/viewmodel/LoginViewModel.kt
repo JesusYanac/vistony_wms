@@ -1,14 +1,11 @@
 package com.vistony.wms.viewmodel
 
 import android.content.Context
-import android.content.Intent
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.vistony.wms.MainActivity
 import com.vistony.wms.model.Login
 import com.vistony.wms.model.LoginCustom
-import com.vistony.wms.model.Users
 import io.realm.Realm
 import io.realm.mongodb.App
 import io.realm.mongodb.AppConfiguration
@@ -17,39 +14,31 @@ import io.realm.mongodb.User
 import io.realm.mongodb.sync.SyncConfiguration
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import okhttp3.OkHttpClient
 import org.bson.Document
 
 
 class LoginViewModel(context: Context): ViewModel() {
 
-   // private var context:Context = context
-    private val realmSync by lazy {
-        val appConfiguration = when {
+    // private var context:Context = context
+    private val realmSync by lazy { App(getAppConfigurationForCountry()) }
+    private fun getAppConfigurationForCountry(): AppConfiguration {
+        // Lógica para determinar la configuración de la aplicación según el país
+        // Devuelve la configuración correspondiente o lanza una excepción si no se encuentra
+        return when {
             // Perú
             /* Producción */ false -> AppConfiguration.Builder("appwms-bckdu").build()
-
             // Ecuador
             /* Producción */ false -> AppConfiguration.Builder("appwms_ec-eqiog").build()
-
             // Bolivia
             /* Producción */ false -> AppConfiguration.Builder("appwms_bo-uolsk").build()
-
             // Paraguay
-            /* Producción */ false -> AppConfiguration.Builder("appwms_py-ruehz").build()
-
+            /* Producción */ true -> AppConfiguration.Builder("appwms_py-ruehz").build()
             // Chile
-            /* Producción */ true -> AppConfiguration.Builder("appwms_cl-kqwdq").build()
-
-            // Agrega más países según sea necesario
-
-            // Por defecto
-            else -> TODO() // Define una configuración por defecto o manejo de error
+            /* Producción */ false -> AppConfiguration.Builder("appwms_cl-kqwdq").build()
+            // Agregar más países según sea necesario
+            else -> throw IllegalStateException("No se ha encontrado una configuración para el país actual")
         }
-
-        App(appConfiguration)
     }
-
 
     private val _login = MutableStateFlow(LoginCustom(realmSync,0, message = ""))
     val login: StateFlow<LoginCustom> get() = _login
@@ -111,7 +100,7 @@ class LoginViewModel(context: Context): ViewModel() {
 
             val configPrivate= SyncConfiguration
                 .Builder(realmSync.currentUser(), realmSync.currentUser()?.id.toString())
-                .schemaVersion(5)
+                .schemaVersion(8)
                 .build()
 
             Realm.setDefaultConfiguration(configPrivate)
@@ -154,7 +143,7 @@ class LoginViewModel(context: Context): ViewModel() {
 
                     val configPrivate= SyncConfiguration
                         .Builder(userSion, userSion.id)
-                        .schemaVersion(3)
+                        .schemaVersion(9)
                         .build()
 
                     Realm.setDefaultConfiguration(configPrivate)

@@ -16,7 +16,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.AlertDialog
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.State
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -27,29 +28,52 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.vistony.wms.component.Editext
-import com.vistony.wms.screen.TableCell
 import com.vistony.wms.R
-
+import com.vistony.wms.component.Editext
+import com.vistony.wms.component.Editext2
+import com.vistony.wms.screen.TableCell
 import com.vistony.wms.ui.theme.AzulVistony202
+import com.vistony.wms.viewmodel.TransferStockViewModel
 
 @Composable
 fun TransferStockDialog(
-    isDialogVisible: Boolean,
-    scannedArticleCode: MutableState<String>,
-    scannedWarehouseCode1: MutableState<String>,
-    scannedWarehouseCode2: MutableState<String>,
-    cantidad: MutableState<String>,
-    onDialogDismiss: () -> Unit,
-    onConfirm: (Boolean) -> Unit,
+    transferStockViewModel: TransferStockViewModel
 ) {
-    if (isDialogVisible) {
+
+    val showPopup = transferStockViewModel.showPopup.collectAsState()
+    val codeProduct: State<String> = transferStockViewModel.codeProduct.collectAsState()
+    val nameProduct: State<String> = transferStockViewModel.nameProduct.collectAsState()
+    val amount: State<String> = transferStockViewModel.amount.collectAsState()
+    val batch: State<String> = transferStockViewModel.batch.collectAsState()
+    val codeSSCC: State<String> = transferStockViewModel.codeSSCC.collectAsState()
+
+    val codeWarehouseOrigen: State<String> = transferStockViewModel.codeWarehouseOrigen.collectAsState()
+    val codeWarehouseDestino: State<String> = transferStockViewModel.codeWarehouseDestino.collectAsState()
+
+    val nombre = remember { mutableStateOf("") }
+    val codigoProducto = remember { mutableStateOf("") }
+    val lote = remember { mutableStateOf("") }
+    val cantidad = remember { mutableStateOf("") }
+
+    nombre.value = nameProduct.value
+    codigoProducto.value = codeProduct.value
+    lote.value = batch.value
+    cantidad.value = amount.value
+
+    val almacenOrigen = remember { mutableStateOf("") }
+    val almacenDestino = remember { mutableStateOf("") }
+
+    almacenOrigen.value = codeWarehouseOrigen.value
+    almacenDestino.value = codeWarehouseDestino.value
+
+
+    if (showPopup.value) {
         AlertDialog(
             onDismissRequest = {
-                onDialogDismiss()
+                transferStockViewModel.closePopUp()
             },
             title = {
-                Text(scannedArticleCode.value.split("|")[1], textAlign = TextAlign.Center)
+                Text(nombre.value, textAlign = TextAlign.Center)
             },
 
             text = {
@@ -59,7 +83,7 @@ fun TransferStockDialog(
                         item {
                             Editext(
                                 status = false,
-                                text = remember { mutableStateOf(scannedArticleCode.value.split("|")[0]) },
+                                text = codigoProducto,
                                 placeholder = "Ingrese Codigo",
                                 label = "Codigo",
                                 painter = painterResource(id = R.drawable.ic_baseline_file_copy_24),
@@ -72,14 +96,15 @@ fun TransferStockDialog(
                         }
 
                         item {
-                            Editext(
-                                status = true,
+                            Editext2(
+                                status = (codeSSCC.value == "0" || codeSSCC.value == ""),
                                 text = cantidad,
                                 placeholder = "Ingrese Cantidad",
                                 label = "Cantidad",
                                 painter = painterResource(id = R.drawable.ic_baseline_numbers_24),
                                 keyboardType = KeyboardType.Number,
-                                limitCharacters = 254
+                                limitCharacters = 254,
+                                transferStockViewModel = transferStockViewModel
                             )
                         }
 
@@ -90,7 +115,7 @@ fun TransferStockDialog(
                         item {
                             Editext(
                                 status = false,
-                                text = remember { mutableStateOf(scannedArticleCode.value.split("|")[2]) },
+                                text = lote,
                                 placeholder = "Ingrese Lote",
                                 label = "Lote",
                                 painter = painterResource(id = R.drawable.ic_baseline_numbers_24),
@@ -106,7 +131,7 @@ fun TransferStockDialog(
                         item {
                             Editext(
                                 status = false,
-                                text = scannedWarehouseCode1,
+                                text = almacenOrigen,
                                 placeholder = "Ingrese almacén origen",
                                 label = "Almacen Origen",
                                 painter = painterResource(id = R.drawable.ic_baseline_packing_24),
@@ -121,7 +146,7 @@ fun TransferStockDialog(
                         item {
                             Editext(
                                 status = false,
-                                text = scannedWarehouseCode2,
+                                text = almacenDestino,
                                 placeholder = "Ingrese almacén destino",
                                 label = "Almacen Destino",
                                 painter = painterResource(id = R.drawable.ic_baseline_packing_24),
@@ -143,7 +168,7 @@ fun TransferStockDialog(
                     ButtonView(
                         description = "Cancelar",
                         OnClick = {
-                            onDialogDismiss()
+                            transferStockViewModel.closePopUp()
                         },
                         context = LocalContext.current,
                         backGroundColor = Color.Gray,
@@ -154,9 +179,13 @@ fun TransferStockDialog(
                     ButtonView(
                         description = "Confirmar",
                         OnClick = {
+                            val all_IsOk = transferStockViewModel.isDataValid();
+                            if(all_IsOk){
+                                transferStockViewModel.insertTransfersLayout() // devolver true luego de validar los campos en el popup
 
-                            onConfirm(true) // devolver true luego de validar los campos en el popup
-                            onDialogDismiss()
+                                //transferStockViewModel.loadTransfersLayoutList()
+                                transferStockViewModel.closePopUp()
+                            }
                         },
                         context = LocalContext.current,
                         backGroundColor = AzulVistony202,
