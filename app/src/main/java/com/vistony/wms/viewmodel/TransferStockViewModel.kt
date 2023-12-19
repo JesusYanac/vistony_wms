@@ -196,11 +196,6 @@ class TransferStockViewModel: ViewModel() {
         // Add the detail object to the transfersLayout
         transfersLayout.detail.add(transfersLayoutDetail)
 
-
-
-
-
-
         return transfersLayout
     }
 
@@ -221,8 +216,8 @@ class TransferStockViewModel: ViewModel() {
         _lastCodeQRScanned.value = _lastPayloadCodeScanned.value
         // obtener datos del rotulado
         _codeProduct.value = _lastCodeQRScanned.value.split("|")[0]
-        _nameProduct.value = _lastCodeQRScanned.value.split("|")[1]
-        _batch.value = _lastCodeQRScanned.value.split("|")[2]
+        _nameProduct.value = _lastCodeQRScanned.value.split("|")[2]
+        _batch.value = _lastCodeQRScanned.value.split("|")[1]
     }
     fun handleWarehouseCodeScan() {
         val code = _lastCodeBar39Scanned.value
@@ -263,7 +258,8 @@ class TransferStockViewModel: ViewModel() {
     fun setAmount(it: String) {
         _amount.value = it
     }
-    fun getSSCC(code: String) {
+    fun getSSCC(codeSSCC: String) {
+        val code:String = codeSSCC.substring(2)
         Log.e("jesusdebug", "getSSCC: $code")
         viewModelScope.launch(Dispatchers.Default) {
             APIService.getInstance()

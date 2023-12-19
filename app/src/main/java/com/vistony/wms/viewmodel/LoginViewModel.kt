@@ -26,13 +26,13 @@ class LoginViewModel(context: Context): ViewModel() {
         // Devuelve la configuración correspondiente o lanza una excepción si no se encuentra
         return when {
             // Perú
-            /* Producción */ false -> AppConfiguration.Builder("appwms-bckdu").build()
+            /* Producción */ true -> AppConfiguration.Builder("appwms-bckdu").build()
             // Ecuador
             /* Producción */ false -> AppConfiguration.Builder("appwms_ec-eqiog").build()
             // Bolivia
             /* Producción */ false -> AppConfiguration.Builder("appwms_bo-uolsk").build()
             // Paraguay
-            /* Producción */ true -> AppConfiguration.Builder("appwms_py-ruehz").build()
+            /* Producción */ false -> AppConfiguration.Builder("appwms_py-ruehz").build()
             // Chile
             /* Producción */ false -> AppConfiguration.Builder("appwms_cl-kqwdq").build()
             // Agregar más países según sea necesario
@@ -100,7 +100,7 @@ class LoginViewModel(context: Context): ViewModel() {
 
             val configPrivate= SyncConfiguration
                 .Builder(realmSync.currentUser(), realmSync.currentUser()?.id.toString())
-                .schemaVersion(8)
+                .schemaVersion(1)
                 .build()
 
             Realm.setDefaultConfiguration(configPrivate)
@@ -143,7 +143,7 @@ class LoginViewModel(context: Context): ViewModel() {
 
                     val configPrivate= SyncConfiguration
                         .Builder(userSion, userSion.id)
-                        .schemaVersion(9)
+                        .schemaVersion(2)
                         .build()
 
                     Realm.setDefaultConfiguration(configPrivate)

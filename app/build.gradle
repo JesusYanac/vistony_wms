@@ -13,8 +13,8 @@ android {
         applicationId "com.vistony.wms"
         minSdk 26
         targetSdk 31
-        versionCode 1
-        versionName "1.1.20"
+        versionCode 2
+        versionName "1.1.21"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary true
@@ -35,13 +35,13 @@ android {
         //buildConfigField('String' , 'API_URL', '"http://190.12.79.132:8082/pe_test/vs1.0/"')        //TEST PERU 24/07/2023 PUBLICO
         //buildConfigField('String' , 'API_URL', '"http://192.168.254.20:8082/pe_test/vs1.0/"')        //TEST PERU 24/07/2023 PRIVADO
         //buildConfigField('String' , 'API_URL', '""')        //TEST PERU 24/07/2023 PRUEBA PICKING
-        buildConfigField('String' , 'API_URL', '"http://190.12.79.132:8082/py/"')        //INVENTARIO - PARAGUAY
+        //buildConfigField('String' , 'API_URL', '"http://190.12.79.132:8082/py/"')        //INVENTARIO - PARAGUAY
         //buildConfigField('String' , 'API_URL', '"http://190.12.79.132:8082/cl/"')        //INVENTARIO - CHILE 04/09/2023
         //buildConfigField('String' , 'API_URL', '"http://190.12.79.132:8082/bo/"')        //INVENTARIO - BOLIVIA
 
 //buildConfigField('String' , 'API_URL', '"https://wms.vistony.pe/vs1.0/"')        //SUMINISTROS/PRODUCCION - PERU 1.1.7
 //buildConfigField('String' , 'API_URL', '"http://190.12.79.132:8082/pe/vs1.0/"')        //SUMINISTROS/PRODUCCION - PERU 1.1.7
-//buildConfigField('String' , 'API_URL', '"http://192.168.254.20:8082/pe/vs1.0/"')        //SUMINISTROS/PRODUCCION - PERU 1.1.7
+buildConfigField('String' , 'API_URL', '"http://192.168.254.20:8082/pe/vs1.0/"')        //SUMINISTROS/PRODUCCION - PERU 1.1.7
     }
 
     buildTypes {

@@ -92,7 +92,7 @@ fun Editext2(
             value = text.value,
             onValueChange =
             {
-                if (it.length <= limitCharacters && it.matches(Regex("\\d+"))) {
+                if (it.isEmpty() || (it.length <= limitCharacters && it.matches(Regex("\\d+")))) {
                     text.value = it
                     transferStockViewModel.setAmount(it)
                 }
