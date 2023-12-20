@@ -22,3 +22,7 @@ val ColorOrigin = Color(0xFFF5EDAB)
 val ColorDestine= Color(0xFFA0DAA2)
 val ColorRowDestine= Color(0xAEEE7A71)
 
+//val BlueVistony= Color(0 ,94 ,168)
+val BlueVistony = Color(9, 87, 195)
+val RedVistony = Color(226, 0, 26)
+val WhiteVistony = Color(0xFFFFFFFF)

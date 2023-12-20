@@ -1355,7 +1355,7 @@ fun RowScope.TableCell(
             Modifier
                 .weight(weight)
                 .padding(7.dp),
-            fontSize = 15.sp,
+            fontSize = 13.sp,
             fontWeight = FontWeight.Bold,
             color = color,
             textAlign =textAlign

@@ -40,8 +40,8 @@ android {
         //buildConfigField('String' , 'API_URL', '"http://190.12.79.132:8082/bo/"')        //INVENTARIO - BOLIVIA
 
 //buildConfigField('String' , 'API_URL', '"https://wms.vistony.pe/vs1.0/"')        //SUMINISTROS/PRODUCCION - PERU 1.1.7
-//buildConfigField('String' , 'API_URL', '"http://190.12.79.132:8082/pe/vs1.0/"')        //SUMINISTROS/PRODUCCION - PERU 1.1.7
-buildConfigField('String' , 'API_URL', '"http://192.168.254.20:8082/pe/vs1.0/"')        //SUMINISTROS/PRODUCCION - PERU 1.1.7
+buildConfigField('String' , 'API_URL', '"http://190.12.79.132:8082/pe/vs1.0/"')        //SUMINISTROS/PRODUCCION - PERU 1.1.7
+//buildConfigField('String' , 'API_URL', '"http://192.168.254.20:8082/pe/vs1.0/"')        //SUMINISTROS/PRODUCCION - PERU 1.1.7
     }
 
     buildTypes {

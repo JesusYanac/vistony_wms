@@ -2,6 +2,7 @@ package com.vistony.wms.util
 
 import com.vistony.wms.BuildConfig
 import com.vistony.wms.model.*
+import com.vistony.wms.model.finditem.FindItemEntity
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import okhttp3.OkHttpClient
@@ -33,7 +34,8 @@ interface APIService {
     @GET("Inventory/getItem")
     fun getArticleFromBatchQrEspecial(@Query("itemCode") itemCode:String): Call<ProductFromBatch>
 
-
+    @GET("/pe/vs1.0/Inventory/GetItemLayout")
+    fun getFindItem(@Query("itemCode") itemCode: String?): Call<FindItemEntity>
 
     companion object {
         private var apiService: APIService? = null
