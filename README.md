@@ -31,50 +31,53 @@ La interfaz de usuario utiliza Jetpack Compose para proporcionar un diseño mode
 # Instalación
 ## Clonar el Repositorio:
 
-'''
+```
 git clone https://github.com/TuUsuario/WMS.git
-'''
+```
 
 ## Configuración del Proyecto:
 * Cambiar la ruta de la key
 * Cambiar las direcciones de las api
 * Cambiar la version de la db realm
-## Ejecución:
-
+  
+# Ejecución:
+```
 cd WMS
 ./gradlew :app:run  # o comando específico para ejecutar la aplicación
-Configuración y Uso
+```
+## Configuración y Uso
 Configuración de la Base de Datos:
 
 [Instrucciones para configurar la conexión con MongoDB Atlas]
-Selección de Base de Datos por País:
+## Selección de Base de Datos por País:
 
 [Instrucciones sobre cómo cambiar y configurar la base de datos según el país]
-Uso de la Aplicación:
+## Uso de la Aplicación:
 
 [Instrucciones detalladas sobre cómo utilizar las funciones principales de la aplicación]
-Contribuciones
+## Contribuciones
 Agradecemos las contribuciones. Si deseas contribuir, sigue estos pasos:
 
 Crea una rama con tu nombre/descripción de la característica:
 
-bash
-Copy code
+```
 git checkout -b feature/tu-nueva-caracteristica
+```
 Haz tus cambios y realiza un commit:
 
-bash
-Copy code
+```
 git add .
 git commit -m "Añadir tu-nueva-caracteristica"
-Sube tu rama:
+```
 
-bash
-Copy code
+Sube tu rama:
+```
 git push origin feature/tu-nueva-caracteristica
+```
+
 Crea una solicitud de extracción (Pull Request) en GitHub.
 
 Licencia
-Este proyecto está bajo la Licencia [Nombre de la Licencia]. Consulta el archivo LICENSE para obtener más detalles.
+Este proyecto está bajo la Licencia Vistony. Consulta el archivo LICENSE para obtener más detalles.
 
-Personaliza este README según las necesidades específicas de tu proyecto, proporcionando detalles adicionales sobre la configuración, uso y contribuciones.
+Todos los derechos reservados 2023
