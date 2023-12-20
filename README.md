@@ -1,46 +1,46 @@
-## WMS (Warehouse Management System) - Vistony
-# Descripción
+# WMS (Warehouse Management System) - Vistony
+## Descripción
 WMS es una aplicación de gestión de almacén desarrollada para la empresa Vistony. La aplicación se centra en facilitar el movimiento de inventario entre almacenes, camiones de entrega, ingresos y traslados, permitiendo una gestión eficiente de los productos y su ubicación en tiempo real. La aplicación está construida con Jetpack Compose y sigue una arquitectura MVVM. Además, integra consultas mediante Retrofit, Realm y Atlas MongoDB para proporcionar una experiencia de usuario eficiente y escalable.
 
-##  Características Principales
-# Movimiento de Inventario: 
+#  Características Principales
+## Movimiento de Inventario: 
 Gestiona los movimientos de inventario entre almacenes, camiones de entrega y traslados.
 
-# Ubicación en Tiempo Real: 
+## Ubicación en Tiempo Real: 
 Permite un seguimiento en tiempo real de la ubicación y disponibilidad de productos.
 
-# Integración con MongoDB Atlas: 
+## Integración con MongoDB Atlas: 
 Utiliza MongoDB Atlas para almacenamiento de datos escalable y flexible.
 
-# Base de Datos Realm: 
+## Base de Datos Realm: 
 Sincronización eficiente de datos entre dispositivos y almacenamiento local con Realm.
 
-# Selección de Base de Datos por País: 
+## Selección de Base de Datos por País: 
 Puede alternar entre bases de datos específicas para diferentes países (Perú, Chile, Paraguay, España, Bolivia, Marruecos, Ecuador e India).
 
-# Diseño Moderno con Jetpack Compose: 
+## Diseño Moderno con Jetpack Compose: 
 La interfaz de usuario utiliza Jetpack Compose para proporcionar un diseño moderno y fluido.
 
-## Tecnologías Utilizadas
-Jetpack Compose
-Retrofit para consultas a API
-Arquitectura MVVM
-Realm para almacenamiento local
-MongoDB Atlas para almacenamiento remoto escalable
-[Otras tecnologías utilizadas]
-Instalación
-Clonar el Repositorio:
+# Tecnologías Utilizadas
+* Jetpack Compose
+* Retrofit para consultas a API
+* Arquitectura MVVM
+* Realm para almacenamiento local
+* MongoDB Atlas para almacenamiento remoto escalable
 
-bash
-Copy code
+# Instalación
+## Clonar el Repositorio:
+
+'''
 git clone https://github.com/TuUsuario/WMS.git
-Configuración del Proyecto:
+'''
 
-[Instrucciones específicas sobre cómo configurar el proyecto, agregar claves de API, etc.]
-Ejecución:
+## Configuración del Proyecto:
+* Cambiar la ruta de la key
+* Cambiar las direcciones de las api
+* Cambiar la version de la db realm
+## Ejecución:
 
-bash
-Copy code
 cd WMS
 ./gradlew :app:run  # o comando específico para ejecutar la aplicación
 Configuración y Uso
