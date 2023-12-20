@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -72,10 +73,11 @@ fun DialogFindItemView(
             Column(
                 modifier = Modifier
             ) {
-                Spacer(modifier = Modifier.height(90.dp))
+                Spacer(modifier = Modifier.height(0.dp))
                 Box(
                     modifier = Modifier
                         //.height(920.dp)
+                        .fillMaxSize()
                         .background(
                             //color = MaterialTheme.colorScheme.onPrimary,
                             color = MaterialTheme.colors.onPrimary,
@@ -105,8 +107,8 @@ fun DialogFindItemView(
                         }
                         Spacer(modifier = Modifier.height(5.dp))
                         Box(
-                            modifier = Modifier //.fillMaxSize()
-                                .size(550.dp)
+                            modifier = Modifier.fillMaxSize()
+                                //.size(550.dp)
                                 .clip(
                                     RoundedCornerShape(
                                         topEndPercent = 10,
@@ -142,7 +144,7 @@ fun DialogFindItemView(
                         }
                     }
                 }
-            }
+            }/*
             Box(
                 modifier = Modifier
                     .size(130.dp)
@@ -167,7 +169,7 @@ fun DialogFindItemView(
                     .size(120.dp)
                     .align(Alignment.TopCenter)
                     .padding(0.dp, 20.dp, 0.dp, 0.dp)
-            )
+            )*/
         }
     }
 }
