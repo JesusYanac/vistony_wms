@@ -76,12 +76,46 @@ class TransferStockViewModel: ViewModel() {
     val codeWarehouseOrigen: StateFlow<String> get() = _codeWarehouseOrigen
     val codeWarehouseDestino: StateFlow<String> get() = _codeWarehouseDestino
 
+    private var _cont = 0
+    private var timeFirstScan: Date? = null
+
     // Métodos para alternar el estado del popup
     fun openPopUp() {
         _showPopup.value = true
+        if(_cont == 0){
+            _cont = 1
+            timeFirstScan = Date()
+        }
     }
     fun closePopUp() {
+        // aqui reseteamos todos los valores del popup para que no queden cargados
+        _codeProduct.value = "0"
+        _nameProduct.value = "(indefinido)"
+        _codeSSCC.value = ""
+        _amount.value = "0"
+        _batch.value = "0"
+        _codeWarehouseOrigen.value = "(vacio)"
+        _codeWarehouseDestino.value = "(vacio)"
+
+        _lastPayloadCodeScanned.value = ""
+        _lastTypeCodeScanned.value = ""
+        _lastCodeQRScanned.value = ""
+        _lastCodeBar39Scanned.value = ""
+        _lastCodeBar128Scanned.value = ""
+
+        _owner.value = "0"
+        _codeSAP.value = "0"
+        _codeWarehouseOrigen.value = "(vacio)"
+        _codeWarehouseDestino.value = "(vacio)"
+
+        // carga de nuevo la lista
+        _transfersLayoutList.value = emptyList()
+        //loadTransfersLayoutList()
+
+        // Cerramos el popup
         _showPopup.value = false
+        _cont = 0
+
     }
     class TransferStockViewModelFactory : ViewModelProvider.Factory {
 
@@ -161,9 +195,9 @@ class TransferStockViewModel: ViewModel() {
         val customUserData : Document? = Realm.getInstance(Realm.getDefaultConfiguration()).syncSession.user.customData
         val employeeId=customUserData?.getInteger("EmployeeId")?:0
         transfersLayout.codeSAP = _codeSAP.value.toInt()
-        transfersLayout.createAt = time
+        transfersLayout.createAt = timeFirstScan!!
         transfersLayout.closeAt = time
-        transfersLayout.arrivalTimeSap = time
+        transfersLayout.arrivalTimeSap = timeFirstScan!!
         transfersLayout.owner = employeeId
         Log.e("jesusdebug", "transfersLayout: $transfersLayout")
         Log.e("jesusdebug", "codeSAP: ${_codeSAP.value}")

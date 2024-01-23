@@ -45,7 +45,7 @@ open class Users(
 }
 
 open class LoginCustom(
-    var app:App,
+    var app: App?,
     var status:Int,
     var message:String,
     var user:Users=Users()

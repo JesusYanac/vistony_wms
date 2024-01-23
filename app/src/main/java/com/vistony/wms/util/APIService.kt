@@ -51,7 +51,7 @@ interface APIService {
         fun getInstance() : APIService {
             if (apiService == null) {
                 apiService = Retrofit.Builder()
-                    .baseUrl(BuildConfig.API_URL)
+                    .baseUrl(DatasourceSingleton.apiUrl) // Usa la URL del singleton
                     .client(client)
                     .addConverterFactory(GsonConverterFactory.create())
                     .build().create(APIService::class.java)

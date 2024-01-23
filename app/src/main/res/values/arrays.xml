@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="domains">
+        <item>https://domain1.com</item>
+        <item>https://domain2.com</item>
+        <item>https://domain3.com</item>
+        <!-- Agrega más dominios según sea necesario -->
+    </string-array>
+</resources>

@@ -2667,8 +2667,8 @@ fun SelectCountryModal(selected: (CountryLocation) -> Unit){
         CountryLocation("PY","PARAGUAY"),
         CountryLocation("CL","CHILE"),
         CountryLocation("EC","ECUADOR"),
-        CountryLocation("BO","BOLIVIA")
-
+        CountryLocation("BO","BOLIVIA"),
+        CountryLocation("RO","ROFALAB"),
     )
 
     Column(modifier=Modifier.padding(top=20.dp, bottom = 10.dp)){
@@ -2684,13 +2684,13 @@ fun SelectCountryModal(selected: (CountryLocation) -> Unit){
             itemsIndexed(listLocation) { _, line ->
                 Row(
                     modifier = Modifier
-                        .fillMaxWidth()
+                            .fillMaxWidth()
                         .clickable(onClick = {
                             selected(line)
                         })
                         .height(55.dp)
                         .padding(start = 25.dp), verticalAlignment = Alignment.CenterVertically
-                ) {
+                    ) {
                     Icon(painter = painterResource(id = R.drawable.ic_baseline_domain_24), contentDescription = null, tint = AzulVistony202)
                     Spacer(modifier = Modifier.width(10.dp))
                     Column{

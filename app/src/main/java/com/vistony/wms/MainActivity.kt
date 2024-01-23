@@ -23,12 +23,10 @@ import java.util.*
 
 class MainActivity : ComponentActivity(),Observer{
 
-    //Declara Variables iniciaales
     private var navController = NavHostController(this)
     private val dwInterface = DWInterface()
     private val receiver = DWReceiver()
     private var version65OrOver = false
-    // private var initialized = false
 
     private var zebraViewModel: ZebraViewModel=ZebraViewModel()
     private var users:Users =Users()
@@ -39,14 +37,6 @@ class MainActivity : ComponentActivity(),Observer{
         const val PROFILE_INTENT_START_ACTIVITY = "0"
     }
 
-    /*override fun onResume() {
-        super.onResume()
-
-        if (!initialized) {
-            dwInterface.sendCommandString(this, DWInterface.DATAWEDGE_SEND_GET_VERSION, "")
-            initialized = true
-        }
-    }*/
 
     override fun onDestroy() {
         super.onDestroy()
@@ -110,31 +100,6 @@ class MainActivity : ComponentActivity(),Observer{
 
         createDataWedgeProfile()
 
-        /*val thread=Thread {
-            try{
-                val realm = Realm.getInstance(Realm.getDefaultConfiguration())
-                val syncSession= realm.syncSession
-
-                // Busca todos los objetos de la clase que se está sincronizando
-                val taskMngmt = realm.where(TaskManagement::class.java).findAll()
-
-                // Agrega un RealmChangeListener a cada objeto
-                taskMngmt.addChangeListener { changedObjects ->
-                    for (changedObject in changedObjects) {
-                        // Aquí puedes manejar los cambios en cada objeto
-                        Log.e("RealmSync", "El objeto ${changedObject._id} ha sido modificado en el servidor")
-                        Log.e("RealmSync", "El objeto ${changedObject._id} ${changedObject.CardCode}")
-                    }
-                }
-
-                syncSession.downloadAllServerChanges()
-            }catch(e:Exception){
-                Looper.prepare()
-                Toast.makeText(applicationContext, "Ocurrio un error al sincronizar la información:\n ${e.message}", Toast.LENGTH_SHORT).show()
-                Looper.loop()
-            }
-        }*/
-
         setContent {
 
             navController= rememberNavController()
@@ -156,24 +121,11 @@ class MainActivity : ComponentActivity(),Observer{
                     )
                 ) {
 
-                    /*val flag=it.arguments?.getString("status")?:"NaN"
-
-                    if(flag=="logout"){
-                        if(thread.isAlive){
-                            thread.interrupt()
-                        }
-                    }*/
-
                     LoginScreen(
                         navController = navController,
                         context=applicationContext,
-                        //flagSesion=flag,
                         afterLogin={ userSesion ->
                             users=userSesion
-                            /* if(thread.isInterrupted){
-                                 thread.start()
-                             }*/
-
                             navController.navigate("Dashboard/userName=${userSesion.FirstName}&userWhs=AN001&userId=${userSesion.EmployeeId}&location=${userSesion.Branch}")
 
                         }
@@ -204,13 +156,13 @@ class MainActivity : ComponentActivity(),Observer{
                         "REOS",
                         "MainActivity-route-location" + it.arguments?.getString("location")
                     )
-
-                    scope.launch {
+                    LaunchedEffect(Unit) {
                         dataStore.setFirstName(user.FirstName)
                         dataStore.setEmployeeId(""+user.EmployeeId)
                         dataStore.setWareHouse(user.Warehouse)
                         dataStore.setLocation(user.Location)
                     }
+
 
                     DashboardScreen(
                         navController = navController,
@@ -227,15 +179,6 @@ class MainActivity : ComponentActivity(),Observer{
                         navArgument("typeInventory") { type = NavType.StringType }
                     )
                 ){
-                    Log.e("JEPICAME","VIENE DEL ZEBRA scan")
-                    Log.e(
-                        "REOS",
-                        "MainActivity-ScanScreen-defaultLocation" + it.arguments?.getString("defaultLocation")
-                    )
-                    Log.e(
-                        "REOS",
-                        "MainActivity-ScanScreen-defaultLocation" + it.arguments?.getString("defaultLocation")?:""
-                    )
                     ScanScreen(
                         navController = navController,
                         whs=it.arguments?.getString("whs")?:"",
@@ -248,8 +191,6 @@ class MainActivity : ComponentActivity(),Observer{
                 }
 
                 composable(Routes.Inventory.route) {
-
-                    /*AlarmScreen(applicationContext)*/
                     InventoryScreen(
                         navController = navController,
                         context = applicationContext
@@ -296,10 +237,6 @@ class MainActivity : ComponentActivity(),Observer{
                         navArgument("objType") { type = NavType.IntType }
                     )
                 ) {
-                    Log.e("REOS","MainActivity-onCreate-composable-Routes.MerchandiseMovementCreate.route")
-                    Log.e("REOS","MainActivity-onCreate-composable-Routes.MerchandiseMovementCreate.type"+NavType.IntType)
-                    Log.e("REOS","MainActivity-onCreate-composable-Routes.MerchandiseMovementCreate.it")
-                    Log.e("REOS","MainActivity-onCreate-composable-Routes.MerchandiseMovementCreate.it.arguments.toString(): "+it.arguments.toString())
                     MerchandiseCreateScreen(
                         navController = navController,
                         context = applicationContext,
@@ -326,7 +263,6 @@ class MainActivity : ComponentActivity(),Observer{
                         zebraViewModel=zebraViewModel,
                         wareHouseDestine = it.arguments?.getString("whsDestine")?:"",
                         objType=it.arguments?.getInt("objType")?:0,
-                        //DateAssignment=it.arguments?.getString("DateAssignment")?:"",
                     )
                 }
 

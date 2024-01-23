@@ -169,6 +169,7 @@ fun TransferStockDialog(
                         description = "Cancelar",
                         OnClick = {
                             transferStockViewModel.closePopUp()
+                            transferStockViewModel.loadTransfersLayoutList()
                         },
                         context = LocalContext.current,
                         backGroundColor = Color.Gray,

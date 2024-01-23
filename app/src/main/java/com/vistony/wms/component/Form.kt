@@ -42,6 +42,7 @@ import com.vistony.wms.R
 import com.vistony.wms.model.*
 import com.vistony.wms.num.TypeCode
 import com.vistony.wms.ui.theme.*
+import com.vistony.wms.util.DatasourceSingleton
 import com.vistony.wms.viewmodel.LoginViewModel
 import com.vistony.wms.viewmodel.SuggestionViewModel
 import com.vistony.wms.viewmodel.WarehouseViewModel
@@ -97,8 +98,64 @@ fun formLogin(loginViewModel: LoginViewModel, context:Context, open: (BottomShee
                         onClick = {
                             open(
                                 BottomSheetScreen.SelectCountryModal(selected = {
+
                                     location = TextFieldValue(it.text)
+                                    Log.e("logindebug", "text: "+it.text)
+                                    Log.e("logindebug", "value: "+it.value)
+
                                     locationVal = it.value
+
+                                    Log.e("logindebug", "nuevo valor: "+locationVal)
+
+                                    /*if (locationVal == "RO") {
+                                        locationVal = "PE"
+                                    }*/
+
+                                    when(it.value){
+                                        "PE" -> { // Perú
+                                            DatasourceSingleton.updateApiUrl(BuildConfig.API_URL_PE_PRO)
+                                            DatasourceSingleton.updatePort(8082)
+                                            DatasourceSingleton.updateDatabaseKey("appwms-bckdu")
+                                        }
+                                        "BO" -> { // Bolivia
+                                            DatasourceSingleton.updateApiUrl(BuildConfig.API_URL_BO_PRO)
+                                            DatasourceSingleton.updatePort(8082)
+                                            DatasourceSingleton.updateDatabaseKey("appwms_bo-uolsk")
+                                        }
+                                        "CL" -> { // Chile
+                                            DatasourceSingleton.updateApiUrl(BuildConfig.API_URL_CL_PRO)
+                                            DatasourceSingleton.updatePort(8082)
+                                            DatasourceSingleton.updateDatabaseKey("appwms_cl-kqwdq")
+                                        }
+                                        "PY" -> { // Paraguay
+                                            DatasourceSingleton.updateApiUrl(BuildConfig.API_URL_PY_PRO)
+                                            DatasourceSingleton.updatePort(8082)
+                                            DatasourceSingleton.updateDatabaseKey("appwms_py-ruehz")
+                                        }
+                                        "EC" -> { // Ecuador
+                                            DatasourceSingleton.updateApiUrl(BuildConfig.API_URL_EC_PRO)
+                                            DatasourceSingleton.updatePort(8082)
+                                            DatasourceSingleton.updateDatabaseKey("appwms_ec-eqiog")
+                                        }
+                                        "RO" -> { // ROFALAB
+                                            locationVal = "PE"
+
+                                            Log.e("logindebug", "nuevo valor: "+locationVal)
+                                            DatasourceSingleton.updateApiUrl(BuildConfig.API_URL_RO_PRO)
+                                            DatasourceSingleton.updatePort(8082)
+                                            DatasourceSingleton.updateDatabaseKey("approfa-iwbde")
+                                        }
+                                        else -> { // Perú
+                                            DatasourceSingleton.updateApiUrl(BuildConfig.API_URL_PE_PRO)
+                                            DatasourceSingleton.updatePort(8082)
+                                            DatasourceSingleton.updateDatabaseKey("appwms-bckdu")
+                                        }
+                                    }
+
+                                    loginViewModel.setSelectedDatabase(DatasourceSingleton.databaseKey)
+
+                                    //aqui debo modificar las ip
+
                                     close()
                                 })
                             )
@@ -171,6 +228,11 @@ fun formLogin(loginViewModel: LoginViewModel, context:Context, open: (BottomShee
 
                 if(codeWorker.text.isNotEmpty()){
                     if(passwordWorker.text.isNotEmpty()){
+                        Log.e("logindebug","Se ha pulsado el boton")
+                        Log.e("logindebug", "locationVal: "+locationVal)
+                        Log.e("logindebug", "codeWorker: "+codeWorker.text)
+                        Log.e("logindebug", "passwordWorker: "+passwordWorker.text)
+                        Log.e("logindebug", "enviando el login")
                         loginViewModel.login(Login("${locationVal}-${codeWorker.text}", passwordWorker.text,locationVal))
                     }else{
                         Toast.makeText(context, "Ingrese una contraseña valida", Toast.LENGTH_SHORT).show()
@@ -1084,4 +1146,32 @@ fun InputBox(
         keyboardOptions =keyboardOptions,
         keyboardActions = keyboardActions
     )
+}
+
+
+@Composable
+fun CountryDropdown() {
+    var expanded by remember { mutableStateOf(false) }
+    val countries = listOf(
+        "Perú",
+        "Chile",
+        "Argentina",
+        "Brasil",
+        "Colombia",
+        )
+    var selectedCountry by remember { mutableStateOf(countries[0]) }
+
+    Box(modifier = Modifier.fillMaxWidth().wrapContentSize(Alignment.TopStart)) {
+        Text(selectedCountry, modifier = Modifier.clickable(onClick = { expanded = true }))
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            countries.forEach { country ->
+                DropdownMenuItem(onClick = {
+                    selectedCountry = country
+                    expanded = false
+                }) {
+                    Text(country)
+                }
+            }
+        }
+    }
 }
