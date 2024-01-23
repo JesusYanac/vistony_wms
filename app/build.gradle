@@ -13,18 +13,19 @@ android {
         applicationId "com.vistony.wms"
         minSdk 26
         targetSdk 31
-        versionCode 4
-        versionName "1.1.23"
+        versionCode 5
+        versionName "1.1.24"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary true
         }
-        buildConfigField('String' , 'API_URL_PE_PRO', '"http://190.12.79.132:8082/pe/"')
+        //buildConfigField('String' , 'API_URL_PE_PRO', '"http://190.12.79.132:8082/pe/"')
+        buildConfigField('String' , 'API_URL_PE_PRO', '"http://192.168.254.20:8082/pe/"') //iplocal peru
         buildConfigField('String' , 'API_URL_BO_PRO', '"http://190.12.79.132:8082/bo/"')
         buildConfigField('String' , 'API_URL_CL_PRO', '"http://190.12.79.132:8082/cl/"')
         buildConfigField('String' , 'API_URL_PY_PRO', '"http://190.12.79.132:8082/py/"')
         buildConfigField('String' , 'API_URL_EC_PRO', '"http://190.12.79.132:8082/ec/"')
-        buildConfigField('String' , 'API_URL_RO_PRO', '"http://190.12.79.132:8082/rofa/"')
+        buildConfigField('String' , 'API_URL_RO_PRO', '"http://192.168.254.20:8082/rofa/"')
     }
 
     buildTypes {
