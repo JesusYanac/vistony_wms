@@ -69,7 +69,8 @@ class MainActivity : ComponentActivity(),Observer{
                     Routes.ImprimirEtiquetaSSCC.route,
                     Routes.TrackingSSCC.route,
                     Routes.ProdcnTrmReport.route,
-                    Routes.TransferStock.route
+                    Routes.TransferStock.route,
+                    Routes.BlockLocation.route
                 )
 
                 if (currentRoute in allowedRoutes) {
@@ -337,6 +338,13 @@ class MainActivity : ComponentActivity(),Observer{
 
                 composable(Routes.TransferStock.route) {
                     TransferStockScreen(
+                        navController = navController,
+                        context = applicationContext,
+                        zebraViewModel=zebraViewModel
+                    )
+                }
+                composable(Routes.BlockLocation.route) {
+                    BlockLocation(
                         navController = navController,
                         context = applicationContext,
                         zebraViewModel=zebraViewModel

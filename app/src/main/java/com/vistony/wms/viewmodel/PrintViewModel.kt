@@ -10,7 +10,9 @@ import com.vistony.wms.util.APIService
 import io.realm.Realm
 import io.realm.kotlin.syncSession
 import io.realm.mongodb.sync.SyncConfiguration
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -20,6 +22,8 @@ import org.json.JSONObject
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 
 class PrintViewModel(): ViewModel() {
 
@@ -113,34 +117,106 @@ class PrintViewModel(): ViewModel() {
         }
     }
 
-    fun sendPrint(print:Print){
-        _statusPrint.value = "cargando"
-
-        print.ipAddress=print.printer.ip
-        print.portNumber=print.printer.port.toInt()
-
+    fun sendPrintFinal(print:Print, data:List<ItemDataPrint>){
         val jsonBody: RequestBody = RequestBody.create(
             MediaType.parse("application/json; charset=utf-8"),
             JSONObject(
                 Gson().toJson(
-                    print
+                    PrintData(
+                        ipAddress = print.ipAddress ,
+                        portNumber = print.portNumber,
+                        flag = "Zebra_QR",
+                        lineaData = listOf(
+                            LineaItem(
+                                itemName = print.itemName,
+                                itemCode = print.itemCode,
+                                numero = print.quantity,
+                                lote = print.itemBatch,
+                                fecha = print.itemDate,
+                                unidadMedida = print.itemUom,
+                                barCode = data?.get(0)?.BarCode.toString(),
+                                fv = data?.get(0)?.Tvida.toString(),
+                            )
+                        )
+                    )
                 )
             ).toString()
         )
 
+        Log.d("jesusdebug", "jsonBody$jsonBody")
+        Log.d("jesusdebug",JSONObject(
+            Gson().toJson(
+                print
+            )
+        ).toString())
+
+
+
         viewModelScope.launch(Dispatchers.Default){
-            /*APIService.getInstance().sendPrint("http://192.168.254.20:89/vs1.0/printer",jsonBody).enqueue(object :Callback<Void> {
-                override fun onResponse(call: Call<Void>, response: Response<Void>) {
+            val retrofit = Retrofit.Builder()
+                .baseUrl("http://192.168.254.26:8050/")
+                .addConverterFactory(GsonConverterFactory.create())
+                .build()
+
+            val apiService = retrofit.create(APIService::class.java)
+            apiService.sendPrint2(jsonBody).enqueue(object :Callback<MyData> {
+                override fun onResponse(call: Call<MyData>, response: Response<MyData>) {
+                    Log.e("jesusdebug","PrintViewModel-sendPrintSSCC-call"+call)
+                    Log.e("jesusdebug","PrintViewModel-sendPrintSSCC-response"+response)
                     if(response.isSuccessful){
                         _statusPrint.value="ok"
                     }else{
-                        _statusPrint.value="InternalServerError"
+
+                        val errorBody = response.errorBody()?.string()
+                        val gson = Gson()
+                        val errorResponse = gson.fromJson(errorBody, MyData::class.java)
+
+                        if(errorResponse==null){
+                            _statusPrint.value = " El servidor respondio ${response.code()} - ${response.message()}"
+                        }else{
+                            _statusPrint.value = " " + errorResponse.Data
+                        }
                     }
                 }
-                override fun onFailure(call: Call<Void>, error: Throwable) {
+                override fun onFailure(call: Call<MyData>, error: Throwable) {
                     _statusPrint.value=error.message.toString()
+                    Log.e("jesusdebug","PrintViewModel-sendPrintSSCC-onFailure-error.message.toString()"+error.message.toString())
                 }
-            })*/
+            })
+        }
+    }
+    fun sendPrint(print:Print){
+        Log.d("jesusdebug", "sendPrint: $print")
+        _statusPrint.value = "cargando"
+
+        //print.ipAddress=print.printer.ip
+        print.ipAddress="172.16.28.50"
+        print.printer.ip="172.16.28.50"
+        print.portNumber=print.printer.port.toInt()
+        Log.d("jesusdebug", "iniciando la llamada")
+        try {
+
+            viewModelScope.launch(Dispatchers.Default){
+
+                APIService.getInstance().getPrintData(itemCode = "1200009").enqueue(object :Callback<MyDataPrint> {
+                    override fun onResponse(call: Call<MyDataPrint>, response: Response<MyDataPrint>) {
+                        Log.e("REOS","PrintViewModel-sendPrintTerminationReport-call"+call)
+                        Log.e("REOS","PrintViewModel-sendPrintTerminationReport-response"+response)
+                        if(response.isSuccessful){
+                            sendPrintFinal(print, response.body()?.Data!!)
+                        }else{
+
+                        }
+                    }
+                    override fun onFailure(call: Call<MyDataPrint>, t: Throwable) {
+                        TODO("Not yet implemented")
+                    }
+                })
+
+
+            }
+        } catch (e: Exception) {
+            Log.e("jesusdebug", "Error sendPrint: $e")
         }
     }
 

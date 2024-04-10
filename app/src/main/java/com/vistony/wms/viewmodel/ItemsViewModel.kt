@@ -201,8 +201,8 @@ class ItemsViewModel(flag:String): ViewModel() {
                 }
             }
         }
-        Log.e("REOS","ItemsViewModel-getArticle-itemCode: "+itemCode)
-        Log.e("REOS","ItemsViewModel-getArticle-batch: "+batch)
+        Log.e("jesusdebug3","ItemsViewModel-getArticle-itemCode: "+itemCode)
+        Log.e("jesusdebug3","ItemsViewModel-getArticle-batch: "+batch)
 
         if(itemCode.length==20 && isNumeric(itemCode))
         {
@@ -354,6 +354,28 @@ class ItemsViewModel(flag:String): ViewModel() {
                 _articulo.value= ItemsResponse(items=emptyList(),status=" ${exception.message}",type=TypeCode.QR)
             }
         })
+    }
+    fun realmGetItem2( ): List<Items> {
+        val lista = mutableListOf<Items>()
+        Realm.getInstanceAsync(configPublic, object : Realm.Callback() {
+            override fun onSuccess(r: Realm) {
+                val articulos = r.where(Items::class.java).sort("ItemCode", Sort.ASCENDING).findAll()
+
+                articulos?.let { data:RealmResults<Items> ->
+                    Log.d("jesusdebug01", "itemResponse: "+data.size)
+                    val noteTemp:List<Items> = data.subList(0, data.size)
+                    _articulos.value =  ListItems(listArticle=noteTemp,status="ok", fechaDescarga = Date())
+                    Log.d("jesusdebug01", "itemResponse: "+noteTemp.size)
+
+                }
+
+                //r.close()
+            }
+            override fun onError(exception: Throwable) {
+                _articulos.value = ListItems(listArticle= emptyList(),status="error",fechaDescarga = Date())
+            }
+        })
+        return lista
     }
 
      fun getMasterDataArticle(){

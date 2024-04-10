@@ -93,5 +93,35 @@ open class Printer(
     var _id: ObjectId = ObjectId()
 }
 
+data class LineaItem(
+    var itemName: String = "",
+    var ssccName: String = "",
+    var itemCode: String = "",
+    var numero: Int = 0,
+    var lote: String = "",
+    var fecha: String = "",
+    var unidadMedida: String = "",
+    var barCode: String = "",
+    var fv: String = ""
+)
+
+data class PrintData(
+    var ipAddress: String = "",
+    var portNumber: Int = 0,
+    var flag: String = "",
+    var lineaData: List<LineaItem> = emptyList()
+)
+
+data class ItemDataPrint(
+    var ItemCode: String = "",
+    var Tvida: Int = 0,
+    var BarCode: String = ""
+)
 
 
+data class MyDataPrint(
+    var Data: List<ItemDataPrint> = emptyList()
+)
+data class MyData(
+    var Data: String = ""
+)

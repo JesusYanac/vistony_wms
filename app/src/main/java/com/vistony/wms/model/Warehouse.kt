@@ -31,7 +31,8 @@ open class BinLocations(
     var SubZona: String? = null,
     var Tipo: String? = null,
     var Warehouse: String = "",
-    var Zona: String? = null
+    var Zona: String? = null,
+    //var IsFull: String = ""
 ): RealmObject() {
     @PrimaryKey
     var _id: ObjectId = ObjectId()

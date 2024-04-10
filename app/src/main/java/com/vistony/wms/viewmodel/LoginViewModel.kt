@@ -72,6 +72,8 @@ class LoginViewModel(context: Context) : ViewModel() {
 
         if (realmSync.currentUser()?.isLoggedIn == true) {
             Log.e("logindebug", "user already logged in")
+
+            Log.d("jesusdebug01", "logged: ${login.user} - ${login.password}")
             Realm.removeDefaultConfiguration()
             Log.e("logindebug", "currentUser: ${realmSync.currentUser()}")
             Log.e("logindebug", "currentUser id: ${realmSync.currentUser()?.id}")
@@ -126,6 +128,7 @@ class LoginViewModel(context: Context) : ViewModel() {
             }
         } else {
             Log.e("logindebug", "user not logged in")
+            Log.d("jesusdebug01", "login: ${login.user} - ${login.password}")
             realmSync.loginAsync(Credentials.emailPassword(login.user, login.password)) {
                 if (it.isSuccess) {
                     try {

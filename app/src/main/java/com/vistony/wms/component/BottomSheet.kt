@@ -2103,7 +2103,8 @@ private fun formHandheld(
                 //}
             }
 
-        } else {
+        }
+        else {
             if (itemsResponse.type == TypeCode.QR && objType !in setOf(22, 18,1701)) {
                 OutlinedTextField(
                     enabled = true,

@@ -137,22 +137,30 @@ fun ScanScreen(navController: NavHostController,whs:String,idInventory:String,st
         zebraViewModel.setData(zebraPayload())
     }
     var titleMutable:MutableState<String> = remember {mutableStateOf("") }
+
+    Log.e("jesusdebug3", "hola2")
     titleMutable.value="Conteo de inventario"
     Scaffold(
         topBar = {
+            Log.e("jesusdebug3", "hola2 - topbar")
 
             if(status=="Abierto"){
+
+                Log.e("jesusdebug3", "hola2 - topbar - abierto")
                 TopBarTitleCamera(
                     title=titleMutable,
                     status= status,
                     objType=Routes.Inventory.value, //100
                     permission=cameraPermissionState,
                     onClick={
+                        Log.e("jesusdebug3", "hola2 - topbar - onclick")
                         when(it){
                             TypeReadSKU.CERRAR_FICHA->{
+                                Log.e("jesusdebug3", "hola2 - topbar - onclick - it : $it")
                                 openDialog.value=FlagDialog(status = true,flag="Close")
                             }
                             else->{
+                                Log.e("jesusdebug3", "hola2 - topbar - onclick - else")
                                 typeRead=it
                             }
                         }
@@ -162,6 +170,8 @@ fun ScanScreen(navController: NavHostController,whs:String,idInventory:String,st
                     ""
                 )
             }else{
+
+                Log.e("jesusdebug3", "hola2 - topbar - cerrado")
                 TopBar(title="Conteo de inventario")
             }
 
@@ -330,6 +340,8 @@ fun ScanScreen(navController: NavHostController,whs:String,idInventory:String,st
 
 
         if(openDialog.value.status){
+
+            Log.e("jesusdebug3", "hola3")
             CustomDialogResendOrClose(
                 title="Conteo de inventario",
                 flag=openDialog.value.flag,
@@ -445,6 +457,8 @@ private fun divContainer(defaultLocation:String, zebraViewModel:ZebraViewModel, 
 
                     formHandheld(
                         onPress={ payloadX ->
+
+                            Log.e("jesusdebug3",payloadX.toString())
                             itemsViewModel.getArticle(payloadX)
                         }
                     )
@@ -551,6 +565,7 @@ private fun formHandheld(
         keyboardActions = KeyboardActions(
             onSearch = {
                 keyboardController?.hide()
+                Log.e("jesusdebug3",textCode.text)
                 onPress(textCode.text)
             }
         ),

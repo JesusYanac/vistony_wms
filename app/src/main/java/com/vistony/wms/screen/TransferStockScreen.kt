@@ -3,75 +3,35 @@ package com.vistony.wms.screen
 import TransferStockDialog
 import android.annotation.SuppressLint
 import android.content.Context
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.Card
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.Icon
-import androidx.compose.material.IconButton
-import androidx.compose.material.Scaffold
-import androidx.compose.material.Text
-import androidx.compose.material.TopAppBar
+import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.State
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
+import androidx.compose.material.icons.filled.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.*
+import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.*
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.*
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.vistony.wms.R
-import com.vistony.wms.component.ButtonCircle
-import com.vistony.wms.component.CardView
-import com.vistony.wms.component.DialogFindItemView
-import com.vistony.wms.component.Editext
-import com.vistony.wms.model.TransfersLayout
-import com.vistony.wms.model.finditem.FindItemRepository
-import com.vistony.wms.model.finditem.FindItemViewModel
-import com.vistony.wms.model.zebraPayload
-import com.vistony.wms.ui.theme.AzulVistony201
-import com.vistony.wms.ui.theme.AzulVistony202
-import com.vistony.wms.ui.theme.BlueVistony
-import com.vistony.wms.viewmodel.TransferStockViewModel
-import com.vistony.wms.viewmodel.ZebraViewModel
-import java.math.BigDecimal
-import java.math.RoundingMode
+import com.vistony.wms.component.*
+import com.vistony.wms.model.*
+import com.vistony.wms.model.finditem.*
+import com.vistony.wms.ui.theme.*
+import com.vistony.wms.viewmodel.*
+import java.math.*
 import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import java.util.*
 
 
 @SuppressLint("UnusedMaterialScaffoldPaddingParameter")
@@ -97,6 +57,7 @@ fun TransferStockScreen(navController: NavHostController, context: Context, zebr
             context = context
         )
         zebraViewModel.setData(zebraPayload())
+        zebraValue.value.Payload = ""  // esta linea fue añadida, se puede borrar si genera problemas
     }
     if(showPopup.value){
         TransferStockDialog(transferStockViewModel = transferStockViewModel)
@@ -153,10 +114,6 @@ fun TransferStockScreen(navController: NavHostController, context: Context, zebr
             transferStockViewModel = transferStockViewModel
         )
     }
-}
-
-fun DialogFindItemView(findItemViewModel: FindItemViewModel) {
-
 }
 
 @Composable
@@ -250,7 +207,7 @@ fun CardTransferenciaLayout(item: TransfersLayout, fecha: String) {
                             modifier = Modifier
                                 .fillMaxWidth()
                         ) {
-                            Text(text = "$fecha", fontWeight = FontWeight.Bold, color = Color.White)
+                            Text(text = fecha, fontWeight = FontWeight.Bold, color = Color.White)
                         }
                         Row (
                             modifier = Modifier
@@ -266,7 +223,7 @@ fun CardTransferenciaLayout(item: TransfersLayout, fecha: String) {
                                 modifier = Modifier
                                     .weight(60f)
                             ) {
-                                Text(text = "$codeArticulo", fontWeight = FontWeight.Light, color = Color.White)
+                                Text(text = codeArticulo, fontWeight = FontWeight.Light, color = Color.White)
                             }
                         }
                         Spacer(modifier = Modifier.height(10.dp))
@@ -307,7 +264,7 @@ fun CardTransferenciaLayout(item: TransfersLayout, fecha: String) {
                 Row (
                     modifier = Modifier.padding(start = 10.dp)
                 ){
-                    Text(text = "$valueArticulo", fontWeight = FontWeight.Bold, color = Color.Black)
+                    Text(text = valueArticulo, fontWeight = FontWeight.Bold, color = Color.Black)
                 }
                 dataRow("Origen", origen, colorBlack)
                 dataRow("Destino", destino, colorBlack)
@@ -352,7 +309,7 @@ fun DialogFindItemScreen(bitmapDeliveryPruebaStatus: MutableState<Boolean>) {
         DialogFindItemView(
             //"Captura de Imagen"
             "Busqueda de Producto"
-            ,"Digitar el código de producto"
+            ,""
             ,onClickCancel = {
                 bitmapDeliveryPruebaStatus.value = false
             }
@@ -363,12 +320,11 @@ fun DialogFindItemScreen(bitmapDeliveryPruebaStatus: MutableState<Boolean>) {
             ,statusButtonIcon = false
             ,context= LocalContext.current
         ){
-            /*val cameraImageViewModel: CameraImageViewModel = viewModel()
-            CamaraScreen(cameraImageViewModel)*/
             val resultEditext : MutableState<String> = remember {mutableStateOf("") }
+            val resultEditextLote : MutableState<String> = remember {mutableStateOf("") }
             val resultItemName :MutableState<String> = remember {mutableStateOf("") }
             val context = LocalContext.current
-            val findItemRepository: FindItemRepository = FindItemRepository()
+            val findItemRepository = FindItemRepository()
             val findItemViewModel: FindItemViewModel = viewModel(
                 factory = FindItemViewModel.FindItemViewModelFactory(
                     findItemRepository,"0",context
@@ -380,40 +336,47 @@ fun DialogFindItemScreen(bitmapDeliveryPruebaStatus: MutableState<Boolean>) {
             Scaffold()
             {
                 Column {
-                    Column() {
-                        Row() {
-                            Column(modifier = Modifier.weight(0.8f)) {
-                                Editext(
-                                    status = true,
-                                    text= resultEditext,
-                                    "Ingrese el código",
-                                    "Código de Producto ",
-                                    painterResource(id = R.drawable.ic_baseline_numbers_24),
-                                    KeyboardType.Text,
-                                    statusMaxCharacter = false
-                                )
+                    Row() {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .weight(1f)
+                        ) {
+                            Box(modifier = Modifier.weight(0.8f)) {
+                                TextField(value = resultEditext.value, placeholder = { Text(text = "Código") }, onValueChange = {
+                                    resultEditext.value = it
+                                })
                             }
-                            //Spacer(modifier = Modifier.width(5.dp))
-                            Column(modifier = Modifier
+                            Box(modifier = Modifier
                                 .weight(0.20f)
-                                .padding(0.dp, 18.dp, 0.dp, 0.dp)) {
+                                .align(Alignment.CenterVertically)
+                                ) {
                                 ButtonCircle(
                                     OnClick = {
-                                        /*collectionDetailViewModel.getCollectionDetailPendingDeposit(
-                                                DateApp.value
-                                        )*/
-                                        //headerDispatchSheetViewModel.getMasterDispatchSheetDB(DateApp.value)
                                         findItemViewModel.getFindItem(resultEditext.value)
-                                    }, roundedCornerShape = RoundedCornerShape(4.dp)
-                                    , size = DpSize(55.dp, 55.dp)
+                                    },
+                                    roundedCornerShape = RoundedCornerShape(4.dp),
+                                    size = DpSize(55.dp, 55.dp)
                                 ) {
                                     Icon(
                                         imageVector = ImageVector.vectorResource(R.drawable.ic_search_white_24dp),
                                         contentDescription = null,
                                         tint = Color.White,
                                         modifier = Modifier
-                                        //tint = if ( stepsStatus.get(index) == "Y") BlueVistony else Color.Gray
                                     )
+                                }
+                            }
+                        }
+                        if (findItemResponse.value.status == "Y"){
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .weight(1f)
+                            ) {
+                                Column(modifier = Modifier.weight(0.8f)) {
+                                    TextField(value = resultEditextLote.value, onValueChange = {
+                                        resultEditextLote.value = it
+                                    })
                                 }
                             }
                         }
@@ -423,6 +386,20 @@ fun DialogFindItemScreen(bitmapDeliveryPruebaStatus: MutableState<Boolean>) {
                     when (findItemResponse.value.status)
                     {
                         "Y" -> {
+
+                            val filteredData =  remember (resultEditextLote)
+                            {
+                                derivedStateOf{
+                                    if (resultEditextLote.value == "") {
+                                        findItemResponse.value.data
+                                    } else {
+                                        findItemResponse.value.data.filter {
+                                                findItem -> findItem.Batch.contains(resultEditextLote.value) }
+                                    }
+                                }
+
+                            }
+
                             Row(modifier = Modifier.background(BlueVistony)) {
                                 TableCell(
                                     text = resultItemName.value,
@@ -432,118 +409,60 @@ fun DialogFindItemScreen(bitmapDeliveryPruebaStatus: MutableState<Boolean>) {
                                     textAlign = TextAlign.Center
                                 )
                             }
-                            LazyColumn(
-                                //modifier = Modifier.fillMaxWidth()
-                            )
-                            {
-                                itemsIndexed(findItemResponse.value.data){
+                            LazyColumn(){
+                                itemsIndexed(filteredData.value){
                                         _, item ->
                                     resultItemName.value = item.ItemName
                                     CardView(
                                         cardtTittle ={},
                                         cardContent = {
                                             Column(modifier = Modifier
-                                                .padding(10.dp)
+                                                .padding(4.dp)
                                                 .fillMaxWidth())
                                             {
-                                                Row(
-                                                ) {
-                                                    Column(
-                                                        horizontalAlignment = Alignment.Start,
-                                                        modifier=Modifier.weight(0.5f)
-                                                    ) {
-                                                        Row() {
-                                                            TableCell(
-                                                                text = "Ubicación",
-                                                                color = Color.Gray,
-                                                                title = false,
-                                                                weight = 1f,
-                                                                textAlign = TextAlign.End
-                                                            )
-                                                        }
-                                                        Row() {
-                                                            TableCell(
-                                                                text = item.BinCode,
-                                                                //color = textColor,
-                                                                title = true,
-                                                                weight = 1f,
-                                                                textAlign = TextAlign.End,
-                                                            )
-                                                        }
+                                                Row {
+                                                    Row (
+                                                        modifier = Modifier
+                                                            .fillMaxWidth()
+                                                            .weight(1f)
+                                                    ){
+                                                        Text(text = "Ubi.", color = Color.Gray, fontSize = 12.sp, textAlign = TextAlign.Start)
+                                                        Spacer(modifier = Modifier.width(4.dp))
+                                                        Text(text = item.BinCode, fontWeight = FontWeight.Bold, color = Color.Black, fontSize = 12.sp, textAlign = TextAlign.Start)
+
                                                     }
-                                                    Column(
-                                                        horizontalAlignment = Alignment.Start,
-                                                        modifier=Modifier.weight(0.5f)
-                                                    ) {
-                                                        Row() {
-                                                            TableCell(
-                                                                //text = "${Convert.currencyForView(invoices?.)}",
-                                                                text = "Cantidad" ,
-                                                                color = Color.Gray,
-                                                                title = false,
-                                                                weight = 1f,
-                                                                textAlign = TextAlign.End
-                                                            )
-                                                        }
-                                                        //TextLabel(text ="Saldo" , textAlign = TextAlign.Center )
-                                                        Row() {
-                                                            numberForViewDecimals(item.Quantity,2)?.let { it1 ->
-                                                                TableCell(
-                                                                    text = it1,
-                                                                    title = true,
-                                                                    weight = 1f,
-                                                                    textAlign = TextAlign.End
-                                                                )
-                                                            }
+                                                    Spacer(modifier = Modifier.width(4.dp))
+                                                    Row (
+                                                        modifier = Modifier
+                                                            .fillMaxWidth()
+                                                            .weight(1f)
+                                                    ){
+                                                        Text(text = "Cant.", color = Color.Gray, fontSize = 12.sp, textAlign = TextAlign.Start)
+                                                        Spacer(modifier = Modifier.width(4.dp))
+                                                        numberForViewDecimals(item.Quantity,2)?.let { it1 ->
+                                                            Text(text = it1, fontWeight = FontWeight.Bold, color = Color.Black, fontSize = 12.sp, textAlign = TextAlign.Start)
                                                         }
                                                     }
                                                 }
                                                 Row(
                                                 ) {
-                                                    Column(
-                                                        horizontalAlignment = Alignment.Start,
-                                                        modifier=Modifier.weight(0.5f)
-                                                    ) {
-                                                        Row() {
-                                                            TableCell(
-                                                                text = "Lote",
-                                                                color = Color.Gray,
-                                                                title = false,
-                                                                weight = 1f,
-                                                                textAlign = TextAlign.End
-                                                            )
-                                                        }
-                                                        Row() {
-                                                            TableCell(
-                                                                text = item.Batch,
-                                                                title = true,
-                                                                weight = 1f,
-                                                                textAlign = TextAlign.End
-                                                            )
-                                                        }
+                                                    Row(
+                                                        modifier = Modifier
+                                                            .fillMaxWidth()
+                                                            .weight(1f)) {
+                                                        Text(text = "Lote", color = Color.Gray, fontSize = 12.sp, textAlign = TextAlign.Start)
+                                                        Spacer(modifier = Modifier.width(4.dp))
+                                                        Text(text = item.Batch, fontWeight = FontWeight.Bold, color = Color.Black, fontSize = 12.sp, textAlign = TextAlign.Start)
                                                     }
-                                                    Column(
-                                                        horizontalAlignment = Alignment.Start,
-                                                        modifier=Modifier.weight(0.5f)
-                                                    ) {
-                                                        Row() {
-                                                            TableCell(
-                                                                //text = "${Convert.currencyForView(invoices?.)}",
-                                                                text = "F. Vencimiento" ,
-                                                                color = Color.Gray,
-                                                                title = false,
-                                                                weight = 1f,
-                                                                textAlign = TextAlign.End
-                                                            )
-                                                        }
-                                                        Row() {
-                                                            TableCell(
-                                                                text = item.DueDate,
-                                                                title = true,
-                                                                weight = 1f,
-                                                                textAlign = TextAlign.End
-                                                            )
-                                                        }
+                                                    Spacer(modifier = Modifier.width(4.dp))
+
+                                                    Row (
+                                                        modifier = Modifier
+                                                            .fillMaxWidth()
+                                                            .weight(1f)){
+                                                        Text(text = "F.venc.", color = Color.Gray, fontSize = 12.sp, textAlign = TextAlign.Start)
+                                                        Spacer(modifier = Modifier.width(4.dp))
+                                                        Text(text = item.DueDate, fontWeight = FontWeight.Bold, color = Color.Black, fontSize = 12.sp, textAlign = TextAlign.Start)
                                                     }
                                                 }
                                             }
@@ -554,6 +473,7 @@ fun DialogFindItemScreen(bitmapDeliveryPruebaStatus: MutableState<Boolean>) {
                             }
                         }
                         "N" -> {
+                            Log.e("busquedadebug", findItemResponse.value.status);
                             resultItemName.value = ""
                             Toast.makeText(context, findItemResponse.value.message, Toast.LENGTH_SHORT).show()
                         }
@@ -572,7 +492,6 @@ fun numberForViewDecimals(amount: String, decimals: Int): String? {
     ) {
         amount = "0"
     }
-    val locale: Locale? = null
     val amountRedonded: BigDecimal = BigDecimal(amount).setScale(
         decimals, RoundingMode.HALF_UP
     )

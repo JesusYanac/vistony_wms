@@ -78,6 +78,7 @@ fun PrintQrScreen(navController: NavHostController, context: Context){
             divPrint(
                 viewModel = printViewModel,
                 onContinue = {
+                    Log.d("jesusdebug","onContinue")
                     printViewModel.sendPrint(it)
                 },
                 onCancel = {
@@ -283,7 +284,6 @@ private fun divPrintSSCC(
     printViewModel:PrintViewModel
     ,onContinue:(Print)->Unit,
     onCancel:()->Unit
-
 ){
 
     val print = printViewModel.print.collectAsState()
@@ -503,6 +503,7 @@ private fun divPrintSSCC(
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun divPrint(viewModel: PrintViewModel,onContinue:(Print)->Unit,onCancel:()->Unit){
+    Log.d("jesusdebug", "DivPrint")
 
     val print = viewModel.print.collectAsState()
 
@@ -631,6 +632,24 @@ private fun divPrint(viewModel: PrintViewModel,onContinue:(Print)->Unit,onCancel
         Button(
             colors= ButtonDefaults.buttonColors(backgroundColor = Color.Gray),
             onClick = {
+                Log.d("jesusdebug", "Se mando a imprimir")
+                var quantityPrint:Int=0
+
+                try{
+                    quantityPrint=print.value.quantityString.toInt()
+                    print.value.quantity=quantityPrint
+
+                    haveError=""
+                    focusManager.clearFocus()
+                    Log.d("jesusdebug", "Se mando a imprimir: "+print.value)
+                    onContinue(
+                        print.value
+                    )
+
+                }catch(e:Exception){
+                    haveError="*La cantidad a imprimir no es valida"
+                }
+                
                 if(print.value.itemCode.isNotEmpty()){
                     if(print.value.itemBatch.isNotEmpty()){
                         if(print.value.itemBatch.isNotEmpty()){

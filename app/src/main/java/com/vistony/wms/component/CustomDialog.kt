@@ -220,7 +220,7 @@ fun CustomDialogVs2(
 
                     if(typeRead==TypeReadSKU.CAMERA && defaultLocation=="+"){
                         Log.e(
-                            "REOS",
+                            "jesusdebug3",
                             "CustomDialog-CustomDialogVs2-TypeReadSKU.CAMERA"
                         )
                         CameraForm(
@@ -234,7 +234,7 @@ fun CustomDialogVs2(
                     }
                 if(customCounting.typeCode==TypeCode.QR){
                     Log.e(
-                        "REOS",
+                        "jesusdebug3",
                         "CustomDialog-CustomDialogVs2-TypeCode.QR"
                     )
                     OutlinedTextField(
@@ -273,7 +273,9 @@ fun CustomDialogVs2(
                         trailingIcon = { Icon(painter = painterResource(id = R.drawable.ic_baseline_numbers_24), contentDescription = null, tint = AzulVistony202) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number,imeAction = ImeAction.Go ),
                         keyboardActions = KeyboardActions(
-                            onGo = {keyboardController?.hide()}
+                            onGo = {
+                                Log.e("jesusdebug3",textNumber)
+                                keyboardController?.hide()}
                         )
                     )
                     Log.e(
@@ -297,6 +299,7 @@ fun CustomDialogVs2(
                         )
                     )
                 }else{
+                    Log.e("jesusdebug3","CustomDialog-CustomDialogVs2-else")
                     LazyRow(modifier = Modifier
                         .fillMaxWidth()
                         .fillMaxHeight(0.6f)) {
@@ -328,11 +331,13 @@ fun CustomDialogVs2(
                     }
                 }
 
+                Log.e("jesusdebug3",defaultLocation)
                 if(defaultLocation!="-" && defaultLocation!="+"){
                     locationTemp=TextFieldValue(defaultLocation)
                 }
-
+                Log.e("jesusdebug3","defaultLocation"+defaultLocation)
                 if(defaultLocation!="-"){
+                    Log.e("jesusdebug3","defaultLocation es diferente de -")
                     OutlinedTextField(
                         enabled= typeRead== TypeReadSKU.KEYBOARD,
                         singleLine=true,
@@ -349,7 +354,11 @@ fun CustomDialogVs2(
                         )
                     )
                 }else{
+                    Log.e("jesusdebug3","defaultLocation es igual a $defaultLocation")
+
                     locationTemp=TextFieldValue("NO CONTROLA UBICACIÓN")
+
+                    Log.e("jesusdebug3", "no controla ubicacion")
                 }
             }
         },

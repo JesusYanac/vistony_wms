@@ -15,19 +15,61 @@ class FindItemRepository {
     fun getFindItem(Imei:String,ItemCode: String)
     {
         try {
+            Log.e("busquedadebug","Buscando item "+ItemCode)
             APIService.getInstance().getFindItem(ItemCode).enqueue(object : Callback<FindItemEntity> {
                 override fun onResponse(
                     call: Call<FindItemEntity?>,
                     response: Response<FindItemEntity?>
                 ) {
+                    Log.e("busquedadebug", "Se ejecuto la peticion")
                     val findItemEntity = response.body()
+                    Log.e("busquedadebug", "Se obtuvo el resultado")
                     if (response.isSuccessful&&findItemEntity?.data?.size!!>0) {
+                        Log.e("busquedadebug", "finItemEntity.data: "+findItemEntity.data)
                         _result.value= FindItemEntity(status = "Y",data = findItemEntity.data)
                     } else {
+                        Log.e("busquedadebug", "No se encontraron registros")
                         _result.value= FindItemEntity(status = "N", message = "No se encontraron registros")
                     }
                 }
                 override fun onFailure(call: Call<FindItemEntity?>, t: Throwable) {
+                    Log.e("busquedadebug", "No se concluyo la peticion")
+                    Log.e("busquedadebug", "onFailure: "+t.message)
+                    _result.value= FindItemEntity(status = "N", message = "No se encontraron registros")
+                }
+            })
+        } catch (e: Exception) {
+
+            Log.e(
+                "REOS",
+                "BankRepository-addBanks-error: " + e.toString()
+            )
+        }
+    }
+
+    fun getFindItembyLote(Imei: String, itemLote: String) {
+
+        try {
+            Log.e("busquedadebug","Buscando item "+itemLote)
+            APIService.getInstance().getFindItembyLote(itemLote).enqueue(object : Callback<FindItemEntity> {
+                override fun onResponse(
+                    call: Call<FindItemEntity?>,
+                    response: Response<FindItemEntity?>
+                ) {
+                    Log.e("busquedadebug", "Se ejecuto la peticion")
+                    val findItemEntity = response.body()
+                    Log.e("busquedadebug", "Se obtuvo el resultado")
+                    if (response.isSuccessful&&findItemEntity?.data?.size!!>0) {
+                        Log.e("busquedadebug", "finItemEntity.data: "+findItemEntity.data)
+                        _result.value= FindItemEntity(status = "Y",data = findItemEntity.data)
+                    } else {
+                        Log.e("busquedadebug", "No se encontraron registros")
+                        _result.value= FindItemEntity(status = "N", message = "No se encontraron registros")
+                    }
+                }
+                override fun onFailure(call: Call<FindItemEntity?>, t: Throwable) {
+                    Log.e("busquedadebug", "No se concluyo la peticion")
+                    Log.e("busquedadebug", "onFailure: "+t.message)
                     _result.value= FindItemEntity(status = "N", message = "No se encontraron registros")
                 }
             })

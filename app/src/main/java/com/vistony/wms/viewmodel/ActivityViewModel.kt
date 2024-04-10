@@ -99,6 +99,8 @@ class ActivityViewModel(flag:String, warehouse:String="", objType:Int=0): ViewMo
 
                         }
                         _almacenes.value = WarehouseResponse(defaultLocation=defaultLocation,numLocation=numLocation,warehouse = temp, status = "ok",fechaDescarga = Date())
+                        Log.d("jesusdebug", "almacenes size: ${_almacenes.value.warehouse.size}")
+                        Log.d("jesusdebug", "almacenes: ${_almacenes.value.warehouse}")
                     } else {
                         _almacenes.value =
                             WarehouseResponse(warehouse = emptyList(), status = "vacio", fechaDescarga = Date())

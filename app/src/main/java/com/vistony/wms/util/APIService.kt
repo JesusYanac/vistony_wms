@@ -8,6 +8,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 import okhttp3.OkHttpClient
 import okhttp3.RequestBody
 import retrofit2.Call
+import retrofit2.Response
 import retrofit2.http.*
 import java.net.Proxy
 import java.util.concurrent.TimeUnit
@@ -24,6 +25,10 @@ interface APIService {
 
     @POST("Sscc/Print")
     fun sendPrint(@Body request:RequestBody): Call<SsccResponse>
+    @POST("api/Printer")
+    fun sendPrint2(@Body request:RequestBody): Call<MyData>
+    @GET("Items/info")
+    fun getPrintData(@Query("itemCode") itemCode:String): Call<MyDataPrint>
 
     @POST("Production/TerminacionReport")
     fun sendTerminationReportPrint(@Body request:RequestBody): Call<TerminationReport>
@@ -36,6 +41,9 @@ interface APIService {
 
     @GET("/pe/vs1.0/Inventory/GetItemLayout")
     fun getFindItem(@Query("itemCode") itemCode: String?): Call<FindItemEntity>
+
+    @GET("/pe/vs1.0/Inventory/GetItemLayoutbyLote")
+    fun getFindItembyLote(@Query("lote") lote: String?): Call<FindItemEntity>
 
     companion object {
         private var apiService: APIService? = null

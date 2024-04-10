@@ -54,5 +54,12 @@ class FindItemViewModel(
         }
     }
 
+    fun getFindItembyLote(itemLote: String) {
+        viewModelScope.launch {
+            findItemRepository.getFindItembyLote(Imei,itemLote)
+        }
+
+    }
+
 
 }

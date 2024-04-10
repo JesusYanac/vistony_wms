@@ -6,6 +6,7 @@ import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.vistony.wms.model.BinLocations
 import com.vistony.wms.model.ItemResponse
 import com.vistony.wms.model.Items
 import com.vistony.wms.model.ItemsResponse
@@ -17,6 +18,7 @@ import com.vistony.wms.util.APIService
 import io.realm.Realm
 import io.realm.Sort
 import io.realm.kotlin.syncSession
+import io.realm.mongodb.sync.SyncConfiguration
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -29,6 +31,7 @@ import java.util.Date
 
 
 class TransferStockViewModel: ViewModel() {
+
 
     private val _articulo = MutableStateFlow(ItemsResponse())
     val article: StateFlow<ItemsResponse> get() = _articulo
@@ -58,6 +61,10 @@ class TransferStockViewModel: ViewModel() {
     private val _batch = MutableStateFlow("0")
     private val _codeWarehouseOrigen = MutableStateFlow("(vacio)")
     private val _codeWarehouseDestino = MutableStateFlow("(vacio)")
+    private val _isDestinationAvailable = MutableStateFlow(true)
+    private val _isOriginAvailable = MutableStateFlow(true)
+    private val _scaffoldMessage = MutableStateFlow("")
+
 
     val transfersLayoutList: StateFlow<List<TransfersLayout>> get() = _transfersLayoutList
     val lastPayloadCodeScanned: StateFlow<String> get() = _lastPayloadCodeScanned
@@ -78,6 +85,16 @@ class TransferStockViewModel: ViewModel() {
 
     private var _cont = 0
     private var timeFirstScan: Date? = null
+
+    //Realm
+    private var realm: Realm = Realm.getInstance(Realm.getDefaultConfiguration())
+    private val customUserData: Document? = realm.syncSession.user.customData
+
+    private var configBranch = SyncConfiguration
+        .Builder(realm.syncSession.user, customUserData?.getString("Branch") ?: "")
+        .allowQueriesOnUiThread(true)
+        .allowWritesOnUiThread(true)
+        .build()
 
     // Métodos para alternar el estado del popup
     fun openPopUp() {
@@ -131,23 +148,29 @@ class TransferStockViewModel: ViewModel() {
     }
 
     fun loadTransfersLayoutList() {
+
         try {
-            Log.e("jesusdebug", "loadTransfersLayoutList")
-            val transfersLayoutList = Realm.getDefaultInstance()
-                .where(TransfersLayout::class.java)
-                .sort("createAt", Sort.DESCENDING)
-                .limit(50)
-                .findAll()
+            Log.e("jesusdebug", "loadBinLocationLayoutList")
+            Realm.getInstanceAsync(configBranch, object : Realm.Callback() {
+                override fun onSuccess(realm: Realm) {
+                    val transfersLayoutList = realm
+                        .where(TransfersLayout::class.java)
+                        .sort("createAt", Sort.DESCENDING)
+                        .findAll()
 
-            _transfersLayoutList.value = transfersLayoutList
+                    _transfersLayoutList.value = transfersLayoutList
 
-            Log.e("jesusdebug1", "loadTransfersLayoutList: ${_transfersLayoutList.value.get(0).owner}")
-            Log.e("jesusdebug1", "loadTransfersLayoutList: ${_transfersLayoutList.value.toString()}")
+                    Log.e("jesusdebug", "onSuccess: $transfersLayoutList")
+                }
+
+                override fun onError(error: Throwable) {
+                    Log.e("jesusdebug", "onError: $error")
+                }
+
+            })
 
         } catch (e: Exception) {
             Log.e("jesusdebug", "catch: $e")
-        } finally {
-            Realm.getDefaultInstance()?.close()
         }
     }
     // Función para insertar una nueva transferencia en Realm
@@ -155,9 +178,15 @@ class TransferStockViewModel: ViewModel() {
         // Crea un nuevo objeto TransfersLayout
         val transfersLayout = buildTransfersLayout()
 
-        // Realiza la transacción de Realm
-        Realm.getDefaultConfiguration()?.let { config ->
-            Realm.getInstanceAsync(config, object : Realm.Callback() {
+        Log.e("jesusdebug", "origen esta disponible: ${_isOriginAvailable.value}")
+        Log.e("jesusdebug", "destino esta disponible: ${_isDestinationAvailable.value}")
+
+
+        if(_isOriginAvailable.value && _isDestinationAvailable.value){
+
+            Log.e("jesusdebug", "inicia la transacción")
+            // Realiza la transacción de Realm
+            Realm.getInstanceAsync(configBranch, object : Realm.Callback() {
                 override fun onSuccess(realm: Realm) {
                     if (realm.isClosed) {
                         Log.e("jesusdebug", "Realm está cerrado al insertar")
@@ -165,14 +194,23 @@ class TransferStockViewModel: ViewModel() {
                     }
 
                     try {
-                        Log.d("jesusdebug", "Éxito al obtener instancia de Realm")
+                        /*val whsx1: List<BinLocations?> = realm.where(BinLocations::class.java)
+                            .equalTo("BinCode", _codeWarehouseOrigen.value)
+                            .findAll()
+                        Log.d("jesusdebug", "Éxito al obtener origen: $whsx1")
+                        val whsx2: List<BinLocations?> = realm.where(BinLocations::class.java)
+                            .equalTo("BinCode", _codeWarehouseDestino.value)
+                            .findAll()
+                        Log.d("jesusdebug", "Éxito al obtener destino: $whsx2")*/
                         realm.executeTransactionAsync({ transactionRealm ->
                             transactionRealm.insertOrUpdate(transfersLayout)
                         }, {
                             Log.d("jesusdebug", "Transacción exitosa")
+                            _scaffoldMessage.value = "Transacción exitosa"
                             loadTransfersLayoutList()
                         }, { error ->
                             Log.e("jesusdebug", "Falló la transacción: $error")
+                            _scaffoldMessage.value = "Falló la transacción"
                         })
 
                         Log.d("jesusdebug", "¿Éxito al insertar?")
@@ -185,8 +223,12 @@ class TransferStockViewModel: ViewModel() {
 
                 override fun onError(exception: Throwable) {
                     Log.e("jesusdebug", "Error al obtener instancia de Realm")
+                    _scaffoldMessage.value = "Error al obtener instancia de Realm"
                 }
             })
+/*
+            updateStatusLocation(_codeWarehouseOrigen.value, "N")
+            updateStatusLocation(_codeWarehouseDestino.value, "Y")*/
         }
     }
     private fun buildTransfersLayout(): TransfersLayout {
@@ -233,10 +275,11 @@ class TransferStockViewModel: ViewModel() {
         return transfersLayout
     }
 
-
     fun handleScannedData(type: String, code: String, context: Context) {
         _lastTypeCodeScanned.value = type
         _lastPayloadCodeScanned.value = code
+        Log.e("jesusdebug01", "handleScannedData: $type")
+        Log.e("jesusdebug01", "handleScannedData: $code")
         when (type) {
             "LABEL-TYPE-QRCODE" -> handleQRCodeScan()
             "LABEL-TYPE-CODE39" -> handleCode39Scan()
@@ -246,36 +289,112 @@ class TransferStockViewModel: ViewModel() {
         openPopUp()
     }
 
-    fun handleQRCodeScan() {
+    private fun handleQRCodeScan() {
         _lastCodeQRScanned.value = _lastPayloadCodeScanned.value
         // obtener datos del rotulado
         _codeProduct.value = _lastCodeQRScanned.value.split("|")[0]
         _nameProduct.value = _lastCodeQRScanned.value.split("|")[2]
         _batch.value = _lastCodeQRScanned.value.split("|")[1]
     }
-    fun handleWarehouseCodeScan() {
+    private fun handleWarehouseCodeScan() {
         val code = _lastCodeBar39Scanned.value
         when {
-            _codeWarehouseOrigen.value == "(vacio)" -> _codeWarehouseOrigen.value = code
-            _codeWarehouseDestino.value == "(vacio)" && _codeWarehouseOrigen.value != code -> _codeWarehouseDestino.value = code
             _codeWarehouseOrigen.value == code -> _codeWarehouseOrigen.value = "(vacio)"
             _codeWarehouseDestino.value == code -> _codeWarehouseDestino.value = "(vacio)"
+            //_codeWarehouseOrigen.value == "(vacio)" -> isOriginValid(code, callback = { _codeWarehouseOrigen.value = it })
+            _codeWarehouseOrigen.value == "(vacio)" -> _codeWarehouseOrigen.value = code
+            //_codeWarehouseDestino.value == "(vacio)" && _codeWarehouseOrigen.value != code -> isDestinationValid(code, callback = { _codeWarehouseDestino.value = it })
+            _codeWarehouseDestino.value == "(vacio)" && _codeWarehouseOrigen.value != code -> _codeWarehouseDestino.value = code
         }
         Log.e("jesusdebug", "codeWarehouseOrigen: ${_codeWarehouseOrigen.value}")
         Log.e("jesusdebug", "codeWarehouseDestino: ${_codeWarehouseDestino.value}")
     }
-    fun handleCode39Scan() {
+
+    // Función para obtener los elementos ("Items") desde Realm
+
+/*
+    private fun isOriginValid(scannedCode: String, callback: (String) -> Unit) {
+        try {
+            Log.e("jesusdebug", "loadBinLocationLayoutList")
+            Realm.getInstanceAsync(configBranch, object : Realm.Callback() {
+                override fun onSuccess(realm: Realm) {
+                    val whsx = realm.where(BinLocations::class.java)
+                        .equalTo("Realm_Id", customUserData?.getString("Branch") ?: "")
+                        .equalTo("BinCode", scannedCode)
+                        .findFirst()
+
+                    val result: String
+                    if(whsx != null && whsx.IsFull == "Y") {
+                        _isOriginAvailable.value = true
+                        result = scannedCode
+                        _scaffoldMessage.value = "Origen listo para transferir"
+                    }else if (whsx != null && whsx.IsFull == "N"){
+                        _isOriginAvailable.value = false
+                        result = "(vacio)"
+                        _scaffoldMessage.value = "No hay items para transferir"
+                    }else{
+                        result = "(vacio)"
+                        _scaffoldMessage.value = "La ubicación no esta registrada"
+                    }
+                    callback(result)
+                    realm.close()
+                }
+
+            })
+
+        } catch (e: Exception) {
+            Log.e("jesusdebug", "catch: $e")
+        }
+    }
+
+    private fun isDestinationValid(scannedCode: String, callback: (String) -> Unit) {
+        try {
+            Log.e("jesusdebug", "loadBinLocationLayoutList")
+            Realm.getInstanceAsync(configBranch, object : Realm.Callback() {
+                override fun onSuccess(realm: Realm) {
+                    val whsx = realm.where(BinLocations::class.java)
+                        .equalTo("Realm_Id", customUserData?.getString("Branch") ?: "")
+                        .equalTo("BinCode", scannedCode)
+                        .findFirst()
+
+                    val result: String
+                    if(whsx != null && whsx.IsFull == "N") {
+                        _isOriginAvailable.value = true
+                        result = scannedCode
+                        _scaffoldMessage.value = "Destino listo para transferir"
+                    }else if (whsx != null && whsx.IsFull == "Y"){
+                        _isOriginAvailable.value = false
+                        result = "(vacio)"
+                        _scaffoldMessage.value = "Ubicación destino ocupada"
+                    }else{
+                        result = "(vacio)"
+                        _scaffoldMessage.value = "La ubicación no esta registrada"
+                    }
+                    callback(result)
+                    realm.close()
+                }
+
+            })
+
+        } catch (e: Exception) {
+            Log.e("jesusdebug", "catch: $e")
+        }
+    }
+*/
+
+    private fun handleCode39Scan() {
         _lastCodeBar39Scanned.value = _lastPayloadCodeScanned.value
         handleWarehouseCodeScan()
     }
-    fun handleCodeEAN128Scan() {
+
+    private fun handleCodeEAN128Scan() {
         _lastCodeBar128Scanned.value = _lastPayloadCodeScanned.value
         _codeSSCC.value = _lastPayloadCodeScanned.value
         // realizar consulta SSCC
         getSSCC(_lastCodeBar128Scanned.value)
         // guardar datos
     }
-    fun showQRCodeMismatchError(context: Context) {
+    private fun showQRCodeMismatchError(context: Context) {
         Toast.makeText(context, "El rotulado escaneado no corresponde a un código QR", Toast.LENGTH_LONG).show()
     }
 
@@ -384,6 +503,32 @@ class TransferStockViewModel: ViewModel() {
                 })
         }
     }
+
+/*
+    fun updateStatusLocation(scannedCode: String, IsFull: String) {
+        try {
+            Log.e("jesusdebug", "loadBinLocationLayoutList")
+            Realm.getInstanceAsync(configBranch, object : Realm.Callback() {
+                override fun onSuccess(realm: Realm) {
+                    val whsx: BinLocations? = realm.where(BinLocations::class.java)
+                        .equalTo("Realm_Id", customUserData?.getString("Branch") ?: "")
+                        .equalTo("BinCode", scannedCode)
+                        .findFirst()
+
+                    whsx?.IsFull = IsFull
+                    realm.copyToRealmOrUpdate(whsx)
+                    realm.close()
+
+                }
+
+            })
+
+        } catch (e: Exception) {
+            Log.e("jesusdebug", "catch: $e")
+        }
+    }
+
+*/
 
 
 }

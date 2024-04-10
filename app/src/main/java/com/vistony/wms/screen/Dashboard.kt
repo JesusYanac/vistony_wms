@@ -276,14 +276,14 @@ fun CourseItem(
 
         modifier = Modifier
             .padding(7.5.dp).clickable {
-                if(options.title in listOf("Recepción","Maestros","Toma de inventario","Mis tareas","Imprimir rotulados","Tracking del Palet","Recibo de producción", "Transferencia de Stock")){
+                if(options.title in listOf("Recepción","Maestros","Toma de inventario","Mis tareas","Imprimir rotulados","Tracking del Palet","Recibo de producción", "Transferencia de Stock", "Bloqueo de Ubicación")){
                     onPress(options.route)
                 }
             }
             .aspectRatio(1f)
             .clip(RoundedCornerShape(10.dp))
             .background(
-                if(options.title in listOf("Recepción","Maestros","Toma de inventario","Mis tareas","Imprimir rotulados","Tracking del Palet","Recibo de producción", "Transferencia de Stock")){
+                if(options.title in listOf("Recepción","Maestros","Toma de inventario","Mis tareas","Imprimir rotulados","Tracking del Palet","Recibo de producción", "Transferencia de Stock", "Bloqueo de Ubicación")){
                     AzulVistony201
                 }else{
                     Color.Gray
@@ -320,7 +320,7 @@ fun CourseItem(
                     .align(Alignment.BottomEnd)
                     .clip(RoundedCornerShape(10.dp))
                     .background(
-                        if(options.title in listOf("Recepción","Maestros","Toma de inventario","Mis tareas","Imprimir rotulados","Tracking del Palet","Recibo de producción", "Transferencia de Stock")){
+                        if(options.title in listOf("Recepción","Maestros","Toma de inventario","Mis tareas","Imprimir rotulados","Tracking del Palet","Recibo de producción", "Transferencia de Stock", "Bloqueo de Ubicación")){
                             AzulVistony202
                         }else{
                             Color.Gray

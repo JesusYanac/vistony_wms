@@ -1,7 +1,7 @@
 package com.vistony.wms.util
 
 object DatasourceSingleton {
-    var apiUrl: String = "http://192.168.254.20:8082/pe/" // URL por defecto para MongoDB
+    var apiUrl: String = "http://192.168.254.20:8082/pe/vs1.0/" // URL por defecto para MongoDB
     var port: Int = 8082  // Puerto por defecto para MongoDB
     //var databaseKey: String = "appwms-bckdu" // Clave por defecto para MongoDB
     var databaseKey: String = "appwms-bckdu" // Clave por defecto para MongoDB

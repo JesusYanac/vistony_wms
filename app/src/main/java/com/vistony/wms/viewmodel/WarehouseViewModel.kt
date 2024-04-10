@@ -79,7 +79,7 @@ class WarehouseViewModel(flag:String,warehouse:String="",objType:Int=0): ViewMod
                             val whsx = r.where(BinLocations::class.java)
                                 .equalTo("Warehouse",i.WarehouseCode)
                                 .findAll()
-
+                            Log.e("REOS","WarehouseViewModel-getMasterDataWarehouse-whsx"+whsx)
                             whsx?.let { datax: RealmResults<BinLocations> ->
                                 val temp2: List<BinLocations> = datax.subList(0, datax.size)
                                 if(i.WmsLocation == "N" ){
@@ -100,6 +100,7 @@ class WarehouseViewModel(flag:String,warehouse:String="",objType:Int=0): ViewMod
 
                         }
                         _almacenes.value = WarehouseResponse(defaultLocation=defaultLocation,numLocation=numLocation,warehouse = temp, status = "ok",fechaDescarga = Date())
+
                     } else {
                         _almacenes.value =
                             WarehouseResponse(warehouse = emptyList(), status = "vacio", fechaDescarga = Date())
