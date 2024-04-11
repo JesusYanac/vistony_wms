@@ -207,7 +207,8 @@ class MainActivity : ComponentActivity(),Observer{
                 composable(Routes.ImprimirEtiqueta.route) {
                     PrintQrScreen(
                         navController = navController,
-                        context = applicationContext
+                        context = applicationContext,
+                        zebraViewModel=zebraViewModel
                     )
                 }
 

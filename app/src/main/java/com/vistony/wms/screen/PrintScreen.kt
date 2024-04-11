@@ -48,19 +48,35 @@ import com.vistony.wms.viewmodel.ZebraViewModel
 
 @SuppressLint("UnusedMaterialScaffoldPaddingParameter")
 @Composable
-fun PrintQrScreen(navController: NavHostController, context: Context){
+fun PrintQrScreen(
+    navController: NavHostController,
+    context: Context,
+    zebraViewModel: ZebraViewModel
+){
+    val zebraValue = zebraViewModel.data.collectAsState()
 
     val printViewModel: PrintViewModel = viewModel(
         factory = PrintViewModel.PrintViewModelFactory()
     )
 
+
     val statusPrint = printViewModel.statusPrint.collectAsState()
 
     Scaffold(
         topBar = {
-            TopBar(title="Imprimir rotulado QR")
+            TopBarWithBackPress(
+                title="Imprimir rotulado QR",
+                onButtonClicked = {
+                    navController.navigateUp()
+                }
+            )
+
         }
     ){
+
+        if (zebraValue.value.Payload.isNotEmpty()) {
+            Log.d("jesusdebug", "Se escaneó: "+zebraValue.value.Payload)
+        }
         when(statusPrint.value){
             ""->{}
             "cargando"->{
@@ -523,8 +539,13 @@ private fun divPrint(viewModel: PrintViewModel,onContinue:(Print)->Unit,onCancel
             }
         ),
         onChange = {
+            Log.d("jesusdebug", "Se escaneo: "+it)
+            val text: String = it.replace("*","")
+            val itemCode = text.split("|")[0]
+            val batch = text.split("|")[1]
+            val name = text.split("|")[2]
             viewModel.setPrint(
-                print=Print(printer=print.value.printer,itemCode = it, itemName = print.value.itemName, itemUom = print.value.itemUom , itemDate =print.value.itemDate,itemBatch = print.value.itemBatch,quantityString=print.value.quantityString)
+                print=Print(printer=print.value.printer,itemCode = itemCode, itemName = name, itemUom = print.value.itemUom , itemDate =print.value.itemDate,itemBatch = batch,quantityString=print.value.quantityString)
             )
         }
     )

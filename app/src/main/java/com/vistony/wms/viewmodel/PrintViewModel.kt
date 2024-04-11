@@ -80,11 +80,12 @@ class PrintViewModel(): ViewModel() {
                 val article = r.where(Items::class.java)
                     .equalTo("ItemCode",value)
                     .findFirst()
+                Log.d("jesusdebug", "getArticle: "+article)
 
                 if (article != null) {
                     _print.value= Print(
-                        itemName=article.ItemName,
-                        itemCode=article.ItemCode,
+                        /*itemName=article.ItemName,
+                        itemCode=article.ItemCode,*/
                         itemUom=article.UoMGroupEntry,
                         status="ok"
                     )
@@ -190,15 +191,15 @@ class PrintViewModel(): ViewModel() {
         _statusPrint.value = "cargando"
 
         //print.ipAddress=print.printer.ip
-        print.ipAddress="172.16.28.50"
-        print.printer.ip="172.16.28.50"
+        print.ipAddress=print.printer.ip
+        Log.d("jesusdebug", "ipAddress: ${print.ipAddress}")
         print.portNumber=print.printer.port.toInt()
         Log.d("jesusdebug", "iniciando la llamada")
         try {
 
             viewModelScope.launch(Dispatchers.Default){
 
-                APIService.getInstance().getPrintData(itemCode = "1200009").enqueue(object :Callback<MyDataPrint> {
+                APIService.getInstance().getPrintData(itemCode = print.itemCode).enqueue(object :Callback<MyDataPrint> {
                     override fun onResponse(call: Call<MyDataPrint>, response: Response<MyDataPrint>) {
                         Log.e("REOS","PrintViewModel-sendPrintTerminationReport-call"+call)
                         Log.e("REOS","PrintViewModel-sendPrintTerminationReport-response"+response)
