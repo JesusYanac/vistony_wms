@@ -28,7 +28,7 @@ interface APIService {
     @POST("api/Printer")
     fun sendPrint2(@Body request:RequestBody): Call<MyData>
     @GET("Items/info")
-    fun getPrintData(@Query("itemCode") itemCode:String): Call<MyDataPrint>
+    fun getPrintData(@Query("itemCode") itemCode:String, @Query("lote") lote:String): Call<MyDataPrint>
 
     @POST("Production/TerminacionReport")
     fun sendTerminationReportPrint(@Body request:RequestBody): Call<TerminationReport>

@@ -540,16 +540,18 @@ private fun divPrint(viewModel: PrintViewModel,onContinue:(Print)->Unit,onCancel
         ),*/
         onChange = {
             Log.d("jesusdebug", "Se escaneo: "+it)
-            val text: String = it.replace("*","")
-            val itemCode = text.split("|")[0]
-            val batch = text.split("|")[1]
-            val name = text.split("|")[2]
-            viewModel.getArticle(itemCode,batch,name)
-            focusManager.clearFocus()
-            keyboardController?.hide()
-            viewModel.setPrint(
-                print=Print(printer=print.value.printer,itemCode = itemCode, itemName = name, itemUom = print.value.itemUom , itemDate =print.value.itemDate,itemBatch = batch,quantityString=print.value.quantityString)
-            )
+            if(!it.isNullOrEmpty() && it.length>2){
+                val text: String = it.replace("*","")
+                val itemCode = text.split("|")[0]
+                val batch = text.split("|")[1]
+                val name = text.split("|")[2]
+                viewModel.getArticle(itemCode,batch,name)
+                focusManager.clearFocus()
+                keyboardController?.hide()
+                viewModel.setPrint(
+                    print=Print(printer=print.value.printer,itemCode = itemCode, itemName = name, itemUom = print.value.itemUom , itemDate =print.value.itemDate,itemBatch = batch,quantityString=print.value.quantityString)
+                )
+            }
         }
     )
 

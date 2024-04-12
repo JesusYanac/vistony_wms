@@ -90,6 +90,23 @@ class PrintViewModel(): ViewModel() {
                         itemCode = article.ItemCode,
                         status="ok"
                     )
+                    viewModelScope.launch(Dispatchers.Default){
+
+                        APIService.getInstance().getPrintData(itemCode = itemCode, lote = batch).enqueue(object :Callback<MyDataPrint> {
+                            override fun onResponse(call: Call<MyDataPrint>, response: Response<MyDataPrint>) {
+                                Log.e("REOS","PrintViewModel-sendPrintTerminationReport-call"+call)
+                                Log.e("REOS","PrintViewModel-sendPrintTerminationReport-response"+response)
+                                _print.value= _print.value.copy(
+                                    itemDate = response.body()?.Data!![0].Fecha,
+                                )
+                            }
+                            override fun onFailure(call: Call<MyDataPrint>, t: Throwable) {
+                                TODO("Not yet implemented")
+                            }
+                        })
+
+
+                    }
                 }else{
                     _print.value=Print(status="vacio")
                 }
@@ -132,7 +149,7 @@ class PrintViewModel(): ViewModel() {
                             LineaItem(
                                 itemName = print.itemName + " "+ print.itemUom,
                                 itemCode = print.itemCode,
-                                numero = print.quantity,
+                                numero = print.quantity*2,
                                 lote = print.itemBatch,
                                 fecha = print.itemDate,
                                 unidadMedida = print.itemUom,
@@ -167,6 +184,7 @@ class PrintViewModel(): ViewModel() {
                     Log.e("jesusdebug","PrintViewModel-sendPrintSSCC-response"+response)
                     if(response.isSuccessful){
                         _statusPrint.value="ok"
+                        _print.value = Print(status = "vacio")
                     }else{
 
                         val errorBody = response.errorBody()?.string()
@@ -200,7 +218,7 @@ class PrintViewModel(): ViewModel() {
 
             viewModelScope.launch(Dispatchers.Default){
 
-                APIService.getInstance().getPrintData(itemCode = print.itemCode).enqueue(object :Callback<MyDataPrint> {
+                APIService.getInstance().getPrintData(itemCode = print.itemCode, lote = print.itemBatch).enqueue(object :Callback<MyDataPrint> {
                     override fun onResponse(call: Call<MyDataPrint>, response: Response<MyDataPrint>) {
                         Log.e("REOS","PrintViewModel-sendPrintTerminationReport-call"+call)
                         Log.e("REOS","PrintViewModel-sendPrintTerminationReport-response"+response)

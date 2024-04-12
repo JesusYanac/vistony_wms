@@ -116,7 +116,8 @@ data class ItemDataPrint(
     var ItemCode: String = "",
     var Tvida: Int = 0,
     var BarCode: String = "",
-    var UM: String = ""
+    var UM: String = "",
+    var Fecha: String = ""
 )
 
 
