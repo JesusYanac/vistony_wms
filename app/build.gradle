@@ -13,8 +13,8 @@ android {
         applicationId "com.vistony.wms"
         minSdk 26
         targetSdk 31
-        versionCode 7
-        versionName "1.1.26"
+        versionCode 26
+        versionName "1.1.27"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary true

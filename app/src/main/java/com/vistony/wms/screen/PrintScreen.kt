@@ -530,20 +530,23 @@ private fun divPrint(viewModel: PrintViewModel,onContinue:(Print)->Unit,onCancel
         value=print.value.itemCode,
         label="Código del artículo",
         placeholder = "Ingresa el código a buscar",
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text,imeAction = ImeAction.Search ),
-        keyboardActions = KeyboardActions(
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text,imeAction = ImeAction.Next ),
+        /*keyboardActions = KeyboardActions(
             onSearch = {
                 viewModel.getArticle(print.value.itemCode)
                 focusManager.clearFocus()
                 keyboardController?.hide()
             }
-        ),
+        ),*/
         onChange = {
             Log.d("jesusdebug", "Se escaneo: "+it)
             val text: String = it.replace("*","")
             val itemCode = text.split("|")[0]
             val batch = text.split("|")[1]
             val name = text.split("|")[2]
+            viewModel.getArticle(itemCode,batch,name)
+            focusManager.clearFocus()
+            keyboardController?.hide()
             viewModel.setPrint(
                 print=Print(printer=print.value.printer,itemCode = itemCode, itemName = name, itemUom = print.value.itemUom , itemDate =print.value.itemDate,itemBatch = batch,quantityString=print.value.quantityString)
             )
@@ -654,56 +657,42 @@ private fun divPrint(viewModel: PrintViewModel,onContinue:(Print)->Unit,onCancel
             colors= ButtonDefaults.buttonColors(backgroundColor = Color.Gray),
             onClick = {
                 Log.d("jesusdebug", "Se mando a imprimir")
-                var quantityPrint:Int=0
 
-                try{
-                    quantityPrint=print.value.quantityString.toInt()
-                    print.value.quantity=quantityPrint
+                val itemCode = print.value.itemCode
+                val itemBatch = print.value.itemBatch
+                val printerIp = print.value.printer.ip
+                val quantityString = print.value.quantityString
+                val fecha = print.value.itemDate
+                Log.d("jesusdebug", "Se mando a imprimir: "+itemCode+"|"+itemBatch+"|"+printerIp+"|"+quantityString+"|"+fecha)
 
-                    haveError=""
-                    focusManager.clearFocus()
-                    Log.d("jesusdebug", "Se mando a imprimir: "+print.value)
-                    onContinue(
-                        print.value
-                    )
-
-                }catch(e:Exception){
-                    haveError="*La cantidad a imprimir no es valida"
-                }
-                
-                if(print.value.itemCode.isNotEmpty()){
-                    if(print.value.itemBatch.isNotEmpty()){
-                        if(print.value.itemBatch.isNotEmpty()){
-                            if(print.value.printer.ip.isNotEmpty()){
-
-                                var quantityPrint:Int=0
-
-                                try{
-                                    quantityPrint=print.value.quantityString.toInt()
-                                    print.value.quantity=quantityPrint
-
-                                    haveError=""
-                                    focusManager.clearFocus()
-                                    onContinue(
-                                        print.value
-                                    )
-
-                                }catch(e:Exception){
-                                    haveError="*La cantidad a imprimir no es valida"
-                                }
-                            }else{
-                                haveError="*Es necesario seleccionar una impresora"
-                            }
-                        }else{
-                            haveError="*Es necesario ingresar la fecha a imprimir"
-                        }
-                    }else{
-                        haveError="*Es necesario ingresar el lote a imprimir"
+                if (itemCode.isNotEmpty() &&
+                    itemBatch.isNotEmpty() &&
+                    printerIp.isNotEmpty() &&
+                    fecha.isNotEmpty()
+                    ) {
+                    try {
+                        val quantityPrint = quantityString.toInt()
+                        print.value.quantity = quantityPrint
+                        Log.d("jesusdebug", "quantityPrint: "+quantityPrint)
+                        haveError = ""
+                        focusManager.clearFocus()
+                        onContinue(print.value)
+                    } catch (e: NumberFormatException) {
+                        haveError = "*La cantidad a imprimir no es válida"
+                        Log.e("jesusdebug", "haveError: "+e.message)
                     }
-                }else{
-                    haveError="*Es necesario ingresar el artículo a imprimir"
+                } else {
+                    haveError = when {
+                        itemCode.isEmpty() -> "*Es necesario ingresar el artículo a imprimir"
+                        itemBatch.isEmpty() -> "*Es necesario ingresar el lote a imprimir"
+                        printerIp.isEmpty() -> "*Es necesario seleccionar una impresora"
+                        fecha.isEmpty() -> "*Es necesario ingresar una fecha"
+                        else -> ""
+                    }
                 }
-            }){
+            }
+
+        ){
             Text(
                 text = "Imprimir",
                 color= Color.White

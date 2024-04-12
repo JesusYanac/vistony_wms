@@ -71,22 +71,23 @@ class PrintViewModel(): ViewModel() {
         _terminationReport.value= TerminationReport(Data="", Status = "")
     }
 
-    fun getArticle(value:String){
-        _print.value=Print(status="cargando")
-
+    fun getArticle(itemCode:String, batch: String, name: String) {
+        Log.d("jesusdebug", "ingreso getArticle: "+itemCode)
+        Log.d("jesusdebug", "print: "+_print.value)
         Realm.getInstanceAsync(configPublic, object : Realm.Callback() {
             override fun onSuccess(r: Realm) {
 
                 val article = r.where(Items::class.java)
-                    .equalTo("ItemCode",value)
+                    .equalTo("ItemCode",itemCode)
                     .findFirst()
                 Log.d("jesusdebug", "getArticle: "+article)
 
                 if (article != null) {
-                    _print.value= Print(
-                        /*itemName=article.ItemName,
-                        itemCode=article.ItemCode,*/
+                    _print.value= _print.value.copy(
                         itemUom=article.UoMGroupEntry,
+                        itemBatch = batch,
+                        itemName = name,
+                        itemCode = article.ItemCode,
                         status="ok"
                     )
                 }else{
@@ -129,7 +130,7 @@ class PrintViewModel(): ViewModel() {
                         flag = "Zebra_QR",
                         lineaData = listOf(
                             LineaItem(
-                                itemName = print.itemName,
+                                itemName = print.itemName + " "+ print.itemUom,
                                 itemCode = print.itemCode,
                                 numero = print.quantity,
                                 lote = print.itemBatch,
