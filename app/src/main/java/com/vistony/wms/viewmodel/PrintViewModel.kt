@@ -24,6 +24,8 @@ import retrofit2.Callback
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 class PrintViewModel(): ViewModel() {
 
@@ -137,6 +139,9 @@ class PrintViewModel(): ViewModel() {
     }
 
     fun sendPrintFinal(print:Print, data:List<ItemDataPrint>){
+        Log.d("jesusdebug", "se ingresó a sendPrintFinal")
+        Log.d("jesusdebug", "sendPrintFinal print: "+print)
+        Log.d("jesusdebug", "sendPrintFinal data: "+data)
         val jsonBody: RequestBody = RequestBody.create(
             MediaType.parse("application/json; charset=utf-8"),
             JSONObject(
@@ -161,13 +166,49 @@ class PrintViewModel(): ViewModel() {
                 )
             ).toString()
         )
+        Log.d("jesusdebug", "sendPrintFinal jsonBody: "+jsonBody)
+        Log.d("jesusdebug", "iniciando calculo de fechas")
 
-        Log.d("jesusdebug", "jsonBody$jsonBody")
-        Log.d("jesusdebug",JSONObject(
+        val fecha = print.itemDate // Reemplaza esto con tu fecha
+        val anio = fecha.split("/")[1].toInt()
+        val mes = fecha.split("/")[0].toInt()
+
+        Log.d("jesusdebug", "fecha: "+fecha)
+        val tv = data?.get(0)?.Tvida // Reemplaza esto con tu valor de tv
+
+        val anioFinal = anio + tv!!.toInt()
+
+        Log.d("jesusdebug", "tv: "+tv)
+
+        val formattedResult = if (mes < 10) {
+            "20${anioFinal}0${mes}01"
+        } else {
+            "20${anioFinal}${mes}01"
+        }
+
+        Log.d("jesusdebug", "formattedResult: "+formattedResult)
+        Log.d("jesusdebug", "jsonBody $jsonBody")
+        Log.d("jesusdebug", "sendPrintFinal: ${JSONObject(
             Gson().toJson(
-                print
+                PrintData(
+                    ipAddress = print.ipAddress ,
+                    portNumber = print.portNumber,
+                    flag = "Zebra_QR",
+                    lineaData = listOf(
+                        LineaItem(
+                            itemName = print.itemName + " "+ print.itemUom,
+                            itemCode = print.itemCode,
+                            numero = print.quantity*2,
+                            lote = print.itemBatch,
+                            fecha = print.itemDate,
+                            unidadMedida = print.itemUom,
+                            barCode = data?.get(0)?.BarCode.toString(),
+                            fv = formattedResult?:"0000",
+                        )
+                    )
+                )
             )
-        ).toString())
+        ).toString()}")
 
 
 
