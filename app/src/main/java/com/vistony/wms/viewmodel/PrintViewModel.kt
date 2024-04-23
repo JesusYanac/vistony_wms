@@ -6,7 +6,9 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
 import com.vistony.wms.model.*
+import com.vistony.wms.num.TypeCode
 import com.vistony.wms.util.APIService
+import io.realm.Case
 import io.realm.Realm
 import io.realm.kotlin.syncSession
 import io.realm.mongodb.sync.SyncConfiguration
@@ -47,6 +49,9 @@ class PrintViewModel(): ViewModel() {
     private val _terminationReport = MutableStateFlow(TerminationReport())
     val terminationReport: StateFlow<TerminationReport> get() = _terminationReport
 
+    private val _articleList = MutableStateFlow<List<Items?>>(emptyList())
+    val articleList: StateFlow<List<Items?>> get() = _articleList
+
     class PrintViewModelFactory(): ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -68,6 +73,9 @@ class PrintViewModel(): ViewModel() {
 
     fun resetStatusPrint(){
         _statusPrint.value=""
+    }
+    fun setStatusPrint(status:String){
+        _statusPrint.value=status
     }
     fun resetStatusTerminationReport(){
         _terminationReport.value= TerminationReport(Data="", Status = "")
@@ -142,6 +150,26 @@ class PrintViewModel(): ViewModel() {
         Log.d("jesusdebug", "se ingresó a sendPrintFinal")
         Log.d("jesusdebug", "sendPrintFinal print: "+print)
         Log.d("jesusdebug", "sendPrintFinal data: "+data)
+
+        Log.d("jesusdebug", "iniciando calculo de fechas")
+
+        val fecha = print.itemDate // Reemplaza esto con tu fecha
+        val anio = fecha.split("/")[1].toInt()
+        val mes = fecha.split("/")[0].toInt()
+
+        Log.d("jesusdebug", "fecha: "+fecha)
+        val tv = data?.get(0)?.Tvida // Reemplaza esto con tu valor de tv
+
+        val anioFinal = anio + tv!!.toInt()
+
+        Log.d("jesusdebug", "tv: "+tv)
+
+        val formattedResult = if (mes < 10) {
+            "${anioFinal}0${mes}01"
+        } else {
+            "${anioFinal}${mes}01"
+        }
+
         val jsonBody: RequestBody = RequestBody.create(
             MediaType.parse("application/json; charset=utf-8"),
             JSONObject(
@@ -159,35 +187,15 @@ class PrintViewModel(): ViewModel() {
                                 fecha = print.itemDate,
                                 unidadMedida = print.itemUom,
                                 barCode = data?.get(0)?.BarCode.toString(),
-                                fv = data?.get(0)?.Tvida.toString(),
+                                fv = formattedResult?:"0000",
                             )
                         )
                     )
                 )
             ).toString()
         )
-        Log.d("jesusdebug", "sendPrintFinal jsonBody: "+jsonBody)
-        Log.d("jesusdebug", "iniciando calculo de fechas")
-
-        val fecha = print.itemDate // Reemplaza esto con tu fecha
-        val anio = fecha.split("/")[1].toInt()
-        val mes = fecha.split("/")[0].toInt()
-
-        Log.d("jesusdebug", "fecha: "+fecha)
-        val tv = data?.get(0)?.Tvida // Reemplaza esto con tu valor de tv
-
-        val anioFinal = anio + tv!!.toInt()
-
-        Log.d("jesusdebug", "tv: "+tv)
-
-        val formattedResult = if (mes < 10) {
-            "20${anioFinal}0${mes}01"
-        } else {
-            "20${anioFinal}${mes}01"
-        }
-
         Log.d("jesusdebug", "formattedResult: "+formattedResult)
-        Log.d("jesusdebug", "jsonBody $jsonBody")
+        Log.d("jesusdebug", "jsonBody ${jsonBody}")
         Log.d("jesusdebug", "sendPrintFinal: ${JSONObject(
             Gson().toJson(
                 PrintData(
@@ -403,6 +411,24 @@ class PrintViewModel(): ViewModel() {
                     _terminationReport.value= TerminationReport(Status=error.message.toString(),Data="")
                 }
             })
+        }
+    }
+
+    fun searchArticleByName(name: String) {
+        // Buscar artículo en Realm por nombre
+        try {
+            Log.d("jesusdebug", "searchArticleByName: $name")
+            val realm = Realm.getInstance(configPublic) // Obtener la instancia de Realm
+            val article = realm.where(Items::class.java)
+                .contains("ItemName", name, Case.INSENSITIVE) // Añadir Case.INSENSITIVE para ignorar mayúsculas
+                .findAll()
+
+            Log.d("jesusdebug", "getArticles: $article")
+
+            _articleList.value = article
+        } catch (e: Exception) {
+            Log.d("jesusdebug", "searchArticleByName: $e")
+            _print.value = Print(status = e.message ?: "Error desconocido")
         }
     }
 }

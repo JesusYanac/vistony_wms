@@ -6,6 +6,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -16,6 +17,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,6 +25,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -32,6 +35,8 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import com.google.gson.annotations.SerializedName
@@ -62,6 +67,9 @@ fun PrintQrScreen(
 
     val statusPrint = printViewModel.statusPrint.collectAsState()
 
+    if (zebraValue.value.Payload.isNotEmpty()) {
+        Log.d("jesusdebug", "Se escaneó: "+zebraValue.value.Payload)
+    }
     Scaffold(
         topBar = {
             TopBarWithBackPress(
@@ -71,16 +79,40 @@ fun PrintQrScreen(
                 }
             )
 
+        },
+        floatingActionButton = {
+            Box(modifier = Modifier
+                .padding(10.dp)
+                .background(color = AzulVistony202)) {
+                FloatingActionButton(
+                    onClick = {
+                        Log.d("jesusdebug","onClick")
+                        printViewModel.setStatusPrint("buscando")
+                    },
+                    backgroundColor = AzulVistony202
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_search_white_24dp),
+                        contentDescription = "Imprimir",
+                        tint = Color.White
+                    )
+                }
+            }
+        },
+        floatingActionButtonPosition = FabPosition.End,
+        isFloatingActionButtonDocked = true,
+        bottomBar = {
         }
+
     ){
 
-        if (zebraValue.value.Payload.isNotEmpty()) {
-            Log.d("jesusdebug", "Se escaneó: "+zebraValue.value.Payload)
-        }
         when(statusPrint.value){
             ""->{}
             "cargando"->{
                 lockScreen("Imprimiendo...")
+            }
+            "buscando"->{
+                lockSearchScreen("Buscando",printViewModel)
             }
             "ok"->{
                 Toast.makeText(context,"Imprimiendo...", Toast.LENGTH_LONG).show()
@@ -90,7 +122,9 @@ fun PrintQrScreen(
             }
         }
 
-        Column(modifier=Modifier.padding(20.dp).verticalScroll(rememberScrollState())) {
+        Column(modifier= Modifier
+            .padding(20.dp)
+            .verticalScroll(rememberScrollState())) {
             divPrint(
                 viewModel = printViewModel,
                 onContinue = {
@@ -101,6 +135,140 @@ fun PrintQrScreen(
                     navController.navigateUp()
                 }
             )
+        }
+    }
+}
+
+@Composable
+fun lockSearchScreen(text: String,printViewModel : PrintViewModel) {
+    val articleList: State<List<Items?>> = printViewModel.articleList.collectAsState()
+    Popup(
+        onDismissRequest = {},
+        properties = PopupProperties(
+            focusable = true,
+            dismissOnBackPress = false,
+            dismissOnClickOutside = false,
+            excludeFromSystemGesture = true,
+        )
+    ){
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.White)
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
+                ,modifier = Modifier
+                    .padding(20.dp)
+                    .background(Color.White)
+                    .fillMaxSize()
+            ) {
+                val focusRequester = remember { FocusRequester() }
+                val inputName = remember { mutableStateOf("") }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ){
+                    Box (
+                        modifier = Modifier
+                            .padding(all = 8.dp),
+                        contentAlignment = Alignment.Center
+                    ){
+                        Text(text = "Busca item por nombre", color = Color.Black)
+                    }
+                    IconButton(
+                        onClick = {
+                            printViewModel.setStatusPrint("")
+
+                        },
+                    ) {
+                        Icon(
+                            Icons.Filled.Close,
+                            contentDescription = "Close",
+                            tint = Color.Black
+                        )
+                    }
+                }
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                ){
+                    OutlinedTextField(
+                        value = inputName.value,
+                        onValueChange = {
+                            inputName.value = it
+                            printViewModel.searchArticleByName(it)
+                                        },
+                        modifier = Modifier
+                            .focusRequester(focusRequester)
+                            .fillMaxWidth(),
+                        placeholder = { Text(text = "Nombre producto") },
+                        trailingIcon = {
+                            if (inputName.value.isNotEmpty()) {
+                                IconButton(
+                                    onClick = {
+                                        inputName.value = ""
+                                    }
+                                ) {
+                                    Icon(
+                                        Icons.Filled.Close,
+                                        contentDescription = "Close",
+                                        tint = Color.Black
+                                    )
+                                }
+                            }
+                        }
+                    )
+                }
+                if(articleList.value.isEmpty()){
+                    Column (
+                        modifier = Modifier
+                            .fillMaxSize(),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ){
+                        Text(text = "Sin Items")
+                    }
+                }else{
+                    LazyColumn(modifier = Modifier.fillMaxWidth()) {
+                        itemsIndexed(articleList.value) { _, item ->
+                            Divider()
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .selectable(
+                                        selected = item?.ItemName == inputName.value,
+                                        onClick = {
+                                            inputName.value = item?.ItemName ?: ""
+                                            printViewModel.setStatusPrint("")
+                                        }
+                                    ),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box (
+                                    modifier = Modifier
+                                        .padding(all = 8.dp)
+                                        .weight(1f),
+                                ){
+                                    Text(text = item?.ItemName ?: "",)
+                                }
+                                Spacer(modifier = Modifier.weight(1f))
+                                Box (
+                                    modifier = Modifier
+                                        .padding(all = 8.dp)
+                                        .width(120.dp),
+                                ){
+                                    Text(text = item?.ItemCode ?: "")
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -166,7 +334,10 @@ fun PrintSSccScreen(navController: NavHostController, context: Context,zebraView
         when(articleValue.value.status){
             ""->{
                 Column(
-                    modifier=Modifier.padding(top=20.dp, bottom = 10.dp).fillMaxWidth().fillMaxHeight(),
+                    modifier= Modifier
+                        .padding(top = 20.dp, bottom = 10.dp)
+                        .fillMaxWidth()
+                        .fillMaxHeight(),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
@@ -531,13 +702,15 @@ private fun divPrint(viewModel: PrintViewModel,onContinue:(Print)->Unit,onCancel
         label="Código del artículo",
         placeholder = "Ingresa el código a buscar",
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text,imeAction = ImeAction.Next ),
-        /*keyboardActions = KeyboardActions(
+        /*
+        keyboardActions = KeyboardActions(
             onSearch = {
                 viewModel.getArticle(print.value.itemCode)
                 focusManager.clearFocus()
                 keyboardController?.hide()
             }
-        ),*/
+        ),
+        */
         onChange = {
             Log.d("jesusdebug", "Se escaneo: "+it)
             if(!it.isNullOrEmpty() && it.length>2){
@@ -558,9 +731,9 @@ private fun divPrint(viewModel: PrintViewModel,onContinue:(Print)->Unit,onCancel
     Text("")
 
     InputBox(
-        enabled= false,
+        enabled= true,
         value=print.value.itemName,
-        label="Nombre del artículo"
+        label="Nombre del artículo",
     )
 
     Text("")
@@ -700,7 +873,7 @@ private fun divPrint(viewModel: PrintViewModel,onContinue:(Print)->Unit,onCancel
                 color= Color.White
             )
         }
-        Button( onClick = {
+        /*Button( onClick = {
             haveError=""
             focusManager.clearFocus()
             onCancel()
@@ -708,7 +881,7 @@ private fun divPrint(viewModel: PrintViewModel,onContinue:(Print)->Unit,onCancel
             Text(
                 text = "Cancelar"
             )
-        }
+        }*/
     }
 
 
@@ -752,8 +925,8 @@ private fun listPrinterSection(viewModel: PrintViewModel,value:PrintMachines,onS
                                 onClick = {
                                     onSelect(
                                         PrintMachines(
-                                            name=line.name,
-                                            ip=line.uIPAdress,
+                                            name = line.name,
+                                            ip = line.uIPAdress,
                                             port = line.uPort
                                         )
                                     )
