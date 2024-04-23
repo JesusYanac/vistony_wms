@@ -148,7 +148,7 @@ fun formLogin(loginViewModel: LoginViewModel, context:Context, open: (BottomShee
                                         else -> { // Perú
                                             DatasourceSingleton.updateApiUrl(BuildConfig.API_URL_PE_PRO)
                                             DatasourceSingleton.updatePort(8082)
-                                            DatasourceSingleton.updateDatabaseKey("appwms-bckdu")
+                                            DatasourceSingleton.updateDatabaseKey("")
                                         }
                                     }
 
