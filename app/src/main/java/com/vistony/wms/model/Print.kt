@@ -115,15 +115,20 @@ data class PrintData(
 data class ItemDataPrint(
     var ItemCode: String = "",
     var Tvida: Int = 0,
+    var QtyUnit: Int = 0, // Asumo que QtyUnit es la cantidad en unidades
+    var QtyPallet: Int = 0, // Asumo que QtyPallet es la cantidad en pallets
+    var ItemName: String = "",
+    var ItemUnit: String = "",
     var BarCode: String = "",
+    var BarCodeUnit: String = "",
     var UM: String = "",
     var Fecha: String = ""
 )
 
-
 data class MyDataPrint(
     var Data: List<ItemDataPrint> = emptyList()
 )
+
 data class MyData(
     var Data: String = ""
 )

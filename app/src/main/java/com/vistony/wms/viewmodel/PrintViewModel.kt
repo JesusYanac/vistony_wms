@@ -195,7 +195,7 @@ class PrintViewModel(): ViewModel() {
                                 lote = print.itemBatch,
                                 fecha = print.itemDate,
                                 unidadMedida = print.itemUom,
-                                barCode = data?.get(0)?.BarCode.toString(),
+                                barCode = if(_flagPrint.value=="Zebra_QR"){data?.get(0)?.BarCode.toString()}else{data?.get(0)?.BarCodeUnit.toString()},
                                 fv = formattedResult?:"0000",
                             )
                         )
@@ -238,8 +238,7 @@ class PrintViewModel(): ViewModel() {
             val apiService = retrofit.create(APIService::class.java)
             apiService.sendPrint2(jsonBody).enqueue(object :Callback<MyData> {
                 override fun onResponse(call: Call<MyData>, response: Response<MyData>) {
-                    Log.e("jesusdebug","PrintViewModel-sendPrintSSCC-call"+call)
-                    Log.e("jesusdebug","PrintViewModel-sendPrintSSCC-response"+response)
+
                     if(response.isSuccessful){
                         _statusPrint.value="ok"
                         _print.value = Print(status = "vacio")
