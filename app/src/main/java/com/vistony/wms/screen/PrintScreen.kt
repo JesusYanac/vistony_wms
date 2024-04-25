@@ -64,6 +64,7 @@ fun PrintQrScreen(
         factory = PrintViewModel.PrintViewModelFactory()
     )
 
+    printViewModel.setFlagPrint("Zebra_QR")
 
     val statusPrint = printViewModel.statusPrint.collectAsState()
 
@@ -243,8 +244,19 @@ fun lockSearchScreen(text: String,printViewModel : PrintViewModel) {
                                     .selectable(
                                         selected = item?.ItemName == inputName.value,
                                         onClick = {
-                                            inputName.value = item?.ItemName ?: ""
                                             printViewModel.setStatusPrint("")
+                                            printViewModel.setPrint(
+                                                Print(
+                                                    itemCode = item?.ItemCode ?: "",
+                                                    itemName = item?.ItemName ?: "",
+                                                    itemUom = "",
+                                                    itemBatch = "",
+                                                    itemDate = "",
+
+                                                )
+                                            )
+                                            printViewModel.getArticle(item?.ItemCode?:"", "", item?.ItemName ?: "")
+                                            printViewModel.setArticleList(null)
                                         }
                                     ),
                                 verticalAlignment = Alignment.CenterVertically
@@ -256,11 +268,10 @@ fun lockSearchScreen(text: String,printViewModel : PrintViewModel) {
                                 ){
                                     Text(text = item?.ItemName ?: "",)
                                 }
-                                Spacer(modifier = Modifier.weight(1f))
                                 Box (
                                     modifier = Modifier
                                         .padding(all = 8.dp)
-                                        .width(120.dp),
+                                        .width(60.dp),
                                 ){
                                     Text(text = item?.ItemCode ?: "")
                                 }
@@ -689,7 +700,7 @@ private fun divPrintSSCC(
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-private fun divPrint(viewModel: PrintViewModel,onContinue:(Print)->Unit,onCancel:()->Unit){
+fun divPrint(viewModel: PrintViewModel, onContinue:(Print)->Unit, onCancel:()->Unit){
     Log.d("jesusdebug", "DivPrint")
 
     val print = viewModel.print.collectAsState()
@@ -712,8 +723,8 @@ private fun divPrint(viewModel: PrintViewModel,onContinue:(Print)->Unit,onCancel
         ),
         */
         onChange = {
-            Log.d("jesusdebug", "Se escaneo: "+it)
-            if(!it.isNullOrEmpty() && it.length>2){
+            if(!it.isNullOrEmpty()&&it.contains("|")){
+                Log.d("jesusdebug", "Se escaneo: "+it)
                 val text: String = it.replace("*","")
                 val itemCode = text.split("|")[0]
                 val batch = text.split("|")[1]
@@ -724,14 +735,22 @@ private fun divPrint(viewModel: PrintViewModel,onContinue:(Print)->Unit,onCancel
                 viewModel.setPrint(
                     print=Print(printer=print.value.printer,itemCode = itemCode, itemName = name, itemUom = print.value.itemUom , itemDate =print.value.itemDate,itemBatch = batch,quantityString=print.value.quantityString)
                 )
+            }else{
+                viewModel.setPrint(
+                    print=Print(printer=print.value.printer,itemCode = it, itemName = print.value.itemName, itemUom = print.value.itemUom , itemDate =print.value.itemDate,itemBatch = print.value.itemBatch,quantityString=print.value.quantityString)
+                )
+                Log.d("jesusdebug", "Se detecto codigo: $it")
+                Log.d("jesusdebug", "itemname: "+print.value.itemName)
+                viewModel.getArticle(it,"",print.value.itemName)
             }
+
         }
     )
 
     Text("")
 
     InputBox(
-        enabled= true,
+        enabled= false,
         value=print.value.itemName,
         label="Nombre del artículo",
     )
@@ -752,6 +771,7 @@ private fun divPrint(viewModel: PrintViewModel,onContinue:(Print)->Unit,onCancel
             viewModel.setPrint(
                 print=Print(printer=print.value.printer,itemCode = print.value.itemCode, itemName = print.value.itemName, itemUom = print.value.itemUom , itemDate =print.value.itemDate,quantityString=print.value.quantityString,itemBatch = it)
             )
+            viewModel.getArticle(print.value.itemCode,it,print.value.itemName)
         }
     )
 

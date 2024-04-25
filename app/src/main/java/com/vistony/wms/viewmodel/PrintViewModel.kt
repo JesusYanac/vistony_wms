@@ -52,6 +52,9 @@ class PrintViewModel(): ViewModel() {
     private val _articleList = MutableStateFlow<List<Items?>>(emptyList())
     val articleList: StateFlow<List<Items?>> get() = _articleList
 
+    private val _flagPrint = MutableStateFlow("")
+    val flagPrint: StateFlow<String> get() = _flagPrint
+
     class PrintViewModelFactory(): ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -82,7 +85,7 @@ class PrintViewModel(): ViewModel() {
     }
 
     fun getArticle(itemCode:String, batch: String, name: String) {
-        Log.d("jesusdebug", "ingreso getArticle: "+itemCode)
+        Log.d("jesusdebug", "ingreso getArticle: $itemCode")
         Log.d("jesusdebug", "print: "+_print.value)
         Realm.getInstanceAsync(configPublic, object : Realm.Callback() {
             override fun onSuccess(r: Realm) {
@@ -90,13 +93,13 @@ class PrintViewModel(): ViewModel() {
                 val article = r.where(Items::class.java)
                     .equalTo("ItemCode",itemCode)
                     .findFirst()
-                Log.d("jesusdebug", "getArticle: "+article)
+                Log.d("jesusdebug", "getArticle: $article")
 
                 if (article != null) {
                     _print.value= _print.value.copy(
                         itemUom=article.UoMGroupEntry,
                         itemBatch = batch,
-                        itemName = name,
+                        itemName = article.ItemName,
                         itemCode = article.ItemCode,
                         status="ok"
                     )
@@ -104,8 +107,11 @@ class PrintViewModel(): ViewModel() {
 
                         APIService.getInstance().getPrintData(itemCode = itemCode, lote = batch).enqueue(object :Callback<MyDataPrint> {
                             override fun onResponse(call: Call<MyDataPrint>, response: Response<MyDataPrint>) {
-                                Log.e("REOS","PrintViewModel-sendPrintTerminationReport-call"+call)
-                                Log.e("REOS","PrintViewModel-sendPrintTerminationReport-response"+response)
+                                Log.e("jesusdebug", "PrintViewModel-sendPrintTerminationReport-call$call")
+                                Log.e("jesusdebug",
+                                    "PrintViewModel-sendPrintTerminationReport-response$response"
+                                )
+                                Log.e("jesusdebug", "PrintViewModel-sendPrintTerminationReport-response${response.body()?.Data}")
                                 _print.value= _print.value.copy(
                                     itemDate = response.body()?.Data!![0].Fecha,
                                 )
@@ -118,11 +124,14 @@ class PrintViewModel(): ViewModel() {
 
                     }
                 }else{
-                    _print.value=Print(status="vacio")
+                    _print.value= _print.value.copy(
+                        status="vacio"
+                    )
                 }
             }
             override fun onError(exception: Throwable) {
-                _print.value=Print(status=exception.message.toString())
+                _print.value= _print.value.copy(
+                    status=exception.message.toString())
             }
         }).toString()
     }
@@ -177,7 +186,7 @@ class PrintViewModel(): ViewModel() {
                     PrintData(
                         ipAddress = print.ipAddress ,
                         portNumber = print.portNumber,
-                        flag = "Zebra_QR",
+                        flag = _flagPrint.value,
                         lineaData = listOf(
                             LineaItem(
                                 itemName = print.itemName + " "+ print.itemUom,
@@ -201,7 +210,7 @@ class PrintViewModel(): ViewModel() {
                 PrintData(
                     ipAddress = print.ipAddress ,
                     portNumber = print.portNumber,
-                    flag = "Zebra_QR",
+                    flag = _flagPrint.value,
                     lineaData = listOf(
                         LineaItem(
                             itemName = print.itemName + " "+ print.itemUom,
@@ -430,5 +439,13 @@ class PrintViewModel(): ViewModel() {
             Log.d("jesusdebug", "searchArticleByName: $e")
             _print.value = Print(status = e.message ?: "Error desconocido")
         }
+    }
+
+    fun setArticleList(articleList: List<Items>?) {
+        _articleList.value = articleList?: emptyList()
+    }
+
+    fun setFlagPrint(flagPrint: String) {
+        _flagPrint.value = flagPrint
     }
 }

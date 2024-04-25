@@ -211,6 +211,13 @@ class MainActivity : ComponentActivity(),Observer{
                         zebraViewModel=zebraViewModel
                     )
                 }
+                composable(Routes.ImprimirEtiqueta.route) {
+                    PrintQrUnidadesScreen(
+                        navController = navController,
+                        context = applicationContext,
+                        zebraViewModel=zebraViewModel
+                    )
+                }
 
                 composable(Routes.ImprimirEtiquetaSSCC.route) {
                     PrintSSccScreen(

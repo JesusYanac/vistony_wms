@@ -115,27 +115,27 @@ fun formLogin(loginViewModel: LoginViewModel, context:Context, open: (BottomShee
                                         "PE" -> { // Perú
                                             DatasourceSingleton.updateApiUrl(BuildConfig.API_URL_PE_PRO)
                                             DatasourceSingleton.updatePort(8082)
-                                            DatasourceSingleton.updateDatabaseKey("")
+                                            DatasourceSingleton.updateDatabaseKey("appwms-bckdu")
                                         }
                                         "BO" -> { // Bolivia
                                             DatasourceSingleton.updateApiUrl(BuildConfig.API_URL_BO_PRO)
                                             DatasourceSingleton.updatePort(8082)
-                                            DatasourceSingleton.updateDatabaseKey("")
+                                            DatasourceSingleton.updateDatabaseKey("appwms_bo-uolsk")
                                         }
                                         "CL" -> { // Chile
                                             DatasourceSingleton.updateApiUrl(BuildConfig.API_URL_CL_PRO)
                                             DatasourceSingleton.updatePort(8082)
-                                            DatasourceSingleton.updateDatabaseKey("")
+                                            DatasourceSingleton.updateDatabaseKey("appwms_cl-kqwdq")
                                         }
                                         "PY" -> { // Paraguay
                                             DatasourceSingleton.updateApiUrl(BuildConfig.API_URL_PY_PRO)
                                             DatasourceSingleton.updatePort(8082)
-                                            DatasourceSingleton.updateDatabaseKey("")
+                                            DatasourceSingleton.updateDatabaseKey("appwms_py-ruehz")
                                         }
                                         "EC" -> { // Ecuador
                                             DatasourceSingleton.updateApiUrl(BuildConfig.API_URL_EC_PRO)
                                             DatasourceSingleton.updatePort(8082)
-                                            DatasourceSingleton.updateDatabaseKey("")
+                                            DatasourceSingleton.updateDatabaseKey("appwms_ec-eqiog")
                                         }
                                         "RO" -> { // ROFALAB
                                             locationVal = "PE"
@@ -143,12 +143,12 @@ fun formLogin(loginViewModel: LoginViewModel, context:Context, open: (BottomShee
                                             Log.e("logindebug", "nuevo valor: "+locationVal)
                                             DatasourceSingleton.updateApiUrl(BuildConfig.API_URL_RO_PRO)
                                             DatasourceSingleton.updatePort(8082)
-                                            DatasourceSingleton.updateDatabaseKey("")
+                                            DatasourceSingleton.updateDatabaseKey("approfa-iwbde")
                                         }
                                         else -> { // Perú
                                             DatasourceSingleton.updateApiUrl(BuildConfig.API_URL_PE_PRO)
                                             DatasourceSingleton.updatePort(8082)
-                                            DatasourceSingleton.updateDatabaseKey("")
+                                            DatasourceSingleton.updateDatabaseKey("appwms-bckdu")
                                         }
                                     }
 

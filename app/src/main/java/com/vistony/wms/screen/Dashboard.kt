@@ -183,6 +183,14 @@ fun DashboardSection(options: List<Routes>, user:LoginResponse, navController: N
 
                                     typePrinters.add(
                                         Options(
+                                            value= Routes.ImprimirEtiqueta.route,
+                                            text= "Rotulado Unidades",
+                                            icono= R.drawable.ic_baseline_print_24
+                                        )
+                                    )
+
+                                    typePrinters.add(
+                                        Options(
                                             value= Routes.ImprimirEtiquetaSSCC.route,
                                             text= "Rotulado palet existente",
                                             icono=R.drawable.ic_baseline_print_24
@@ -320,7 +328,7 @@ fun CourseItem(
                     .align(Alignment.BottomEnd)
                     .clip(RoundedCornerShape(10.dp))
                     .background(
-                        if(options.title in listOf("Recepción","Maestros","Toma de inventario","Mis tareas","Imprimir rotulados","Tracking del Palet","Recibo de producción", "Transferencia de Stock", "Bloqueo de Ubicación")){
+                        if(options.title in listOf("Recepción","Maestros","Toma de inventario","Mis tareas","Imprimir rotulados","Rotulado Unidades","Tracking del Palet","Recibo de producción", "Transferencia de Stock", "Bloqueo de Ubicación")){
                             AzulVistony202
                         }else{
                             Color.Gray
