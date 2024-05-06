@@ -1,6 +1,8 @@
 package com.vistony.wms.util
 
 import com.vistony.wms.BuildConfig
+import com.vistony.wms.asn.mvvm.ASNHeaderResponseEntity
+import com.vistony.wms.asn.mvvm.PreASNEntity
 import com.vistony.wms.model.*
 import com.vistony.wms.model.finditem.FindItemEntity
 import retrofit2.Retrofit
@@ -44,6 +46,13 @@ interface APIService {
 
     @GET("/pe/vs1.0/Inventory/GetItemLayoutbyLote")
     fun getFindItembyLote(@Query("lote") lote: String?): Call<FindItemEntity>
+
+    @GET("/pe/vs1.0/Production/OFInfo")
+    fun getDataPreASN(@Query("itemCode") code: String?,@Query("lote") batch: String?):  Call<PreASNEntity>
+    //Flow<PreASNEntity> // Devuelve un Flow directamente
+
+    @POST("Production/ASN")
+    fun sendDataASNPrint(@Body request:RequestBody): Call<ASNHeaderResponseEntity>
 
     companion object {
         private var apiService: APIService? = null

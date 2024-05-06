@@ -114,7 +114,9 @@ class WarehouseViewModel(flag:String,warehouse:String="",objType:Int=0): ViewMod
         })
     }
 
-    fun verificationLocation(binCode:String,AbsEntry: String){
+    fun verificationLocation(binCode:String,AbsEntryinitial: String){
+        val AbsEntry = AbsEntryinitial.removePrefix("B")
+
         Log.e("JEPICAME","===>"+binCode)
         Log.e("REOS","WarehouseViewModel-verificationLocation-binCode: "+binCode)
         Log.e("REOS","WarehouseViewModel-verificationLocation-AbsEntry: "+AbsEntry)
@@ -151,7 +153,9 @@ class WarehouseViewModel(flag:String,warehouse:String="",objType:Int=0): ViewMod
         Log.e("REOS","WarehouseViewModel-verificationLocation-_location.value.location.AbsEntry: "+_location.value.location.AbsEntry)
     }
 
-    fun getLocations(AbsEntry:String,whsOrigin:String,objType: Int){
+    fun getLocations(AbsEntryinitial:String,whsOrigin:String,objType: Int){
+        val AbsEntry = AbsEntryinitial.removePrefix("B")
+
         Log.e("REOS","WarehouseViewModel-getLocations-AbsEntry: "+AbsEntry)
         Log.e("REOS","WarehouseViewModel-getLocations-whsOrigin: "+whsOrigin)
         _location.value= LocationResponse(location= BinLocations(),status="cargando")
@@ -291,7 +295,6 @@ class WarehouseViewModel(flag:String,warehouse:String="",objType:Int=0): ViewMod
 
                             whsx?.let { datax: RealmResults<BinLocations> ->
                                 val temp2: List<BinLocations> = datax.subList(0, datax.size)
-
                                 if(i.WmsLocation == "N" ){
                                     defaultLocation.add("-")
                                     numLocation.add(0)
@@ -303,7 +306,6 @@ class WarehouseViewModel(flag:String,warehouse:String="",objType:Int=0): ViewMod
                                     }else{
                                         defaultLocation.add("-")
                                     }
-
                                     numLocation.add(temp2.size)
                                 }
                             }

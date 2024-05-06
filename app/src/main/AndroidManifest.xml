@@ -17,8 +17,6 @@
     <permission android:name="com.vistony.wms.permission.C2D_MESSAGE" android:protectionLevel="signature" />
     <uses-permission android:name="com.vistony.wms.permission.C2D_MESSAGE" />
 
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-
     <application
         android:allowBackup="false"
         android:usesCleartextTraffic="true"
@@ -33,13 +31,15 @@
             android:label="@string/app_name"
             android:launchMode="singleTask"
             android:windowSoftInputMode="adjustResize"
-            android:theme="@style/Theme.Wms">
+            android:theme="@style/Theme.Wms"
+
+            >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-           <intent-filter>
+            <intent-filter>
                 <action android:name="com.vistony.wms.model.SCAN" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
@@ -62,11 +62,26 @@
 
         <service android:name=".util.RealmNotificationService"/>
         -->
+        <activity
+            android:name="androidx.test.core.app.InstrumentationActivityInvoker$BootstrapActivity"
+            android:exported="false">
+            <!-- Otros atributos de la actividad -->
+        </activity>
+        <activity
+            android:name="androidx.test.core.app.InstrumentationActivityInvoker$EmptyActivity"
+            android:exported="false">
+            <!-- Otros atributos de la actividad -->
+        </activity>
+        <activity
+            android:name="androidx.test.core.app.InstrumentationActivityInvoker$EmptyFloatingActivity"
+            android:exported="false">
+            <!-- Otros atributos de la actividad -->
+        </activity>
 
     </application>
-
     <queries>
         <package android:name="com.google.ar.core" />
     </queries>
+
 
 </manifest>

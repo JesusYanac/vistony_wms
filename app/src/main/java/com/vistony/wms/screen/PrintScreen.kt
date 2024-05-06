@@ -39,6 +39,7 @@ import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
+import com.google.android.material.textfield.TextInputEditText
 import com.google.gson.annotations.SerializedName
 import com.vistony.wms.R
 import com.vistony.wms.component.*
@@ -253,9 +254,13 @@ fun lockSearchScreen(text: String,printViewModel : PrintViewModel) {
                                                     itemBatch = "",
                                                     itemDate = "",
 
-                                                )
+                                                    )
                                             )
-                                            printViewModel.getArticle(item?.ItemCode?:"", "", item?.ItemName ?: "")
+                                            printViewModel.getArticle(
+                                                item?.ItemCode ?: "",
+                                                "",
+                                                item?.ItemName ?: ""
+                                            )
                                             printViewModel.setArticleList(null)
                                         }
                                     ),
@@ -312,7 +317,7 @@ fun PrintSSccScreen(navController: NavHostController, context: Context,zebraView
                 itemsViewModel.getArticle(value=zebraValue.value.Payload)
             }
             "LABEL-TYPE-CODE39"->{
-                warehouseViewModel.verificationLocation(binCode = zebraValue.value.Payload, AbsEntry = "")
+                warehouseViewModel.verificationLocation(binCode = zebraValue.value.Payload, AbsEntryinitial = "")
             }
             else->{
                 Toast.makeText(context, "El rotulado escaneado no corresponde a un código QR", Toast.LENGTH_LONG).show()
@@ -713,15 +718,7 @@ fun divPrint(viewModel: PrintViewModel, onContinue:(Print)->Unit, onCancel:()->U
         label="Código del artículo",
         placeholder = "Ingresa el código a buscar",
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text,imeAction = ImeAction.Next ),
-        /*
-        keyboardActions = KeyboardActions(
-            onSearch = {
-                viewModel.getArticle(print.value.itemCode)
-                focusManager.clearFocus()
-                keyboardController?.hide()
-            }
-        ),
-        */
+
         onChange = {
             if(!it.isNullOrEmpty()&&it.contains("|")){
                 Log.d("jesusdebug", "Se escaneo: "+it)
@@ -729,13 +726,37 @@ fun divPrint(viewModel: PrintViewModel, onContinue:(Print)->Unit, onCancel:()->U
                 val itemCode = text.split("|")[0]
                 val batch = text.split("|")[1]
                 val name = text.split("|")[2]
+                viewModel.setTypeScan("QR")
                 viewModel.getArticle(itemCode,batch,name)
                 focusManager.clearFocus()
                 keyboardController?.hide()
                 viewModel.setPrint(
                     print=Print(printer=print.value.printer,itemCode = itemCode, itemName = name, itemUom = print.value.itemUom , itemDate =print.value.itemDate,itemBatch = batch,quantityString=print.value.quantityString)
                 )
-            }else{
+            }else if(!it.isNullOrEmpty()&&it.contains("(")){
+                viewModel.setTypeScan("BARCODE")
+                Log.d("jesusdebug", "Se escaneo: "+it)
+                val codigo = it
+                val codigos = Regex("\\(\\d+\\)([^\\(]+)").findAll(codigo).map { it.groupValues[1] }.toList()
+                codigos.forEachIndexed { index, codigo ->
+                    Log.d("Codigo ${index + 1}", codigo)
+                }
+
+                    val itemCode = codigos.getOrNull(0) ?: "No se encontró itemcode"
+                    val batch = codigos.getOrNull(1) ?: "No se encontró lote"
+                    val date = codigos.getOrNull(2) ?: "No se encontró fv"
+                    val month = date.substring(2, 4)
+                    val day = date.substring(0, 2)
+                    val dateFormatted = "$month/$day"
+                    viewModel.getArticleSSCC(itemCode,batch,dateFormatted)
+                    focusManager.clearFocus()
+                    keyboardController?.hide()
+                viewModel.setFV(date)
+                    viewModel.setPrint(
+                        print=Print(printer=print.value.printer,itemCode = itemCode, itemName = print.value.itemName, itemUom = print.value.itemUom , itemDate =dateFormatted,itemBatch = batch,quantityString=print.value.quantityString)
+                    )
+                }else{
+                viewModel.setTypeScan("MANUAL")
                 viewModel.setPrint(
                     print=Print(printer=print.value.printer,itemCode = it, itemName = print.value.itemName, itemUom = print.value.itemUom , itemDate =print.value.itemDate,itemBatch = print.value.itemBatch,quantityString=print.value.quantityString)
                 )
@@ -776,23 +797,72 @@ fun divPrint(viewModel: PrintViewModel, onContinue:(Print)->Unit, onCancel:()->U
     )
 
     Text("")
-
-    InputBox(
-        value=print.value.itemDate,
-        label="Fecha del artículo",
-        placeholder = "Ingresa fecha",
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text,imeAction = ImeAction.Next ),
-        keyboardActions = KeyboardActions(
-            onNext = {
-                focusManager.moveFocus(FocusDirection.Down)
-            }
-        ),
-        onChange = {
-            viewModel.setPrint(
-                print=Print(printer=print.value.printer,itemCode = print.value.itemCode, itemName = print.value.itemName, itemUom = print.value.itemUom ,itemBatch = print.value.itemBatch,quantityString=print.value.quantityString, itemDate =it)
-            )
+    Row (
+        modifier = Modifier
+            .fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ){
+        Box (
+            modifier = Modifier
+                .weight(1f)
+        ){
+            Text(text = "Fecha: ", color = Color.Gray, textAlign = TextAlign.Center)
         }
-    )
+        Spacer(modifier = Modifier.width(10.dp))
+        // Suponiendo que itemDate es una fecha en formato "MM/yyyy"
+        val dateParts = print.value.itemDate.split("/")
+        val month = dateParts.getOrNull(0) ?: ""
+        val year = dateParts.getOrNull(1) ?: ""
+        OutlinedTextField(
+            value = month,
+            onValueChange = { newMonth ->
+                // Actualiza solo la parte del mes de la fecha
+                viewModel.setPrint(
+                    print = print.value.copy(
+                        itemDate = "$newMonth/$year"
+                    )
+                )
+            },
+            enabled = true, // Cambiar a false si no se desea editar
+            modifier = Modifier
+                .width(64.dp),
+            label = { Text(text = "Mes") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number,imeAction = ImeAction.Next ),
+            keyboardActions = KeyboardActions(
+                onNext = {
+                    focusManager.moveFocus(FocusDirection.Down)
+                }
+            ),
+            maxLines = 1,
+            singleLine = true,
+            placeholder = { Text(text = "01") }
+        )
+        Spacer(modifier = Modifier.width(10.dp))
+        OutlinedTextField(
+            value = year,
+            onValueChange = { newYear ->
+                // Actualiza solo la parte del año de la fecha
+                viewModel.setPrint(
+                    print = print.value.copy(
+                        itemDate = "$month/$newYear"
+                    )
+                )
+            },
+            enabled = true, // Cambiar a false si no se desea editar
+            modifier = Modifier
+                .width(64.dp),
+            label = { Text(text = "Año") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number,imeAction = ImeAction.Next, ),
+            keyboardActions = KeyboardActions(
+                onNext = {
+                    focusManager.moveFocus(FocusDirection.Down)
+                }
+            ),
+            maxLines = 1,
+            singleLine = true,
+            placeholder = { Text(text = "24") }
+        )
+    }
 
     Text("")
 
@@ -808,7 +878,9 @@ fun divPrint(viewModel: PrintViewModel, onContinue:(Print)->Unit, onCancel:()->U
         ),
         onChange = {
             viewModel.setPrint(
-                print=Print(printer=print.value.printer,itemCode = print.value.itemCode, itemName = print.value.itemName, itemUom = print.value.itemUom ,itemBatch = print.value.itemBatch,itemDate=print.value.itemDate,quantityString =it)
+                print = print.value.copy(
+                    quantityString = it
+                )
             )
         }
     )

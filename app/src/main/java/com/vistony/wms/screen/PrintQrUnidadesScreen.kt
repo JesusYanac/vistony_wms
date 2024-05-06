@@ -74,7 +74,7 @@ fun PrintQrUnidadesScreen(
     Scaffold(
         topBar = {
             TopBarWithBackPress(
-                title="Rotulado Unidades QR",
+                title="Rotulado Unidades",
                 onButtonClicked = {
                     navController.navigateUp()
                 }

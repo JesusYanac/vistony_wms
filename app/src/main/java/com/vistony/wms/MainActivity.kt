@@ -12,6 +12,7 @@ import androidx.navigation.*
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.vistony.wms.asn.view.page.ASNpage1
 import com.vistony.wms.model.*
 import com.vistony.wms.screen.*
 import com.vistony.wms.util.*
@@ -70,7 +71,8 @@ class MainActivity : ComponentActivity(),Observer{
                     Routes.TrackingSSCC.route,
                     Routes.ProdcnTrmReport.route,
                     Routes.TransferStock.route,
-                    Routes.BlockLocation.route
+                    Routes.BlockLocation.route,
+                    Routes.ASN.route
                 )
 
                 if (currentRoute in allowedRoutes) {
@@ -211,7 +213,7 @@ class MainActivity : ComponentActivity(),Observer{
                         zebraViewModel=zebraViewModel
                     )
                 }
-                composable(Routes.ImprimirEtiqueta.route) {
+                composable(Routes.ImprimirRotuladoUnidades.route) {
                     PrintQrUnidadesScreen(
                         navController = navController,
                         context = applicationContext,
@@ -353,6 +355,13 @@ class MainActivity : ComponentActivity(),Observer{
                 }
                 composable(Routes.BlockLocation.route) {
                     BlockLocation(
+                        navController = navController,
+                        context = applicationContext,
+                        zebraViewModel=zebraViewModel
+                    )
+                }
+                composable(Routes.ASN.route) {
+                    ASNpage1(
                         navController = navController,
                         context = applicationContext,
                         zebraViewModel=zebraViewModel

@@ -28,12 +28,14 @@ sealed class Routes(val route: String,val title:String,val icon:Int,val value:In
     object Packing : Routes("Packing","Packing", R.drawable.ic_baseline_packing_24,0)
     object Almacenamiento : Routes("Almacenamiento","Almacenamiento", R.drawable.ic_baseline_cloud_download_24,0)
     object ImprimirEtiqueta : Routes("ImprimirEtiqueta","Imprimir rotulados", R.drawable.ic_baseline_print_24,0)
+    object ImprimirRotuladoUnidades : Routes("ImprimirRotuladoUnidades","Rotulado Unidades", R.drawable.ic_baseline_print_24,0)
     object ImprimirEtiquetaSSCC : Routes("ImprimirEtiquetaSSCC","Imprimir SSCC", R.drawable.ic_baseline_print_24,0)
 
     object TrackingSSCC : Routes("TrackingSSCC","Tracking del Palet", R.drawable.ic_baseline_palet_on_24,0)
     object ProdcnTrmReport : Routes("ProdcnTrmReport","Recibo de producción", R.drawable.ic_baseline_factory_24,0)
     object TransferStock : Routes("TransferStock","Transferencia de Stock", R.drawable.ic_baseline_palet_on_24,0)
     object BlockLocation : Routes("BlockLocation","Bloqueo de Ubicación", R.drawable.ic_baseline_palet_on_24,0)
+    object ASN : Routes("ASN","Creación de ASN", R.drawable.ic_baseline_palet_on_24,0)
 }
 
 val RoutesOptionDashboard = listOf(
@@ -51,5 +53,6 @@ val RoutesOptionDashboard = listOf(
     Routes.ImprimirEtiqueta,
     Routes.ProdcnTrmReport,
     Routes.TransferStock,
-    Routes.BlockLocation
+    Routes.BlockLocation,
+    Routes.ASN
 )

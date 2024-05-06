@@ -176,15 +176,15 @@ fun DashboardSection(options: List<Routes>, user:LoginResponse, navController: N
                                     typePrinters.add(
                                         Options(
                                             value= Routes.ImprimirEtiqueta.route,
-                                            text= "Rotulado QR",
+                                            text= "Rotulado Codigos de barras",
                                             icono= R.drawable.ic_baseline_print_24
                                         )
                                     )
 
                                     typePrinters.add(
                                         Options(
-                                            value= Routes.ImprimirEtiqueta.route,
-                                            text= "Rotulado Unidades",
+                                            value= Routes.ImprimirRotuladoUnidades.route,
+                                            text= "Rotulado QR para Unidades",
                                             icono= R.drawable.ic_baseline_print_24
                                         )
                                     )
@@ -237,7 +237,6 @@ fun DashboardSection(options: List<Routes>, user:LoginResponse, navController: N
                                             selected = {
                                                 if(it.text.equals("Producción"))
                                                 {
-
                                                     merchandiseViewModel.addMerchandiseHeader(
                                                         StockTransferHeader(
                                                             Comment= "Recepción de Producción|AN001-EXP-RP-01",
@@ -284,14 +283,14 @@ fun CourseItem(
 
         modifier = Modifier
             .padding(7.5.dp).clickable {
-                if(options.title in listOf("Recepción","Maestros","Toma de inventario","Mis tareas","Imprimir rotulados","Tracking del Palet","Recibo de producción", "Transferencia de Stock", "Bloqueo de Ubicación")){
+                if(options.title in listOf("Recepción","Maestros","Toma de inventario","Mis tareas","Imprimir rotulados","Tracking del Palet","Recibo de producción", "Transferencia de Stock", "Bloqueo de Ubicación"/*,"Creación de ASN"*/)){
                     onPress(options.route)
                 }
             }
             .aspectRatio(1f)
             .clip(RoundedCornerShape(10.dp))
             .background(
-                if(options.title in listOf("Recepción","Maestros","Toma de inventario","Mis tareas","Imprimir rotulados","Tracking del Palet","Recibo de producción", "Transferencia de Stock", "Bloqueo de Ubicación")){
+                if(options.title in listOf("Recepción","Maestros","Toma de inventario","Mis tareas","Imprimir rotulados","Tracking del Palet","Recibo de producción", "Transferencia de Stock", "Bloqueo de Ubicación"/*,"Creación de ASN"*/)){
                     AzulVistony201
                 }else{
                     Color.Gray
@@ -328,7 +327,7 @@ fun CourseItem(
                     .align(Alignment.BottomEnd)
                     .clip(RoundedCornerShape(10.dp))
                     .background(
-                        if(options.title in listOf("Recepción","Maestros","Toma de inventario","Mis tareas","Imprimir rotulados","Rotulado Unidades","Tracking del Palet","Recibo de producción", "Transferencia de Stock", "Bloqueo de Ubicación")){
+                        if(options.title in listOf("Recepción","Maestros","Toma de inventario","Mis tareas","Imprimir rotulados","Rotulado Unidades","Tracking del Palet","Recibo de producción", "Transferencia de Stock", "Bloqueo de Ubicación"/*,"Creación de ASN"*/)){
                             AzulVistony202
                         }else{
                             Color.Gray

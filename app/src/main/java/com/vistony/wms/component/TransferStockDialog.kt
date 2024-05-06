@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.AlertDialog
+import androidx.compose.material.Icon
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
@@ -23,8 +24,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -33,6 +36,7 @@ import com.vistony.wms.component.Editext
 import com.vistony.wms.component.Editext2
 import com.vistony.wms.screen.TableCell
 import com.vistony.wms.ui.theme.AzulVistony202
+import com.vistony.wms.ui.theme.RedVistony
 import com.vistony.wms.viewmodel.TransferStockViewModel
 
 @Composable
@@ -203,11 +207,12 @@ fun TransferStockDialog(
 @Composable
 fun RowScope.ButtonView(
     description:String
-    ,OnClick:() ->Unit
-    ,status: Boolean=false
-    ,context: Context
-    ,backGroundColor: Color = Color.Unspecified
-    ,textColor: Color = Color.Unspecified,
+    , OnClick:() ->Unit
+    , status: Boolean=false
+    , IconActive:Boolean=false
+    , context: Context
+    , backGroundColor: Color = RedVistony
+    , textColor: Color = Color.White,
 ) {
     Box(
         modifier = Modifier
@@ -217,7 +222,8 @@ fun RowScope.ButtonView(
             //.fillMaxWidth()
 
             .background(
-                backGroundColor, RoundedCornerShape(4.dp)
+                if(status){backGroundColor}else{
+                    Color.Gray} , RoundedCornerShape(4.dp)
             )
             .clickable {
                 if (status) {
@@ -238,6 +244,13 @@ fun RowScope.ButtonView(
         ) {
         Row()
         {
+            if (IconActive) {
+                Icon(
+                    ImageVector.vectorResource(R.drawable.ic_baseline_arrow_drop_down_24),
+                    tint = Color.White,
+                    contentDescription = null
+                )
+            }
             TableCell(
                 text = description,
                 color = textColor,

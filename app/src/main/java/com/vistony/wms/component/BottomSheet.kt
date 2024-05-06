@@ -1719,7 +1719,7 @@ private fun formHandheld(
                 "REOS",
                 "BottomSheet-formHandheld-invoco-warehouseViewModel.verificationLocation"
             )
-            warehouseViewModel.verificationLocation(binCode = itemsResponse.defaultLocation.toString(), AbsEntry ="")
+            warehouseViewModel.verificationLocation(binCode = itemsResponse.defaultLocation.toString(), AbsEntryinitial ="")
         }
     }
 
@@ -1780,7 +1780,7 @@ private fun formHandheld(
                                         if (textLocation.length != 20) {
                                             warehouseViewModel.verificationLocation(
                                                 binCode = textLocation,
-                                                AbsEntry = ""
+                                                AbsEntryinitial = ""
                                             )
                                         }
                                     }
@@ -1811,7 +1811,7 @@ private fun formHandheld(
                                         if (textLocation.length != 20) {
                                             warehouseViewModel.verificationLocation(
                                                 binCode = textLocation,
-                                                AbsEntry = ""
+                                                AbsEntryinitial = ""
                                             )
                                         }
                                     }
@@ -2046,7 +2046,7 @@ private fun formHandheld(
                             {
                                 warehouseViewModel.verificationLocation(
                                     binCode = textLocation,
-                                    AbsEntry = ""
+                                    AbsEntryinitial = ""
                                 )
                             }
                         },
@@ -2068,7 +2068,7 @@ private fun formHandheld(
                                 keyboardController?.hide()
                                 warehouseViewModel.verificationLocation(
                                     binCode = textLocation,
-                                    AbsEntry = ""
+                                    AbsEntryinitial = ""
                                 )
                             }
                         )
@@ -2119,7 +2119,7 @@ private fun formHandheld(
                             ) {
                                 warehouseViewModel.verificationLocation(
                                     binCode = textLocation,
-                                    AbsEntry = ""
+                                    AbsEntryinitial = ""
                                 )
                             }
                         }

@@ -28,6 +28,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
+import java.util.Calendar
 
 class PrintViewModel(): ViewModel() {
 
@@ -55,6 +56,11 @@ class PrintViewModel(): ViewModel() {
     private val _flagPrint = MutableStateFlow("")
     val flagPrint: StateFlow<String> get() = _flagPrint
 
+    private  val _typeScan = MutableStateFlow("")
+    val typeScan: StateFlow<String> get() = _typeScan
+    private val _fv = MutableStateFlow("")
+    val fv: StateFlow<String> get() = _fv
+
     class PrintViewModelFactory(): ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -68,6 +74,9 @@ class PrintViewModel(): ViewModel() {
 
     fun resetItemStatus(){
         _print.value=Print()
+    }
+    fun setTypeScan(type:String){
+        _typeScan.value=type
     }
 
     fun setPrint(print:Print){
@@ -135,6 +144,34 @@ class PrintViewModel(): ViewModel() {
             }
         }).toString()
     }
+    fun getArticleSSCC(itemCode:String, batch: String, date: String) {
+        Log.d("jesusdebug", "ingreso getArticle: $itemCode")
+        Log.d("jesusdebug", "print: "+_print.value)
+        viewModelScope.launch(Dispatchers.Default){
+
+            APIService.getInstance().getPrintData(itemCode = itemCode, lote = batch).enqueue(object :Callback<MyDataPrint> {
+                override fun onResponse(call: Call<MyDataPrint>, response: Response<MyDataPrint>) {
+                    Log.e("jesusdebug", "PrintViewModel-sendPrintTerminationReport-call$call")
+                    Log.e("jesusdebug",
+                        "PrintViewModel-sendPrintTerminationReport-response$response"
+                    )
+                    Log.e("jesusdebug", "PrintViewModel-sendPrintTerminationReport-response${response.body()?.Data}")
+                    _print.value= _print.value.copy(
+                        itemUom = response.body()?.Data!![0].UM,
+                        itemBatch = batch,
+                        itemName = response.body()?.Data!![0].ItemName,
+                        itemCode = response.body()?.Data!![0].ItemCode,
+                        itemDate = date,
+                    )
+                }
+                override fun onFailure(call: Call<MyDataPrint>, t: Throwable) {
+                    TODO("Not yet implemented")
+                }
+            })
+
+
+        }
+    }
 
     private fun listPrinter(){
         _printList.value = ListPrint(prints=emptyList(), "cargando")
@@ -162,14 +199,24 @@ class PrintViewModel(): ViewModel() {
 
         Log.d("jesusdebug", "iniciando calculo de fechas")
 
-        val fecha = print.itemDate // Reemplaza esto con tu fecha
+
+        val fecha = print.itemDate.substringBefore("/") // Obtener el número antes del '/'
+            .let {
+                val numBeforeSlash = if (it.toInt() in 1..12) it else "01" // Validar el primer número
+                if (numBeforeSlash.toInt() < 9) "0${numBeforeSlash.toInt()}" else numBeforeSlash // Agregar '0' si es menor que 9
+            }
+            .padStart(2, '0') // Asegurarse de que el número tenga dos dígitos
+            .plus("/") // Agregar el '/'
+            .plus(Calendar.getInstance().get(Calendar.YEAR).toString().takeLast(2)) // Obtener los dos últimos dígitos del año actual
+
+
         val anio = fecha.split("/")[1].toInt()
         val mes = fecha.split("/")[0].toInt()
 
         Log.d("jesusdebug", "fecha: "+fecha)
         val tv = data?.get(0)?.Tvida // Reemplaza esto con tu valor de tv
 
-        val anioFinal = anio + tv!!.toInt()
+        val anioFinal = anio + (if(Calendar.getInstance().get(Calendar.YEAR).toString().takeLast(2).toInt() < anio) 0 else tv)!!
 
         Log.d("jesusdebug", "tv: "+tv)
 
@@ -191,9 +238,10 @@ class PrintViewModel(): ViewModel() {
                             LineaItem(
                                 itemName = print.itemName + " "+ print.itemUom,
                                 itemCode = print.itemCode,
-                                numero = print.quantity*2,
+                                numero = if(_flagPrint.value=="Zebra_QR") print.quantity else print.quantity,
                                 lote = print.itemBatch,
-                                fecha = print.itemDate,
+                                fecha = if(_typeScan.value=="BARCODE" && _fv.value!= "")"${_fv.value.substring(2, 4)}/${_fv.value.substring(0, 2)}"
+                                else fecha,
                                 unidadMedida = print.itemUom,
                                 barCode = if(_flagPrint.value=="Zebra_QR"){data?.get(0)?.BarCode.toString()}else{data?.get(0)?.BarCodeUnit.toString()},
                                 fv = formattedResult?:"0000",
@@ -215,11 +263,12 @@ class PrintViewModel(): ViewModel() {
                         LineaItem(
                             itemName = print.itemName + " "+ print.itemUom,
                             itemCode = print.itemCode,
-                            numero = print.quantity*2,
+                            numero = if(_flagPrint.value=="Zebra_QR") print.quantity else print.quantity,
                             lote = print.itemBatch,
-                            fecha = print.itemDate,
+                            fecha = if(_typeScan.value=="BARCODE" && _fv.value!= "")"${_fv.value.substring(2, 4)}/${_fv.value.substring(0, 2)}"
+                            else fecha,
                             unidadMedida = print.itemUom,
-                            barCode = data?.get(0)?.BarCode.toString(),
+                            barCode = if(_flagPrint.value=="Zebra_QR"){data?.get(0)?.BarCode.toString()}else{data?.get(0)?.BarCodeUnit.toString()},
                             fv = formattedResult?:"0000",
                         )
                     )
@@ -446,5 +495,9 @@ class PrintViewModel(): ViewModel() {
 
     fun setFlagPrint(flagPrint: String) {
         _flagPrint.value = flagPrint
+    }
+
+    fun setFV(fv: String) {
+        _fv.value = fv
     }
 }

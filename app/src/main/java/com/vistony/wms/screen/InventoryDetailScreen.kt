@@ -88,51 +88,65 @@ fun ScanScreen(navController: NavHostController,whs:String,idInventory:String,st
     val articleValue = itemsViewModel.article.collectAsState()
     val zebraValue = zebraViewModel.data.collectAsState()
     val warehouseValue = warehouseViewModel.location.collectAsState()
-
+    val resetforced = itemsViewModel.resetForced.collectAsState()
     val openDialog = remember { mutableStateOf(FlagDialog()) }
     var flagModal = remember { mutableStateOf(FlagDialog()) }
 
     Log.e(
-        "REOS",
+        "jesusdebug",
         "CustomDialog-CustomDialogVs2-zebraValue.value.Payload"+zebraValue.value.Payload
     )
     Log.e(
-        "REOS",
+        "jesusdebug",
         "CustomDialog-CustomDialogVs2-zebraValue.value.Type"+zebraValue.value.Type
     )
-    if(zebraValue.value.Payload.isNotEmpty()){
-        if(
-            zebraValue.value.Payload.split("-").size==4
-            && zebraValue.value.Type!="LABEL-TYPE-QRCODE"
-            //&& zebraValue.value.Payload[0] =='B'
-            //zebraValue.value.Payload.split("-").size>=2
-           // &&
-            //zebraValue.value.Payload[0]=='B'
-        ){
-            Log.e(
-                "REOS",
-                "CustomDialog-CustomDialogVs2-zebraValue.Entro-zebraValue.value.Payload[0]=='B'"
-            )
-            if(defaultLocation=="+"){
+    itemsViewModel.setNameLocation("")
+    if(zebraValue.value.Payload.isNotEmpty()&& status!= "Cerrado" && resetforced.value!=0){
+        itemsViewModel.setNameLocation("")
+        itemsViewModel.lauchResetForced()
+        if(zebraValue.value.Payload.startsWith("B")){
+            itemsViewModel.setLocation(zebraValue.value.Payload.removePrefix("B"))
+        }
+        else{
+
+            Log.d("jesusdebug", "Se escaneó: "+zebraValue.value.Payload)
+            Log.d("jesusdebug", "Se escaneó type: "+zebraValue.value.Type)
+            Log.d("jesusdebug", "Se escaneó size: "+(zebraValue.value.Payload.split("-").size==4))
+            if(
+                zebraValue.value.Payload.split("-").size==4
+                && zebraValue.value.Type=="LABEL-TYPE-CODE39"
+            ){
                 Log.e(
-                    "REOS",
-                    "CustomDialog-CustomDialogVs2-zebraValue..Entro-zebraValue.value.Payload[0]=='B'-+"
+                    "jesusdebug",
+                    "CustomDialog-CustomDialogVs2-zebraValue.Entro-zebraValue.value.Payload[0]=='B'"
                 )
-                Log.e(
-                    "REOS",
-                    "CustomDialog-CustomDialogVs2-zebraValue.value.Payload+"+zebraValue.value.Payload
-                )
-                Log.e(
-                    "REOS",
-                    "CustomDialog-CustomDialogVs2-zebraValue.value.whs+"+whs
-                )
-                warehouseViewModel.getLocations(zebraValue.value.Payload,whs, -1)
+                if(defaultLocation=="+"){
+                    Log.e(
+                        "jesusdebug",
+                        "CustomDialog-CustomDialogVs2-zebraValue..Entro-zebraValue.value.Payload[0]=='B'-+"
+                    )
+                    Log.e(
+                        "jesusdebug",
+                        "CustomDialog-CustomDialogVs2-zebraValue.value.Payload+"+zebraValue.value.Payload
+                    )
+                    Log.e(
+                        "jesusdebug",
+                        "CustomDialog-CustomDialogVs2-zebraValue.value.whs+"+whs
+                    )
+                    warehouseViewModel.getLocations(zebraValue.value.Payload,whs, -1)
+
+                }
+            } else{
+                Log.d("jesusdebug", "entro else")
+                if(zebraValue.value.Payload.isNotEmpty() &&zebraValue.value.Payload.contains("(")){
+                    Log.d("jesusdebug", "tiene parentesis consiguiendo getArticleSSCC")
+                    itemsViewModel.getArticleSSCC(codigo=zebraValue.value.Payload,typeInventario=typeInventory, idHeader = idInventory)
+                }else{
+                    Log.d("jesusdebug", "no tiene parentesis consiguiendo getArticle: ")
+                    itemsViewModel.getArticle(value=zebraValue.value.Payload,typeInventario=typeInventory, idHeader = idInventory)
+                }
 
             }
-        }else{
-
-            itemsViewModel.getArticle(value=zebraValue.value.Payload,typeInventario=typeInventory, idHeader = idInventory)
-
         }
         zebraViewModel.setData(zebraPayload())
     }
@@ -236,7 +250,7 @@ fun ScanScreen(navController: NavHostController,whs:String,idInventory:String,st
                     )
                 )
 
-                itemsViewModel.resetArticleStatus()
+                itemsViewModel.setStatus("")
             }
             "vacio"->{
                 Toast.makeText(context, "El código escaneado no se encuentra en el maestro de articulos", Toast.LENGTH_SHORT).show()
@@ -300,22 +314,36 @@ fun ScanScreen(navController: NavHostController,whs:String,idInventory:String,st
         }
 
         if(dataObs.value.counting.isNotEmpty()){
+            Log.d("jesusdebug", "llamnado a CustomDialogVs2")
             CustomDialogVs2(
                 zebraViewModel=zebraViewModel,
                 defaultLocation=defaultLocation,
                 context=context,
                 customCounting=dataObs.value,
                 typeRead=typeRead,
+                itemsViewModel=itemsViewModel,
                 newValue = {
+                    Log.d("jesusdebug", "llamnado a CustomDialogVs2 - newValue")
                     it.forEach { counting ->
+                        Log.d("jesusdebug", "llamnado a CustomDialogVs2 - newValue - counting - Realm_Id: " + counting.Realm_Id)
                         if(counting.Realm_Id=="Y"){
+                            Log.d("jesusdebug", "llamnado a CustomDialogVs2 - newValue - Realm_Id")
                             homeViewModel.writeData(CustomCounting())
-                        }else{
+                        }
+                        else{
+                            Log.d("jesusdebug", "llamnado a CustomDialogVs2 - newValue - else")
+                            Log.d("jesusdebug", "quantity: " + counting.quantity)
+                            Log.d("jesusdebug", "location: " + counting.location)
+                            Log.d("jesusdebug", "itemName: " + counting.itemName)
                             if(counting.quantity==0.0 && counting.location.isEmpty() && counting.itemName.isEmpty()){
+                                Log.d("jesusdebug", "llamnado a CustomDialogVs2 - newValue - else - if")
                                 homeViewModel.writeData(CustomCounting())
                             }else{
+                                Log.d("jesusdebug", "llamnado a CustomDialogVs2 - newValue - else - else")
+                                Log.d("jesusdebug", "itemname: "+counting.itemName)
+                                Log.d("jesusdebug", "location: "+counting.location)
                                 if(counting.itemName.isEmpty() && counting.location.isNotEmpty()){
-
+                                    Log.d("jesusdebug", "llamnado a CustomDialogVs2 - newValue - else - else - if")
                                     counting.quantity=0.0
                                     counting.itemCode="0000000"
                                     counting.itemName="UBICACIÓN VACIA"
@@ -323,7 +351,16 @@ fun ScanScreen(navController: NavHostController,whs:String,idInventory:String,st
                                     homeViewModel.insertData(counting)
                                     homeViewModel.writeData(CustomCounting())
 
+                                }else if(counting.itemName.isNotEmpty() && counting.location.isEmpty()){
+                                    Log.d("jesusdebug", "llamnado a CustomDialogVs2 - newValue - else - else - else if")
+                                    if(counting.quantity>0.0){
+                                        homeViewModel.insertData(counting)
+                                        homeViewModel.writeData(CustomCounting())
+                                    }
                                 }else{
+                                    Log.d("jesusdebug", "llamnado a CustomDialogVs2 - newValue - else - else - else")
+                                    Log.d("jesusdebug", "location: "+counting.location)
+                                    Log.d("jesusdebug", "quantity: "+counting.quantity)
                                     if(counting.quantity>0.0 && counting.location.isNotEmpty()){
                                         homeViewModel.insertData(counting)
                                         homeViewModel.writeData(CustomCounting())
@@ -333,7 +370,10 @@ fun ScanScreen(navController: NavHostController,whs:String,idInventory:String,st
 
                             ///////////////////////
                         }
+
                     }
+
+                    itemsViewModel.resetArticleStatus()
                 }
             )
         }
@@ -436,7 +476,7 @@ private fun divContainer(defaultLocation:String, zebraViewModel:ZebraViewModel, 
             when(typeRead){
                 TypeReadSKU.CAMERA->{
                     Log.e(
-                        "REOS",
+                        "jesusdebug",
                         "InventoryDetailScreen-divContainer-TypeReadSKU.CAMERA"
                     )
                     CameraForm(
@@ -448,7 +488,7 @@ private fun divContainer(defaultLocation:String, zebraViewModel:ZebraViewModel, 
                 }
                 TypeReadSKU.KEYBOARD-> {
                     Log.e(
-                        "REOS",
+                        "jesusdebug",
                         "InventoryDetailScreen-divContainer-TypeReadSKU.KEYBOARD"
                     )
                     cameraProvider.unbindAll()
@@ -457,8 +497,6 @@ private fun divContainer(defaultLocation:String, zebraViewModel:ZebraViewModel, 
 
                     formHandheld(
                         onPress={ payloadX ->
-
-                            Log.e("jesusdebug3",payloadX.toString())
                             itemsViewModel.getArticle(payloadX)
                         }
                     )
@@ -473,7 +511,7 @@ private fun divContainer(defaultLocation:String, zebraViewModel:ZebraViewModel, 
                 }
                 TypeReadSKU.HANDHELD->{
                     Log.e(
-                        "REOS",
+                        "jesusdebug",
                         "InventoryDetailScreen-divContainer-TypeReadSKU.HANDHELD"
                     )
                     Text(
@@ -762,6 +800,7 @@ fun CameraForm(zebraViewModel:ZebraViewModel,context:Context, cameraProviderFutu
             cameraProvider=cameraProvider,
             context=context,
             valueText = { textDecode ->
+                Log.d("jesusdebug", "valueText: $textDecode")
                 zebraViewModel.setData( zebraPayload(Payload=textDecode,Type="LABEL-TYPE-CAMERA"))
             }
         )
