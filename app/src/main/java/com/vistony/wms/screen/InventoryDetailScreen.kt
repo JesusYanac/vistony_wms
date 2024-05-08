@@ -114,8 +114,9 @@ fun ScanScreen(navController: NavHostController,whs:String,idInventory:String,st
             Log.d("jesusdebug", "Se escaneó size: "+(zebraValue.value.Payload.split("-").size==4))
             if(
                 zebraValue.value.Payload.split("-").size==4
-                && zebraValue.value.Type=="LABEL-TYPE-CODE39"
+                && (zebraValue.value.Type=="LABEL-TYPE-CODE39" || zebraValue.value.Type=="LABEL-TYPE-CAMERA")
             ){
+               // warehouseViewModel.getLocations(zebraValue.value.Payload,whs, -1)
                 Log.e(
                     "jesusdebug",
                     "CustomDialog-CustomDialogVs2-zebraValue.Entro-zebraValue.value.Payload[0]=='B'"
@@ -138,13 +139,16 @@ fun ScanScreen(navController: NavHostController,whs:String,idInventory:String,st
                 }
             } else{
                 Log.d("jesusdebug", "entro else")
-                if(zebraValue.value.Payload.isNotEmpty() &&zebraValue.value.Payload.contains("(")){
-                    Log.d("jesusdebug", "tiene parentesis consiguiendo getArticleSSCC")
-                    itemsViewModel.getArticleSSCC(codigo=zebraValue.value.Payload,typeInventario=typeInventory, idHeader = idInventory)
-                }else{
-                    Log.d("jesusdebug", "no tiene parentesis consiguiendo getArticle: ")
-                    itemsViewModel.getArticle(value=zebraValue.value.Payload,typeInventario=typeInventory, idHeader = idInventory)
+                val payload = zebraValue.value.Payload
+                val numParentheses = payload.count { it == '(' }
+                if (numParentheses == 3) {
+                    Log.d("jesusdebug", "Tiene exactamente 3 paréntesis. Consiguiendo getArticleSSCC")
+                    itemsViewModel.getArticleSSCC(codigo = payload, typeInventario = typeInventory, idHeader = idInventory)
+                } else {
+                    Log.d("jesusdebug", "No tiene exactamente 3 paréntesis. Consiguiendo getArticle")
+                    itemsViewModel.getArticle(value = payload, typeInventario = typeInventory, idHeader = idInventory)
                 }
+
 
             }
         }
